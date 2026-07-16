@@ -701,10 +701,8 @@ function handleCoverFile(){
   const f=document.getElementById('coverFileInput').files[0];if(!f)return;
   if(!f.type.startsWith('image/')){showToast('warn','Lütfen bir görsel dosyası seç.');return;}
   readImageFileAsDataUrl(f).then(dataUrl=>{
-    return compressImage(dataUrl, 1200, 1800, 0.97);
-  }).then(compressed=>{
-    showCoverPreview(compressed);
-    document.getElementById('coverUrlInput').value=compressed;
+    showCoverPreview(dataUrl);
+    document.getElementById('coverUrlInput').value=dataUrl;
   }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
 }
 function showCoverPreview(src){
@@ -719,11 +717,7 @@ function handleOldCoverFile(){
   const files=Array.from(document.getElementById('oldCoverFileInput').files);
   const imageFiles=files.filter(f=>f.type.startsWith('image/'));
   if(imageFiles.length<files.length){showToast('warn','Bazı dosyalar görsel değil, atlandı.');}
-  Promise.all(imageFiles.map(f=>
-    readImageFileAsDataUrl(f)
-      .then(dataUrl=>compressImage(dataUrl, 1200, 1800, 0.97))
-      .catch(err=>{showToast('warn',err.message||'Bir görsel yüklenemedi.');return null;})
-  )).then(results=>{
+  Promise.all(imageFiles.map(f=>readImageFileAsDataUrl(f).catch(err=>{showToast('warn',err.message||'Bir görsel yüklenemedi.');return null;}))).then(results=>{
     results.filter(Boolean).forEach(dataUrl=>oldCovers.push(dataUrl));
     renderOldCoverPreviews();
   });
