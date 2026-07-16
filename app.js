@@ -118,7 +118,7 @@ function triggerKonamiEffect(){
     '✨ Gizli modu buldun! Okuma ruhu seninle! 📚',
     '🐉 7 kez tıkladın... Bu sabır bir manga kahramanına yakışır!',
     '🌸 Gizli bahçeyi keşfettin! Tebrikler!',
-    "📖 Megami'un kalbini açtın!"
+    "📖 Megami'nin kalbini açtın!"
   ];
   showToast('star',msgs[Math.floor(Math.random()*msgs.length)]);
 }
@@ -689,14 +689,21 @@ function compressImage(src, maxW, maxH, quality){
   });
 }
 function previewCoverUrl(){const u=document.getElementById('coverUrlInput').value.trim();if(u)showCoverPreview(u);else resetCoverPreview();}
+function readImageFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Dosya okunamadı'));
+    reader.onload=e=>resolve(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
 function handleCoverFile(){
   const f=document.getElementById('coverFileInput').files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=async e=>{
-    showCoverPreview(e.target.result);
-    document.getElementById('coverUrlInput').value=e.target.result;
-  };
-  r.readAsDataURL(f);
+  if(!f.type.startsWith('image/')){showToast('warn','Lütfen bir görsel dosyası seç.');return;}
+  readImageFileAsDataUrl(f).then(dataUrl=>{
+    showCoverPreview(dataUrl);
+    document.getElementById('coverUrlInput').value=dataUrl;
+  }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
 }
 function showCoverPreview(src){
   const w=document.getElementById('coverPreviewWrap');
@@ -708,15 +715,11 @@ function showCoverPreview(src){
 function resetCoverPreview(){document.getElementById('coverPreviewWrap').innerHTML=`<div class="cover-preview-ph" id="coverPlaceholder">${ic('img',20)}</div>`;}
 function handleOldCoverFile(){
   const files=Array.from(document.getElementById('oldCoverFileInput').files);
-  let pending=files.length;
-  files.forEach(f=>{
-    const r=new FileReader();
-    r.onload=async e=>{
-      oldCovers.push(e.target.result);
-      pending--;
-      if(!pending)renderOldCoverPreviews();
-    };
-    r.readAsDataURL(f);
+  const imageFiles=files.filter(f=>f.type.startsWith('image/'));
+  if(imageFiles.length<files.length){showToast('warn','Bazı dosyalar görsel değil, atlandı.');}
+  Promise.all(imageFiles.map(f=>readImageFileAsDataUrl(f).catch(err=>{showToast('warn',err.message||'Bir görsel yüklenemedi.');return null;}))).then(results=>{
+    results.filter(Boolean).forEach(dataUrl=>oldCovers.push(dataUrl));
+    renderOldCoverPreviews();
   });
 }
 function renderOldCoverPreviews(){
@@ -757,6 +760,21 @@ async function exportBackup(){
   a.click(); URL.revokeObjectURL(url);
   showToast('check','Yedek dosyası indiriliyor…');
 }
+function validateSeriesShape(arr){
+  // Her elemanın gerçek bir "seri" objesi olduğunu doğrular.
+  // id ve name zorunlu; diğer alanlar eksikse makul varsayılanlarla tamamlanır.
+  const cleaned=[];
+  let skipped=0;
+  for(const item of arr){
+    if(!item||typeof item!=='object'){skipped++;continue;}
+    const id=item.id;
+    const name=typeof item.name==='string'?item.name.trim():'';
+    if(!id||!name){skipped++;continue;}
+    cleaned.push(item);
+  }
+  return {cleaned,skipped};
+}
+let _lastBackupBeforeImport=null;
 async function importBackup(e){
   const file=e.target.files[0]; if(!file)return;
   if(!confirm('Mevcut verilerinin üzerine yazılacak. Emin misin?')){e.target.value='';return;}
@@ -765,15 +783,49 @@ async function importBackup(e){
     const data=JSON.parse(text);
     const imported=data.series||data;
     if(!Array.isArray(imported)) throw new Error('Geçersiz format');
-    series=imported;
+    const {cleaned,skipped}=validateSeriesShape(imported);
+    if(cleaned.length===0) throw new Error('Dosyada geçerli seri bulunamadı');
+    // Geri alınabilmesi için mevcut veriyi bellekte sakla (sayfa açıkken geçerli)
+    _lastBackupBeforeImport=JSON.parse(JSON.stringify(series));
+    series=cleaned;
     await save();
     renderTabs(); renderContent();
     closeSheet('backupOverlay');
-    showToast('check',`${series.length} seri geri yüklendi!`);
+    const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
+    showToast('check',`${series.length} seri geri yüklendi!${skipMsg}`);
+    if(_lastBackupBeforeImport&&_lastBackupBeforeImport.length>0){
+      showUndoImportBanner();
+    }
   } catch(err){
     showToast('warn','Geçersiz yedek dosyası!');
   }
   e.target.value='';
+}
+async function undoImport(){
+  if(!_lastBackupBeforeImport)return;
+  series=_lastBackupBeforeImport;
+  _lastBackupBeforeImport=null;
+  await save();
+  renderTabs(); renderContent();
+  hideUndoImportBanner();
+  showToast('check','Önceki verilerine geri dönüldü.');
+}
+function showUndoImportBanner(){
+  let b=document.getElementById('undoImportBanner');
+  if(!b){
+    b=document.createElement('div');
+    b.id='undoImportBanner';
+    b.style.cssText='position:fixed;bottom:calc(var(--nav-h,0px)+9px);left:13px;right:13px;background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:998;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    document.body.appendChild(b);
+  }
+  b.innerHTML=`<span>İçe aktarma tamamlandı.</span><button onclick="undoImport()" style="background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;">Geri Al</button>`;
+  b.style.display='flex';
+  clearTimeout(window._undoBannerTimer);
+  window._undoBannerTimer=setTimeout(hideUndoImportBanner,10000);
+}
+function hideUndoImportBanner(){
+  const b=document.getElementById('undoImportBanner');
+  if(b)b.style.display='none';
 }
 function openInstallPrompt(){
   if(window._deferredPrompt){triggerInstall();return;}
