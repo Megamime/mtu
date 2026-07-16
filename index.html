@@ -68,7 +68,7 @@ body{color:var(--text);font-family:'Outfit',sans-serif;display:flex;align-items:
   <div class="mark-wrap">
     <div class="mark-halo"></div>
     <div class="mark">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M 12.0,1.0 L 13.556,10.444 L 23.0,12.0 L 13.556,13.556 L 12.0,23.0 L 10.444,13.556 L 1.0,12.0 L 10.444,10.444 Z"/></svg>
     </div>
   </div>
   <div class="wordmark">
@@ -84,9 +84,8 @@ body{color:var(--text);font-family:'Outfit',sans-serif;display:flex;align-items:
 <script>
 var pagesEl = document.getElementById('pages');
 function starPath(spikes,innerRatio){var outerR=12,innerR=12*innerRatio,pts=[];for(var i=0;i<spikes*2;i++){var r=i%2===0?outerR:innerR,a=(Math.PI/spikes)*i-Math.PI/2;pts.push((12+r*Math.cos(a)).toFixed(2)+','+(12+r*Math.sin(a)).toFixed(2));}return pts.join(' ');}
-var star5=starPath(5,.5);
-var sparkle4='<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>';
-var shapeSVGs=[sparkle4,'<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="currentColor"><polygon points="'+star5+'"/></svg>','<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>','<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>'];
+var star4=starPath(4,.42),star5=starPath(5,.5);
+var shapeSVGs=['<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="currentColor"><polygon points="'+star4+'"/></svg>','<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="currentColor"><polygon points="'+star5+'"/></svg>','<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>','<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>'];
 var kinds=['page','diamond','dust','shape'];
 for(var i=0;i<24;i++){
   var kind=kinds[Math.floor(Math.random()*kinds.length)],p=document.createElement('div');
@@ -99,8 +98,8 @@ for(var i=0;i<24;i++){
   pagesEl.appendChild(p);
 }
 
-var DURATION = 1500; // yükleme animasyonu süresi (ms)
-var REDIRECT_DELAY = 1600; // yönlendirme gecikmesi (ms)
+var DURATION = 2500;
+var REDIRECT_DELAY = 2600;
 
 var pctEl=document.getElementById('pct'),pct=0,start=performance.now();
 function tick(now){
