@@ -7,7 +7,7 @@ function ic(n,s=13){
   _icCache[k]=v; return v;
 }
 const SK='mangavault_v3';
-const DB_NAME='MangaVaultDB', DB_VER=1, STORE='series';
+const DB_NAME='MegamiDB', DB_VER=1, STORE='series';
 let db=null;
 function openDB(){
   return new Promise((resolve,reject)=>{
@@ -118,7 +118,7 @@ function triggerKonamiEffect(){
     '✨ Gizli modu buldun! Okuma ruhu seninle! 📚',
     '🐉 7 kez tıkladın... Bu sabır bir manga kahramanına yakışır!',
     '🌸 Gizli bahçeyi keşfettin! Tebrikler!',
-    "📖 MangaVault'un kalbini açtın!"
+    "📖 Megami'un kalbini açtın!"
   ];
   showToast('star',msgs[Math.floor(Math.random()*msgs.length)]);
 }
@@ -253,7 +253,7 @@ function renderHome(){
 function carouselCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[MangaVault] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
     :`<div class="card-cover-ph">${ic('img',18)}</div>`;
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -273,7 +273,7 @@ function carouselCard(s,i){
 function flatCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[MangaVault] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
     :`<div class="card-cover-ph">${ic('img',18)}</div>`;
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -797,6 +797,6 @@ function normalizeCoverUrl(u){
   if(u.startsWith('http://')||u.startsWith('https://'))return u;
   if(u.startsWith('/'))return u;
   if(/^[\w.-]+\.[a-z]{2,}\/.+/i.test(u))return 'https://'+u;
-  console.warn('[MangaVault] Geçersiz kapak URL formatı, kaydedilmedi:',u);
+  console.warn('[Megami] Geçersiz kapak URL formatı, kaydedilmedi:',u);
   return '';
 }
