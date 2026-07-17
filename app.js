@@ -89,7 +89,10 @@ function updateStreak(){
   else if(data.last===new Date(Date.now()-86400000).toDateString()){data.count=(data.count||0)+1;data.last=today;}
   else{data.count=1;data.last=today;}
   localStorage.setItem('mv_streak',JSON.stringify(data));
-  document.getElementById('streakNum').textContent=data.count||1;
+  const streakNumEl=document.getElementById('streakNum');
+  if(streakNumEl)streakNumEl.textContent=data.count||1;
+  const streakSidebarNumEl=document.getElementById('streakSidebarNum');
+  if(streakSidebarNumEl)streakSidebarNumEl.textContent=data.count||1;
   if(data.count===7)  setTimeout(()=>{spawnConfetti();showToast('fire','7 günlük seri! Bir hafta boyunca buradayken! 🔥');},800);
   if(data.count===30) setTimeout(()=>{spawnConfetti();showToast('fire','30 gün! Sen artık bir efsanesin! 👑');},800);
   if(data.count===100)setTimeout(()=>{spawnConfetti();spawnConfetti();showToast('fire','100 GÜN! Bu gerçekten inanılmaz! 🏆');},800);
@@ -252,11 +255,17 @@ function bulkDelete(){
   if(selectedIds.size===0)return;
   const n=selectedIds.size;
   showConfirm(`${n} seriyi silmek istediğine emin misin?`,async()=>{
+    const deletedSeries=series.filter(s=>selectedIds.has(s.id));
     series=series.filter(s=>!selectedIds.has(s.id));
     await save();
     showToast('check',`${n} seri silindi.`);
     selectionMode=false;selectedIds.clear();
     renderTabs();renderHome();
+    showUndoBanner(`${n} seri silindi.`,async()=>{
+      series=series.concat(deletedSeries);
+      await save();renderTabs();renderHome();
+      showToast('check','Seriler geri getirildi.');
+    });
   });
 }
 let _searchDebounceTimer=null;
@@ -305,12 +314,15 @@ function renderHome(){
     return;
   }
   let html=banner?`<div style="padding:0">${banner}</div>`:'';
+  const homeSortBar=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
+  html+=homeSortBar;
   SECTIONS.forEach(sec=>{
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);
     else if(sec.favsOnly) items=filtered.filter(s=>s.favorited&&!s.pinned);
     else items=filtered.filter(s=>!s.pinned&&!s.favorited&&sec.cats.includes(s.category));
     if(!items.length) return;
+    items=sortSeries(items);
     const MAX_SHOW = 9;
     const seeAllCat = sec.cats ? sec.cats[0] : 'all';
     const shown = items.slice(0, MAX_SHOW);
@@ -321,7 +333,8 @@ function renderHome(){
         ${items.length > MAX_SHOW ? `<div class="sec-see-all" onclick="setCat('${seeAllCat}')">Tümü ${ic('chevron',11)}</div>` : ''}
       </div><div class="carousel-wrap"><button class="carousel-arrow left" onclick="scrollCarousel(this,-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="carousel" id="car-${sec.key}">${shown.map((s,i)=>carouselCard(s,i)).join('')}${moreCard}</div><button class="carousel-arrow right" onclick="scrollCarousel(this,1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>`;
   });
-  el.innerHTML=html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`;
+  const homeBulkBar=selectionMode?renderBulkBar():'';
+  el.innerHTML=(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar;
 }
 function carouselCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
@@ -333,10 +346,14 @@ function carouselCard(s,i){
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
-  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''}" style="animation-delay:${i*.03}s" onclick="openDetail('${s.id}')"><div class="card-cover-wrap">
+  const isSel=selectedIds.has(s.id);
+  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}')`;
+  const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
+  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
+      ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      ${s.newChapter?'<div class="new-chapter-badge">Yeni Bölüm</div>':''}<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div></div>
+      ${s.newChapter?'<div class="new-chapter-badge">Yeni Bölüm</div>':''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
@@ -641,11 +658,24 @@ async function saveSeries(){
     const old=series.find(x=>x.id===editingId);
     if(old) data.autoIncrSkips=old.autoIncrSkips||[];
   }
+  const isNew=!editingId;
+  const prevState=isNew?null:series.find(x=>x.id===editingId);
+  const prevIdx=series.findIndex(x=>x.id===data.id);
   if(editingId){
     const idx=series.findIndex(x=>x.id===editingId);if(idx>=0)series[idx]=data;
     if(newTR&&newTR!==String(prevTR)) addLog(editingId,`TR bölüm ${prevTR}→${newTR}`);
   } else series.unshift(data);
-  await save();closeSheet('addOverlay');renderTabs();renderContent();
+  try{
+    await save();
+  } catch(err){
+    console.error('[Megami] Kaydetme başarısız:',err);
+    // Değişikliği geri al, tutarsız durumda bırakma
+    if(isNew) series=series.filter(x=>x.id!==data.id);
+    else if(prevState&&prevIdx>=0) series[prevIdx]=prevState;
+    showToast('warn','Kaydedilemedi! Kapak görseli çok büyük olabilir, daha küçük bir dosya dene.');
+    return;
+  }
+  closeSheet('addOverlay');renderTabs();renderContent();
   showToast('check',editingId?'Seri güncellendi.':'Seri eklendi.');
   if(!editingId&&series.length===1){setTimeout(()=>{spawnConfetti();showToast('star','İlk serini ekledin! Hoş geldin! 🎉');},400);}
   easterEggCheck();
@@ -654,9 +684,18 @@ async function deleteSeries(){
   if(!editingId)return;
   const id=editingId;
   showConfirm('Bu seriyi silmek istediğine emin misin?',async()=>{
+    const deletedSeries=series.find(x=>x.id===id);
+    const deletedIndex=series.findIndex(x=>x.id===id);
     series=series.filter(x=>x.id!==id);
     await save();closeSheet('addOverlay');renderTabs();renderContent();
     showToast('check','Seri silindi.');
+    if(deletedSeries){
+      showUndoBanner(`"${deletedSeries.name}" silindi.`,async()=>{
+        series.splice(Math.min(deletedIndex,series.length),0,deletedSeries);
+        await save();renderTabs();renderContent();
+        showToast('check','Seri geri getirildi.');
+      });
+    }
   });
 }
 function toggleReturnDate(){
@@ -779,6 +818,10 @@ function readImageFileAsDataUrl(file){
 function handleCoverFile(){
   const f=document.getElementById('coverFileInput').files[0];if(!f)return;
   if(!f.type.startsWith('image/')){showToast('warn','Lütfen bir görsel dosyası seç.');return;}
+  const sizeMB=f.size/1024/1024;
+  if(sizeMB>10){
+    showToast('warn',`Görsel ${sizeMB.toFixed(1)}MB — telefonda kaydetme sorunlu olabilir. Sorun yaşarsan daha küçük bir dosya dene.`);
+  }
   readImageFileAsDataUrl(f).then(dataUrl=>{
     showCoverPreview(dataUrl);
     document.getElementById('coverUrlInput').value=dataUrl;
@@ -898,7 +941,7 @@ function importBackup(e){
       const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
       showToast('check',`${series.length} seri geri yüklendi!${skipMsg}`);
       if(_lastBackupBeforeImport&&_lastBackupBeforeImport.length>0){
-        showUndoImportBanner();
+        showUndoBanner('İçe aktarma tamamlandı.',undoImport);
       }
     } catch(err){
       showToast('warn','Geçersiz yedek dosyası!');
@@ -912,24 +955,25 @@ async function undoImport(){
   _lastBackupBeforeImport=null;
   await save();
   renderTabs(); renderContent();
-  hideUndoImportBanner();
   showToast('check','Önceki verilerine geri dönüldü.');
 }
-function showUndoImportBanner(){
-  let b=document.getElementById('undoImportBanner');
+function showUndoBanner(message,onUndo){
+  let b=document.getElementById('undoBanner');
   if(!b){
     b=document.createElement('div');
-    b.id='undoImportBanner';
-    b.style.cssText='position:fixed;bottom:calc(var(--nav-h,0px)+9px);left:13px;right:13px;background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:998;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    b.id='undoBanner';
+    b.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);max-width:420px;width:calc(100% - 32px);background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:998;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
     document.body.appendChild(b);
   }
-  b.innerHTML=`<span>İçe aktarma tamamlandı.</span><button onclick="undoImport()" style="background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;">Geri Al</button>`;
+  b.innerHTML=`<span></span><button style="background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;">Geri Al</button>`;
+  b.querySelector('span').textContent=message;
+  b.querySelector('button').onclick=()=>{onUndo();hideUndoBanner();};
   b.style.display='flex';
   clearTimeout(window._undoBannerTimer);
-  window._undoBannerTimer=setTimeout(hideUndoImportBanner,10000);
+  window._undoBannerTimer=setTimeout(hideUndoBanner,10000);
 }
-function hideUndoImportBanner(){
-  const b=document.getElementById('undoImportBanner');
+function hideUndoBanner(){
+  const b=document.getElementById('undoBanner');
   if(b)b.style.display='none';
 }
 function openInstallPrompt(){
