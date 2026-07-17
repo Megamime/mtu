@@ -2,7 +2,7 @@
   "name": "Megami",
   "short_name": "Megami",
   "description": "Manga ve fansub takip kütüphanen.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
