@@ -267,11 +267,11 @@ function luckyPick(){
 }
 function switchPage(p){
   currentPage=p;
-  document.getElementById('navHome').classList.toggle('active',p==='home');
-  document.getElementById('navStats').classList.toggle('active',p==='stats');
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabs').style.display=p==='home'?'':'none';
   renderContent();
+  updateRadialActive();
+  closeRadial();
 }
 function renderTabs(){
   document.getElementById('catTabs').innerHTML=Object.entries(CATS).map(([k,v])=>{
@@ -1288,7 +1288,6 @@ function initPinnedDragSort(){
   const car=document.getElementById('car-pinned');
   if(!car||car._dragInit)return;
   car._dragInit=true;
-  // Masaüstü: native HTML5 drag & drop
   car.addEventListener('dragover',e=>{
     if(!_pinDragId)return;
     e.preventDefault();
@@ -1304,102 +1303,6 @@ function initPinnedDragSort(){
     if(!target||!_pinDragId||target.dataset.seriesId===_pinDragId)return;
     reorderPinned(_pinDragId,target.dataset.seriesId);
   });
-  // Mobil: touch tabanlı basılı-tut-sürükle
-  initPinnedTouchDrag(car);
-}
-// --- Mobil touch sürükleme ---
-let _touchDragState=null; // {id, longPressTimer, ghost, startX, startY, active, originalCard}
-function initPinnedTouchDrag(car){
-  car.addEventListener('touchstart',e=>{
-    const cardEl=e.target.closest('[data-series-id]');
-    if(!cardEl||selectionMode)return;
-    const id=cardEl.dataset.seriesId;
-    const touch=e.touches[0];
-    _touchDragState={
-      id, originalCard:cardEl,
-      startX:touch.clientX, startY:touch.clientY,
-      active:false, moved:false,
-      longPressTimer:setTimeout(()=>startTouchDrag(cardEl,touch),350)
-    };
-  },{passive:true});
-  car.addEventListener('touchmove',e=>{
-    if(!_touchDragState)return;
-    const touch=e.touches[0];
-    const dx=Math.abs(touch.clientX-_touchDragState.startX);
-    const dy=Math.abs(touch.clientY-_touchDragState.startY);
-    if(!_touchDragState.active){
-      // Belirgin hareket varsa (kaydırma niyeti) uzun-basma iptal edilir
-      if(dx>8||dy>8){
-        clearTimeout(_touchDragState.longPressTimer);
-        _touchDragState.moved=true;
-      }
-      return;
-    }
-    e.preventDefault();
-    moveTouchGhost(touch);
-    highlightTouchTarget(touch);
-  },{passive:false});
-  car.addEventListener('touchend',e=>{
-    if(!_touchDragState)return;
-    clearTimeout(_touchDragState.longPressTimer);
-    if(_touchDragState.active)endTouchDrag(e.changedTouches[0]);
-    _touchDragState=null;
-  });
-  car.addEventListener('touchcancel',()=>{
-    if(_touchDragState){
-      clearTimeout(_touchDragState.longPressTimer);
-      cleanupTouchGhost();
-    }
-    _touchDragState=null;
-  });
-}
-function startTouchDrag(cardEl,touch){
-  if(!_touchDragState||_touchDragState.moved)return;
-  _touchDragState.active=true;
-  if(navigator.vibrate)navigator.vibrate(12);
-  cardEl.style.opacity='0.35';
-  const rect=cardEl.getBoundingClientRect();
-  const ghost=cardEl.cloneNode(true);
-  ghost.id='touchDragGhost';
-  ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:9999;opacity:0.92;transform:scale(1.06) rotate(-2deg);box-shadow:0 12px 32px rgba(0,0,0,.7);border-radius:var(--r);transition:none;`;
-  document.body.appendChild(ghost);
-  _touchDragState.ghost=ghost;
-  _touchDragState.offsetX=touch.clientX-rect.left;
-  _touchDragState.offsetY=touch.clientY-rect.top;
-}
-function moveTouchGhost(touch){
-  const st=_touchDragState;
-  if(!st||!st.ghost)return;
-  st.ghost.style.left=(touch.clientX-st.offsetX)+'px';
-  st.ghost.style.top=(touch.clientY-st.offsetY)+'px';
-}
-function highlightTouchTarget(touch){
-  const ghost=_touchDragState.ghost;
-  ghost.style.display='none';
-  const el=document.elementFromPoint(touch.clientX,touch.clientY);
-  ghost.style.display='';
-  const target=el&&el.closest('[data-series-id]');
-  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
-  if(target&&target.dataset.seriesId!==_touchDragState.id)target.classList.add('drag-over');
-}
-function endTouchDrag(touch){
-  const st=_touchDragState;
-  if(!st)return;
-  const ghost=st.ghost;
-  if(ghost)ghost.style.display='none';
-  const el=document.elementFromPoint(touch.clientX,touch.clientY);
-  if(ghost)ghost.style.display='';
-  const target=el&&el.closest('[data-series-id]');
-  cleanupTouchGhost();
-  if(st.originalCard)st.originalCard.style.opacity='';
-  if(target&&target.dataset.seriesId!==st.id){
-    reorderPinned(st.id,target.dataset.seriesId);
-  }
-}
-function cleanupTouchGhost(){
-  const ghost=document.getElementById('touchDragGhost');
-  if(ghost)ghost.remove();
-  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
 }
 async function reorderPinned(draggedId,targetId){
   const draggedIdx=series.findIndex(s=>s.id===draggedId);
@@ -1411,27 +1314,7 @@ async function reorderPinned(draggedId,targetId){
   await save();
   renderContent();
 }
-function computeExtraStats(){
-  const rated=series.filter(s=>s.rating>0);
-  const avgRating=rated.length?(rated.reduce((a,s)=>a+s.rating,0)/rated.length):0;
-  const totEN=series.reduce((a,s)=>a+(parseInt(s.chapterEN)||0),0);
-  const totTR=series.reduce((a,s)=>a+(parseInt(s.chapterTR)||0),0);
-  // Fansub sıklığı
-  const fansubCount={};
-  series.forEach(s=>(s.fansubList||[]).forEach(f=>{const key=f.trim();if(key)fansubCount[key]=(fansubCount[key]||0)+1;}));
-  const topFansub=Object.entries(fansubCount).sort((a,b)=>b[1]-a[1])[0];
-  // Bu ay eklenenler (id zaman damgalı, Date.now().toString())
-  const now=new Date();
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
-  const addedThisMonth=series.filter(s=>{const t=parseInt(s.id);return !isNaN(t)&&t>=monthStart;}).length;
-  // En uzun seri (toplam bölüm bilgisine göre)
-  const withTotal=series.filter(s=>parseInt(s.chapterTotal)>0);
-  const longest=withTotal.sort((a,b)=>(parseInt(b.chapterTotal)||0)-(parseInt(a.chapterTotal)||0))[0];
-  // En çok okunan (TR bölüm sayısına göre)
-  const mostRead=[...series].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
-  const pinnedCount=series.filter(s=>s.pinned).length;
-  return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount};
-}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatNote(s){
   if(!s)return '';
   let out=esc(s);
@@ -1454,3 +1337,117 @@ function normalizeCoverUrl(u){
   console.warn('[Megami] Geçersiz kapak URL formatı, kaydedilmedi:',u);
   return '';
 }
+// ═══════════════════════════════════════════
+// RADIAL MENU
+// ═══════════════════════════════════════════
+var radialOpen = false;
+var radialLongPressTimer = null;
+var radialItems = [
+  { label: 'Ana Sayfa', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action: function(){ switchPage('home'); }, page: 'home' },
+  { label: 'Arama',    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action: function(){ switchPage('home'); setTimeout(function(){ var inp=document.getElementById('searchInput'); if(inp){inp.focus();inp.select();} },200); }, page: null },
+  { label: 'Seri Ekle',icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action: function(){ openAddSheet(); }, page: null },
+  { label: 'Ekstra',   icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action: function(){ showToast('star','Yakında! ✨'); }, page: null },
+  { label: 'İstatistik',icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action: function(){ switchPage('stats'); }, page: 'stats' },
+];
+
+function buildRadialMenu() {
+  var menu = document.getElementById('radialMenu');
+  if (!menu) return;
+
+  // 5 item, yarım daire: -160° ile -20° arası (sol üstten sağ üste)
+  var angles = [-160, -110, -90, -70, -20];
+  var radius = 90;
+
+  menu.innerHTML = '';
+  radialItems.forEach(function(item, i) {
+    var angle = angles[i] * (Math.PI / 180);
+    var x = Math.round(radius * Math.cos(angle));
+    var y = Math.round(radius * Math.sin(angle));
+
+    var el = document.createElement('div');
+    el.className = 'radial-item';
+    el.id = 'radial-item-' + i;
+    el.style.left = '50%';
+    el.style.bottom = '28px';
+    el.style.transform = 'translate(calc(-50% + ' + x + 'px), calc(-50% + ' + (-y) + 'px)) scale(0.4)';
+    el.innerHTML = '<div class="radial-btn" id="radial-btn-' + i + '">' + item.icon + '</div><span class="radial-label">' + item.label + '</span>';
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      item.action();
+    });
+    menu.appendChild(el);
+  });
+
+  updateRadialActive();
+}
+
+function openRadial() {
+  if (radialOpen) { closeRadial(); return; }
+  radialOpen = true;
+  var trigger = document.getElementById('radialTrigger');
+  var backdrop = document.getElementById('radialBackdrop');
+  if (trigger) trigger.classList.add('open');
+  if (backdrop) backdrop.classList.add('open');
+  document.querySelectorAll('.radial-item').forEach(function(el) {
+    el.classList.add('open');
+  });
+}
+
+function closeRadial() {
+  radialOpen = false;
+  var trigger = document.getElementById('radialTrigger');
+  var backdrop = document.getElementById('radialBackdrop');
+  if (trigger) trigger.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('open');
+  document.querySelectorAll('.radial-item').forEach(function(el) {
+    el.classList.remove('open');
+  });
+}
+
+function updateRadialActive() {
+  radialItems.forEach(function(item, i) {
+    var btn = document.getElementById('radial-btn-' + i);
+    if (btn) {
+      if (item.page && item.page === currentPage) {
+        btn.classList.add('active-page');
+      } else {
+        btn.classList.remove('active-page');
+      }
+    }
+  });
+}
+
+function initRadialMenu() {
+  buildRadialMenu();
+  var trigger = document.getElementById('radialTrigger');
+  if (!trigger) return;
+
+  // Long press
+  trigger.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    radialLongPressTimer = setTimeout(openRadial, 350);
+  }, { passive: false });
+
+  trigger.addEventListener('touchend', function(e) {
+    clearTimeout(radialLongPressTimer);
+  });
+
+  trigger.addEventListener('touchmove', function(e) {
+    clearTimeout(radialLongPressTimer);
+  });
+
+  // Desktop fallback: click
+  trigger.addEventListener('mousedown', function(e) {
+    radialLongPressTimer = setTimeout(openRadial, 350);
+  });
+  trigger.addEventListener('mouseup', function() {
+    clearTimeout(radialLongPressTimer);
+  });
+  trigger.addEventListener('mouseleave', function() {
+    clearTimeout(radialLongPressTimer);
+  });
+}
+
+// Init radial on DOM ready
+document.addEventListener('DOMContentLoaded', initRadialMenu);
+if (document.readyState !== 'loading') initRadialMenu();
