@@ -1288,6 +1288,7 @@ function initPinnedDragSort(){
   const car=document.getElementById('car-pinned');
   if(!car||car._dragInit)return;
   car._dragInit=true;
+  // Masaüstü: native HTML5 drag & drop
   car.addEventListener('dragover',e=>{
     if(!_pinDragId)return;
     e.preventDefault();
@@ -1303,6 +1304,102 @@ function initPinnedDragSort(){
     if(!target||!_pinDragId||target.dataset.seriesId===_pinDragId)return;
     reorderPinned(_pinDragId,target.dataset.seriesId);
   });
+  // Mobil: touch tabanlı basılı-tut-sürükle
+  initPinnedTouchDrag(car);
+}
+// --- Mobil touch sürükleme ---
+let _touchDragState=null; // {id, longPressTimer, ghost, startX, startY, active, originalCard}
+function initPinnedTouchDrag(car){
+  car.addEventListener('touchstart',e=>{
+    const cardEl=e.target.closest('[data-series-id]');
+    if(!cardEl||selectionMode)return;
+    const id=cardEl.dataset.seriesId;
+    const touch=e.touches[0];
+    _touchDragState={
+      id, originalCard:cardEl,
+      startX:touch.clientX, startY:touch.clientY,
+      active:false, moved:false,
+      longPressTimer:setTimeout(()=>startTouchDrag(cardEl,touch),350)
+    };
+  },{passive:true});
+  car.addEventListener('touchmove',e=>{
+    if(!_touchDragState)return;
+    const touch=e.touches[0];
+    const dx=Math.abs(touch.clientX-_touchDragState.startX);
+    const dy=Math.abs(touch.clientY-_touchDragState.startY);
+    if(!_touchDragState.active){
+      // Belirgin hareket varsa (kaydırma niyeti) uzun-basma iptal edilir
+      if(dx>8||dy>8){
+        clearTimeout(_touchDragState.longPressTimer);
+        _touchDragState.moved=true;
+      }
+      return;
+    }
+    e.preventDefault();
+    moveTouchGhost(touch);
+    highlightTouchTarget(touch);
+  },{passive:false});
+  car.addEventListener('touchend',e=>{
+    if(!_touchDragState)return;
+    clearTimeout(_touchDragState.longPressTimer);
+    if(_touchDragState.active)endTouchDrag(e.changedTouches[0]);
+    _touchDragState=null;
+  });
+  car.addEventListener('touchcancel',()=>{
+    if(_touchDragState){
+      clearTimeout(_touchDragState.longPressTimer);
+      cleanupTouchGhost();
+    }
+    _touchDragState=null;
+  });
+}
+function startTouchDrag(cardEl,touch){
+  if(!_touchDragState||_touchDragState.moved)return;
+  _touchDragState.active=true;
+  if(navigator.vibrate)navigator.vibrate(12);
+  cardEl.style.opacity='0.35';
+  const rect=cardEl.getBoundingClientRect();
+  const ghost=cardEl.cloneNode(true);
+  ghost.id='touchDragGhost';
+  ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:9999;opacity:0.92;transform:scale(1.06) rotate(-2deg);box-shadow:0 12px 32px rgba(0,0,0,.7);border-radius:var(--r);transition:none;`;
+  document.body.appendChild(ghost);
+  _touchDragState.ghost=ghost;
+  _touchDragState.offsetX=touch.clientX-rect.left;
+  _touchDragState.offsetY=touch.clientY-rect.top;
+}
+function moveTouchGhost(touch){
+  const st=_touchDragState;
+  if(!st||!st.ghost)return;
+  st.ghost.style.left=(touch.clientX-st.offsetX)+'px';
+  st.ghost.style.top=(touch.clientY-st.offsetY)+'px';
+}
+function highlightTouchTarget(touch){
+  const ghost=_touchDragState.ghost;
+  ghost.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  ghost.style.display='';
+  const target=el&&el.closest('[data-series-id]');
+  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+  if(target&&target.dataset.seriesId!==_touchDragState.id)target.classList.add('drag-over');
+}
+function endTouchDrag(touch){
+  const st=_touchDragState;
+  if(!st)return;
+  const ghost=st.ghost;
+  if(ghost)ghost.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  if(ghost)ghost.style.display='';
+  const target=el&&el.closest('[data-series-id]');
+  cleanupTouchGhost();
+  if(st.originalCard)st.originalCard.style.opacity='';
+  if(target&&target.dataset.seriesId!==st.id){
+    reorderPinned(st.id,target.dataset.seriesId);
+  }
+}
+function cleanupTouchGhost(){
+  const ghost=document.getElementById('touchDragGhost');
+  if(ghost)ghost.remove();
+  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
 }
 async function reorderPinned(draggedId,targetId){
   const draggedIdx=series.findIndex(s=>s.id===draggedId);
@@ -1314,7 +1411,27 @@ async function reorderPinned(draggedId,targetId){
   await save();
   renderContent();
 }
-function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function computeExtraStats(){
+  const rated=series.filter(s=>s.rating>0);
+  const avgRating=rated.length?(rated.reduce((a,s)=>a+s.rating,0)/rated.length):0;
+  const totEN=series.reduce((a,s)=>a+(parseInt(s.chapterEN)||0),0);
+  const totTR=series.reduce((a,s)=>a+(parseInt(s.chapterTR)||0),0);
+  // Fansub sıklığı
+  const fansubCount={};
+  series.forEach(s=>(s.fansubList||[]).forEach(f=>{const key=f.trim();if(key)fansubCount[key]=(fansubCount[key]||0)+1;}));
+  const topFansub=Object.entries(fansubCount).sort((a,b)=>b[1]-a[1])[0];
+  // Bu ay eklenenler (id zaman damgalı, Date.now().toString())
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  const addedThisMonth=series.filter(s=>{const t=parseInt(s.id);return !isNaN(t)&&t>=monthStart;}).length;
+  // En uzun seri (toplam bölüm bilgisine göre)
+  const withTotal=series.filter(s=>parseInt(s.chapterTotal)>0);
+  const longest=withTotal.sort((a,b)=>(parseInt(b.chapterTotal)||0)-(parseInt(a.chapterTotal)||0))[0];
+  // En çok okunan (TR bölüm sayısına göre)
+  const mostRead=[...series].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
+  const pinnedCount=series.filter(s=>s.pinned).length;
+  return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount};
+}
 function formatNote(s){
   if(!s)return '';
   let out=esc(s);

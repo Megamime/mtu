@@ -45,6 +45,20 @@ function renderStats(){
     <div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('grid4',10)} Kategori</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;"><div class="cat-stat-list">${cats.map(c=>'<div class="cat-stat-row"><span class="cat-stat-name">'+ic(c.icon)+' '+c.label+'</span><div class="cat-stat-bar-wrap"><div class="cat-stat-bar" style="width:'+(c.count/mx*100)+'%"></div></div><span class="cat-stat-count">'+c.count+'</span></div>').join('')}</div></div>`:''}
     <div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('checkcirc',10)} Durum</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div class="summary-grid" style="margin-bottom:14px;"><div class="summary-card"><div class="summary-val" style="color:var(--purple3);">${series.filter(s=>s.category==='reading'||s.category==='current'||s.category==='current_en'||s.category==='current_both').length}</div><div class="summary-lbl">Aktif</div></div><div class="summary-card"><div class="summary-val" style="color:var(--green);">${series.filter(s=>s.category==='completed').length}</div><div class="summary-lbl">Tamamlandı</div></div><div class="summary-card"><div class="summary-val" style="color:var(--gold);">${series.filter(s=>s.category==='paused'||s.category==='season').length}</div><div class="summary-lbl">Beklemede</div></div><div class="summary-card"><div class="summary-val" style="color:#f87171;">${series.filter(s=>s.category==='dropped').length}</div><div class="summary-lbl">Bırakıldı</div></div></div>
     ${(()=>{
+      const xs=computeExtraStats();
+      const rows=[];
+      rows.push(['Toplam Okunan Bölüm (TR+EN)',xs.totAll]);
+      if(xs.ratedCount>0)rows.push(['Ortalama Puanın',xs.avgRating.toFixed(1)+' / 5 ★ ('+xs.ratedCount+' seri)']);
+      if(xs.topFansub)rows.push(['En Çok Kullandığın Ekip',esc(xs.topFansub[0])+' ('+xs.topFansub[1]+' seri)']);
+      if(xs.addedThisMonth>0)rows.push(['Bu Ay Eklenen',xs.addedThisMonth+' seri']);
+      if(xs.pinnedCount>0)rows.push(['Sabitlenen',xs.pinnedCount+' seri']);
+      if(xs.longest)rows.push(['En Uzun Seri',esc(xs.longest.name)+' ('+xs.longest.chapterTotal+' bölüm)']);
+      if(xs.mostRead&&parseInt(xs.mostRead.chapterTR)>0)rows.push(['En Çok Okuduğun',esc(xs.mostRead.name)+' ('+xs.mostRead.chapterTR+' bölüm)']);
+      if(!rows.length)return '';
+      return `<div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('bolt',10)} Detaylı</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
+      <div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;display:flex;flex-direction:column;gap:9px;">${rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="font-size:11.5px;color:var(--text2);">${r[0]}</span><span style="font-size:11.5px;font-weight:600;color:var(--text);text-align:right;">${r[1]}</span></div>`).join('')}</div>`;
+    })()}
+    ${(()=>{
     const upcoming=series.filter(s=>s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrNext).sort((a,b)=>a.autoIncrNext-b.autoIncrNext);
     if(!upcoming.length) return '';
     const extra=upcoming.length-3;

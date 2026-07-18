@@ -339,9 +339,24 @@ ${cats.length?`<div style="margin:0 0 12px;display:flex;align-items:center;gap:8
   <div class="summary-card"><div class="summary-val" style="color:var(--gold);">${series.filter(s=>s.category==='paused'||s.category==='season').length}</div><div class="summary-lbl">Beklemede</div></div>
   <div class="summary-card"><div class="summary-val" style="color:#f87171;">${series.filter(s=>s.category==='dropped').length}</div><div class="summary-lbl">Bırakıldı</div></div>
 </div>
+${(()=>{
+  const xs=computeExtraStats();
+  const rows=[];
+  rows.push(['Toplam Okunan Bölüm (TR+EN)',xs.totAll]);
+  if(xs.ratedCount>0)rows.push(['Ortalama Puanın',xs.avgRating.toFixed(1)+' / 5 ★ ('+xs.ratedCount+' seri)']);
+  if(xs.topFansub)rows.push(['En Çok Kullandığın Ekip',esc(xs.topFansub[0])+' ('+xs.topFansub[1]+' seri)']);
+  if(xs.addedThisMonth>0)rows.push(['Bu Ay Eklenen',xs.addedThisMonth+' seri']);
+  if(xs.pinnedCount>0)rows.push(['Sabitlenen',xs.pinnedCount+' seri']);
+  if(xs.longest)rows.push(['En Uzun Seri',esc(xs.longest.name)+' ('+xs.longest.chapterTotal+' bölüm)']);
+  if(xs.mostRead&&parseInt(xs.mostRead.chapterTR)>0)rows.push(['En Çok Okuduğun',esc(xs.mostRead.name)+' ('+xs.mostRead.chapterTR+' bölüm)']);
+  if(!rows.length)return '';
+  return `<div style="margin:0 0 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('bolt',11)} Detaylı</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
+<div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:9px;">${rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="font-size:12px;color:var(--text2);">${r[0]}</span><span style="font-size:12px;font-weight:600;color:var(--text);text-align:right;">${r[1]}</span></div>`).join('')}</div>`;
+})()}
 ${upcoming.length?`<div style="margin:0 0 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('clock',11)} Yakında Yeni Bölüm</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
 <div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;" id="upcomingBox">${upcoming.map((s,i)=>{const diff=Math.ceil((s.autoIncrNext-Date.now())/(1000*60*60*24));const diffStr=diff<=0?'<span style="color:var(--green);font-weight:700;">Bugün!</span>':diff===1?'<span style="color:var(--gold);">Yarın</span>':'<span style="color:var(--text2);">'+diff+' gün</span>';return '<div style="display:'+(i<3?'flex':'none')+';align-items:center;gap:10px;" class="upcoming-row">'+(s.cover?'<img src="'+esc(s.cover)+'" style="width:30px;height:42px;border-radius:4px;object-fit:cover;flex-shrink:0;">':'')+'<div style="flex:1;overflow:hidden;"><div style="font-size:12px;font-weight:600;color:var(--text);">'+esc(s.name)+'</div><div style="font-size:10px;color:var(--text3);">'+(s.releaseDay||'')+'</div></div><div>'+diffStr+'</div></div>';}).join('')}${upcoming.length>3?'<div onclick="expandUpcoming()" id="upcomingMoreBtn" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+'+(upcoming.length-3)+' daha göster</div>':''}</div>`:''}
 <button onclick="luckyPick()" style="width:100%;padding:12px;border-radius:11px;background:var(--black4);border:1px solid var(--line2);color:var(--text2);font-size:13px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .18s;margin-bottom:20px;" onmouseenter="this.style.borderColor='var(--purple2)';this.style.color='var(--purple3)'" onmouseleave="this.style.borderColor='var(--line2)';this.style.color='var(--text2)'">
+
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
 Bugün Ne Okusam? (Şanslı Çekiliş)
 </button>
