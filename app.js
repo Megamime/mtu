@@ -1,3 +1,6 @@
+// ── HELPERS ──
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 const THEME_KEY='megami_theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(t){
