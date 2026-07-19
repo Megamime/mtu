@@ -1537,10 +1537,9 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-var RADIAL_ANGLES=[180,135,90,45,0];
-var RADIAL_R=120;
+var RADIAL_ANGLES=[160,115,90,65,20];
+var RADIAL_R=100;
 
-// Item center koordinatlarını sakla (drag hit-test için)
 var radialItemCenters=[];
 
 function buildRadialItems(){
@@ -1551,14 +1550,20 @@ function buildRadialItems(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
   var tr=trigger.getBoundingClientRect();
+  // Trigger merkezi
   var cx=tr.left+tr.width/2;
   var cy=tr.top+tr.height/2;
+  // Ekran genişliği — sağa taşmayı önle
+  var sw=window.innerWidth;
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
     var ix=cx+RADIAL_R*Math.cos(angleRad);
     var iy=cy-RADIAL_R*Math.sin(angleRad);
-    radialItemCenters.push({x:ix,y:iy,r:36});
+    // Ekran sınırı kontrolü
+    var margin=40;
+    ix=Math.max(margin, Math.min(sw-margin, ix));
+    radialItemCenters.push({x:ix,y:iy,r:40});
 
     var el=document.createElement('div');
     el.className='radial-item';
@@ -1567,9 +1572,9 @@ function buildRadialItems(){
     el.style.top=iy+'px';
     el.innerHTML='<div class="radial-btn" id="rb-'+i+'">'+def.icon+'</div>'
       +'<span class="radial-label">'+def.label+'</span>';
-    (function(d,idx){
+    (function(d){
       el.addEventListener('click',function(e){e.stopPropagation();closeRadial();d.action();});
-    })(def,i);
+    })(def);
     menu.appendChild(el);
   });
   updateRadialActive();
