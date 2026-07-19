@@ -1528,45 +1528,48 @@ function normalizeCoverUrl(u){
 // ═══════════════════════════════════════════
 // RADIAL MENU
 // ═══════════════════════════════════════════
-var radialOpen=false, radialTimer=null;
+var radialOpen=false, radialTimer=null, radialHovered=-1;
 var radialDefs=[
-  {label:'Ana Sayfa', page:'home', icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
-  {label:'Arama',     page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
-  {label:'Seri Ekle', page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
-  {label:'Ekstra',    page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action:function(){showToast('star','Yakında! ✨');}},
-  {label:'İstatistik',page:'stats', icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
+  {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
+  {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
+  {label:'Seri Ekle', page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
+  {label:'Ekstra',    page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action:function(){showToast('star','Yakında! ✨');}},
+  {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-// Yarım daire açıları: 180°(sol) → 90°(üst) → 0°(sağ)
 var RADIAL_ANGLES=[180,135,90,45,0];
-var RADIAL_R=105; // yarıçap px
+var RADIAL_R=120;
+
+// Item center koordinatlarını sakla (drag hit-test için)
+var radialItemCenters=[];
 
 function buildRadialItems(){
   var menu=document.getElementById('radialMenu');
   if(!menu) return;
   menu.innerHTML='';
+  radialItemCenters=[];
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
   var tr=trigger.getBoundingClientRect();
-  var cx=tr.left+tr.width/2; // trigger merkez X
-  var cy=tr.top+tr.height/2; // trigger merkez Y
+  var cx=tr.left+tr.width/2;
+  var cy=tr.top+tr.height/2;
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
-    var x=cx+RADIAL_R*Math.cos(angleRad);
-    var y=cy-RADIAL_R*Math.sin(angleRad); // ekran Y ekseni ters
+    var ix=cx+RADIAL_R*Math.cos(angleRad);
+    var iy=cy-RADIAL_R*Math.sin(angleRad);
+    radialItemCenters.push({x:ix,y:iy,r:36});
 
     var el=document.createElement('div');
     el.className='radial-item';
     el.id='ri-'+i;
-    el.style.left=x+'px';
-    el.style.top=y+'px';
-    el.style.transform='translate(-50%,-50%) scale(0.2)';
+    el.style.left=ix+'px';
+    el.style.top=iy+'px';
     el.innerHTML='<div class="radial-btn" id="rb-'+i+'">'+def.icon+'</div>'
       +'<span class="radial-label">'+def.label+'</span>';
-    (function(d){
+    (function(d,idx){
       el.addEventListener('click',function(e){e.stopPropagation();closeRadial();d.action();});
-    })(def);
+    })(def,i);
     menu.appendChild(el);
   });
   updateRadialActive();
@@ -1574,22 +1577,47 @@ function buildRadialItems(){
 
 function openRadial(){
   radialOpen=true;
+  radialHovered=-1;
   buildRadialItems();
   document.getElementById('radialTrigger').classList.add('open');
   document.getElementById('radialBackdrop').classList.add('open');
-  // Staggered open
   document.querySelectorAll('.radial-item').forEach(function(el,i){
-    setTimeout(function(){el.classList.add('open');},i*40);
+    setTimeout(function(){el.classList.add('open');},i*45);
   });
 }
 
 function closeRadial(){
   radialOpen=false;
-  document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open');});
+  radialHovered=-1;
+  document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open','hovered');});
   var t=document.getElementById('radialTrigger');
   var b=document.getElementById('radialBackdrop');
   if(t) t.classList.remove('open');
   if(b) b.classList.remove('open');
+}
+
+function getHoveredItem(touchX,touchY){
+  var best=-1, bestDist=60; // 60px hit radius
+  radialItemCenters.forEach(function(c,i){
+    var d=Math.sqrt(Math.pow(touchX-c.x,2)+Math.pow(touchY-c.y,2));
+    if(d<bestDist){bestDist=d;best=i;}
+  });
+  return best;
+}
+
+function setHovered(idx){
+  if(idx===radialHovered) return;
+  radialHovered=idx;
+  document.querySelectorAll('.radial-item').forEach(function(el,i){
+    var btn=el.querySelector('.radial-btn');
+    if(i===idx){
+      el.classList.add('hovered');
+      if(btn) btn.classList.add('hovered');
+    } else {
+      el.classList.remove('hovered');
+      if(btn) btn.classList.remove('hovered');
+    }
+  });
 }
 
 function updateRadialActive(){
@@ -1604,18 +1632,43 @@ function initRadialMenu(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
 
+  // Touch: basılı tut → aç, sürükle → hover, bırak → seç
   trigger.addEventListener('touchstart',function(e){
     e.preventDefault();
-    radialTimer=setTimeout(function(){openRadial();},350);
+    radialTimer=setTimeout(function(){
+      openRadial();
+    },350);
   },{passive:false});
-  trigger.addEventListener('touchend',function(){clearTimeout(radialTimer);});
-  trigger.addEventListener('touchmove',function(){clearTimeout(radialTimer);});
-  trigger.addEventListener('touchcancel',function(){clearTimeout(radialTimer);});
+
+  trigger.addEventListener('touchmove',function(e){
+    if(!radialOpen){clearTimeout(radialTimer);return;}
+    e.preventDefault();
+    var t=e.touches[0];
+    var idx=getHoveredItem(t.clientX,t.clientY);
+    setHovered(idx);
+  },{passive:false});
+
+  trigger.addEventListener('touchend',function(e){
+    clearTimeout(radialTimer);
+    if(!radialOpen) return;
+    e.preventDefault();
+    var idx=radialHovered;
+    closeRadial();
+    if(idx>=0) radialDefs[idx].action();
+  },{passive:false});
+
+  trigger.addEventListener('touchcancel',function(){
+    clearTimeout(radialTimer);
+    closeRadial();
+  });
 
   // Desktop fallback
   trigger.addEventListener('mousedown',function(){radialTimer=setTimeout(openRadial,350);});
-  trigger.addEventListener('mouseup',function(){clearTimeout(radialTimer);});
-  trigger.addEventListener('mouseleave',function(){clearTimeout(radialTimer);});
+  trigger.addEventListener('mouseup',function(){
+    clearTimeout(radialTimer);
+    if(radialOpen&&radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
+    else if(radialOpen) closeRadial();
+  });
 }
 
 document.addEventListener('DOMContentLoaded',initRadialMenu);
