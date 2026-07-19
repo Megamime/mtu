@@ -1,4 +1,3 @@
-// ── HELPERS ──
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 const THEME_KEY='megami_theme';
@@ -275,11 +274,11 @@ function switchPage(p){
     history.pushState({},'',location.pathname);
   }
   currentPage=p;
-  document.getElementById('navHome').classList.toggle('active',p==='home');
-  document.getElementById('navStats').classList.toggle('active',p==='stats');
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabs').style.display=p==='home'?'':'none';
   renderContent();
+  if(typeof updateRadialActive==='function') updateRadialActive();
+  if(typeof closeRadial==='function') closeRadial();
 }
 function renderTabs(){
   document.getElementById('catTabs').innerHTML=Object.entries(CATS).map(([k,v])=>{
@@ -1526,3 +1525,98 @@ function normalizeCoverUrl(u){
   console.warn('[Megami] Geçersiz kapak URL formatı, kaydedilmedi:',u);
   return '';
 }
+// ═══════════════════════════════════════════
+// RADIAL MENU
+// ═══════════════════════════════════════════
+var radialOpen=false, radialTimer=null;
+var radialDefs=[
+  {label:'Ana Sayfa', page:'home', icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
+  {label:'Arama',     page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
+  {label:'Seri Ekle', page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
+  {label:'Ekstra',    page:null,   icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action:function(){showToast('star','Yakında! ✨');}},
+  {label:'İstatistik',page:'stats', icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
+];
+
+// Yarım daire açıları: 180°(sol) → 90°(üst) → 0°(sağ)
+var RADIAL_ANGLES=[180,135,90,45,0];
+var RADIAL_R=105; // yarıçap px
+
+function buildRadialItems(){
+  var menu=document.getElementById('radialMenu');
+  if(!menu) return;
+  menu.innerHTML='';
+  var trigger=document.getElementById('radialTrigger');
+  if(!trigger) return;
+  var tr=trigger.getBoundingClientRect();
+  var cx=tr.left+tr.width/2; // trigger merkez X
+  var cy=tr.top+tr.height/2; // trigger merkez Y
+
+  radialDefs.forEach(function(def,i){
+    var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
+    var x=cx+RADIAL_R*Math.cos(angleRad);
+    var y=cy-RADIAL_R*Math.sin(angleRad); // ekran Y ekseni ters
+
+    var el=document.createElement('div');
+    el.className='radial-item';
+    el.id='ri-'+i;
+    el.style.left=x+'px';
+    el.style.top=y+'px';
+    el.style.transform='translate(-50%,-50%) scale(0.2)';
+    el.innerHTML='<div class="radial-btn" id="rb-'+i+'">'+def.icon+'</div>'
+      +'<span class="radial-label">'+def.label+'</span>';
+    (function(d){
+      el.addEventListener('click',function(e){e.stopPropagation();closeRadial();d.action();});
+    })(def);
+    menu.appendChild(el);
+  });
+  updateRadialActive();
+}
+
+function openRadial(){
+  radialOpen=true;
+  buildRadialItems();
+  document.getElementById('radialTrigger').classList.add('open');
+  document.getElementById('radialBackdrop').classList.add('open');
+  // Staggered open
+  document.querySelectorAll('.radial-item').forEach(function(el,i){
+    setTimeout(function(){el.classList.add('open');},i*40);
+  });
+}
+
+function closeRadial(){
+  radialOpen=false;
+  document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open');});
+  var t=document.getElementById('radialTrigger');
+  var b=document.getElementById('radialBackdrop');
+  if(t) t.classList.remove('open');
+  if(b) b.classList.remove('open');
+}
+
+function updateRadialActive(){
+  radialDefs.forEach(function(def,i){
+    var btn=document.getElementById('rb-'+i);
+    if(!btn) return;
+    btn.classList.toggle('active-page', def.page===currentPage);
+  });
+}
+
+function initRadialMenu(){
+  var trigger=document.getElementById('radialTrigger');
+  if(!trigger) return;
+
+  trigger.addEventListener('touchstart',function(e){
+    e.preventDefault();
+    radialTimer=setTimeout(function(){openRadial();},350);
+  },{passive:false});
+  trigger.addEventListener('touchend',function(){clearTimeout(radialTimer);});
+  trigger.addEventListener('touchmove',function(){clearTimeout(radialTimer);});
+  trigger.addEventListener('touchcancel',function(){clearTimeout(radialTimer);});
+
+  // Desktop fallback
+  trigger.addEventListener('mousedown',function(){radialTimer=setTimeout(openRadial,350);});
+  trigger.addEventListener('mouseup',function(){clearTimeout(radialTimer);});
+  trigger.addEventListener('mouseleave',function(){clearTimeout(radialTimer);});
+}
+
+document.addEventListener('DOMContentLoaded',initRadialMenu);
+if(document.readyState!=='loading') initRadialMenu();
