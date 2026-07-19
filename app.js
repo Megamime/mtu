@@ -31,7 +31,7 @@ function updateThemeToggleIcon(){
   btn.innerHTML=(isLight?ic('sun',15):ic('moon',15))+(isSidebarItem?`<span class="sidebar-label">${isLight?' Aydınlık Tema':' Karanlık Tema'}</span>`:'');
 }
 applyTheme(getTheme());
-const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#e85d75" stroke="#e85d75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#e85d75" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,};
+const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#e85d75" stroke="#e85d75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#e85d75" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,};
 const _icCache={};
 function ic(n,s=13){
   const k=n+'_'+s;
@@ -87,7 +87,7 @@ async function load(){
     try{series=JSON.parse(localStorage.getItem(SK))||[];}catch{series=[];}
   }
 }
-let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',currentSort=localStorage.getItem('megami_sort')||'default';
+let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',currentSort=localStorage.getItem('megami_sort')||'default',currentDetailId=null;
 let selectionMode=false,selectedIds=new Set();
 let altNames=[],oldCovers=[],fansubList=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
@@ -266,12 +266,17 @@ function luckyPick(){
   setTimeout(()=>openDetail(pick.id),600);
 }
 function switchPage(p){
+  if(currentPage==='detail'&&p!=='detail'){
+    currentDetailId=null;
+    _detailReturnState=null;
+    history.pushState({},'',location.pathname);
+  }
   currentPage=p;
+  document.getElementById('navHome').classList.toggle('active',p==='home');
+  document.getElementById('navStats').classList.toggle('active',p==='stats');
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabs').style.display=p==='home'?'':'none';
   renderContent();
-  updateRadialActive();
-  closeRadial();
 }
 function renderTabs(){
   document.getElementById('catTabs').innerHTML=Object.entries(CATS).map(([k,v])=>{
@@ -503,7 +508,8 @@ async function saveQuick(){
   if(quickCat==='completed'&&prevCat!=='completed'){
     setTimeout(()=>{spawnConfetti();showToast('star','Tebrikler! Seriyi bitirdin! 🎉');},300);
   }
-  await save();closeSheet('quickOverlay');renderTabs();renderContent();
+  await save();closeSheet('quickOverlay');renderTabs();
+  if(currentPage==='detail'&&currentDetailId===s.id)openDetail(s.id,true);else renderContent();
   if(quickCat!=='completed'||prevCat==='completed') showToast('check','Güncellendi.');
 }
 const ALT_LIMIT=3, FANSUB_LIMIT=3, LOG_LIMIT=3;
@@ -514,9 +520,15 @@ function buildCountdown(s){
   return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
 }
 
-function openDetail(id){
+let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
+function openDetail(id,skipHistory){
   const s=series.find(x=>x.id===id); if(!s) return;
   if(s.newChapter){ s.newChapter=false; save(); }
+  if(currentPage!=='detail'){
+    _detailReturnState={page:currentPage};
+  }
+  currentPage='detail';
+  currentDetailId=id;
   const cat=CATS[s.category]||CATS.reading;
   const bgS=s.cover?`background-image:url('${esc(s.cover)}')`:'background:var(--black4)';
   const coverImg=s.cover
@@ -549,7 +561,9 @@ function openDetail(id){
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
   const countdownH=buildCountdown(s);
-  document.getElementById('detailContent').innerHTML=`
+  const el=document.getElementById('mainContent');
+  el.innerHTML=`
+    <div class="detail-page-backbtn" onclick="closeDetail()">${ic('chevronLeft',15)} <span>Geri</span></div>
     <div class="detail-cover-wrap">
       <div class="detail-cover-bg" style="${bgS}"></div>
       <div class="detail-cover-gradient"></div>
@@ -580,10 +594,36 @@ function openDetail(id){
         <div class="action-chip ${s.favorited?'chip-fav':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('starFill',13):ic('star',13)} ${s.favorited?'Favoriden Çıkar':'Favorile'}</div>
       </div>
       <button class="btn-primary" onclick="openEditSheet('${s.id}')">${ic('edit',13)} Düzenle</button>
-      <button class="btn-ghost" onclick="closeSheet('detailOverlay');openQuick('${s.id}')">${ic('bolt',13)} Hızlı Düzenle</button>
+      <button class="btn-ghost" onclick="openQuick('${s.id}')">${ic('bolt',13)} Hızlı Düzenle</button>
     </div>`;
-  document.getElementById('detailOverlay').classList.remove('hidden');
+  el.scrollTop=0;
+  document.getElementById('searchWrap').style.display='none';
+  document.getElementById('catTabs').style.display='none';
+  if(!skipHistory){
+    history.pushState({megamiDetail:id},'',location.pathname+'?seri='+encodeURIComponent(id));
+  }
 }
+function closeDetail(){
+  const returnPage=(_detailReturnState&&_detailReturnState.page)||'home';
+  _detailReturnState=null;
+  currentDetailId=null;
+  currentPage=returnPage;
+  history.pushState({},'',location.pathname);
+  document.getElementById('navHome').classList.toggle('active',returnPage==='home');
+  document.getElementById('navStats').classList.toggle('active',returnPage==='stats');
+  document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
+  document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
+  renderContent();
+}
+window.addEventListener('popstate',()=>{
+  const params=new URLSearchParams(location.search);
+  const seriId=params.get('seri');
+  if(seriId&&series.find(x=>x.id===seriId)){
+    openDetail(seriId,true);
+  } else if(currentPage==='detail'){
+    closeDetail();
+  }
+});
 function expandTags(wrapId, seriesId, type){
   const s=series.find(x=>x.id===seriesId); if(!s) return;
   const items=type==='alts'?(s.altNames||[]):(s.fansubList||[]);
@@ -617,10 +657,16 @@ function addLog(id,text){
   if(log.length>20)log.shift();
   localStorage.setItem('mv_log_'+id,JSON.stringify(log));
 }
-async function togglePin(id){const s=series.find(x=>x.id===id);if(!s)return;s.pinned=!s.pinned;await save();renderTabs();renderContent();closeSheet('detailOverlay');showToast('check',s.pinned?'Seri sabitlendi.':'Sabitleme kaldırıldı.');}
+async function togglePin(id){
+  const s=series.find(x=>x.id===id);if(!s)return;
+  s.pinned=!s.pinned;await save();renderTabs();
+  if(currentPage==='detail'&&currentDetailId===id)openDetail(id,true);else renderContent();
+  showToast('check',s.pinned?'Seri sabitlendi.':'Sabitleme kaldırıldı.');
+}
 async function toggleFav(id){
   const s=series.find(x=>x.id===id);if(!s)return;
-  s.favorited=!s.favorited;await save();renderTabs();renderContent();closeSheet('detailOverlay');
+  s.favorited=!s.favorited;await save();renderTabs();
+  if(currentPage==='detail'&&currentDetailId===id)openDetail(id,true);else renderContent();
   showToast(s.favorited?'star':'check',s.favorited?'Favorilere eklendi.':'Favorilerden çıkarıldı.');
   if(s.favorited)checkFavoriteMilestone();
 }
@@ -653,7 +699,6 @@ function openAddSheet(){
   document.getElementById('addOverlay').classList.remove('hidden');
 }
 function openEditSheet(id){
-  closeSheet('detailOverlay');
   const s=series.find(x=>x.id===id);if(!s)return;
   editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
@@ -756,7 +801,8 @@ async function saveSeries(){
     showToast('warn','Kaydedilemedi! Kapak görseli çok büyük olabilir, daha küçük bir dosya dene.');
     return;
   }
-  closeSheet('addOverlay');renderTabs();renderContent();
+  closeSheet('addOverlay');renderTabs();
+  if(currentPage==='detail'&&currentDetailId===data.id)openDetail(data.id,true);else renderContent();
   showToast('check',editingId?'Seri güncellendi.':'Seri eklendi.');
   if(!editingId&&series.length===1){setTimeout(()=>{spawnConfetti();showToast('star','İlk serini ekledin! Hoş geldin! 🎉');},400);}
   easterEggCheck();
@@ -767,8 +813,10 @@ async function deleteSeries(){
   showConfirm('Bu seriyi silmek istediğine emin misin?',async()=>{
     const deletedSeries=series.find(x=>x.id===id);
     const deletedIndex=series.findIndex(x=>x.id===id);
+    const wasDetailPage=currentPage==='detail'&&currentDetailId===id;
     series=series.filter(x=>x.id!==id);
-    await save();closeSheet('addOverlay');renderTabs();renderContent();
+    await save();closeSheet('addOverlay');renderTabs();
+    if(wasDetailPage){closeDetail();}else{renderContent();}
     if(deletedSeries){
       showUndoBanner(`"${deletedSeries.name}" silindi.`,async()=>{
         series.splice(Math.min(deletedIndex,series.length),0,deletedSeries);
@@ -1218,6 +1266,7 @@ function importBackup(e){
       _lastBackupBeforeImport=JSON.parse(JSON.stringify(series));
       series=cleaned;
       await save();
+      if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
       renderTabs(); renderContent();
       closeSheet('backupOverlay');
       const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
@@ -1237,6 +1286,7 @@ async function undoImport(){
   series=_lastBackupBeforeImport;
   _lastBackupBeforeImport=null;
   await save();
+  if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
   renderTabs(); renderContent();
   showToast('check','Önceki verilerine geri dönüldü.');
 }
@@ -1288,6 +1338,7 @@ function initPinnedDragSort(){
   const car=document.getElementById('car-pinned');
   if(!car||car._dragInit)return;
   car._dragInit=true;
+  // Masaüstü: native HTML5 drag & drop
   car.addEventListener('dragover',e=>{
     if(!_pinDragId)return;
     e.preventDefault();
@@ -1303,6 +1354,102 @@ function initPinnedDragSort(){
     if(!target||!_pinDragId||target.dataset.seriesId===_pinDragId)return;
     reorderPinned(_pinDragId,target.dataset.seriesId);
   });
+  // Mobil: touch tabanlı basılı-tut-sürükle
+  initPinnedTouchDrag(car);
+}
+// --- Mobil touch sürükleme ---
+let _touchDragState=null; // {id, longPressTimer, ghost, startX, startY, active, originalCard}
+function initPinnedTouchDrag(car){
+  car.addEventListener('touchstart',e=>{
+    const cardEl=e.target.closest('[data-series-id]');
+    if(!cardEl||selectionMode)return;
+    const id=cardEl.dataset.seriesId;
+    const touch=e.touches[0];
+    _touchDragState={
+      id, originalCard:cardEl,
+      startX:touch.clientX, startY:touch.clientY,
+      active:false, moved:false,
+      longPressTimer:setTimeout(()=>startTouchDrag(cardEl,touch),350)
+    };
+  },{passive:true});
+  car.addEventListener('touchmove',e=>{
+    if(!_touchDragState)return;
+    const touch=e.touches[0];
+    const dx=Math.abs(touch.clientX-_touchDragState.startX);
+    const dy=Math.abs(touch.clientY-_touchDragState.startY);
+    if(!_touchDragState.active){
+      // Belirgin hareket varsa (kaydırma niyeti) uzun-basma iptal edilir
+      if(dx>8||dy>8){
+        clearTimeout(_touchDragState.longPressTimer);
+        _touchDragState.moved=true;
+      }
+      return;
+    }
+    e.preventDefault();
+    moveTouchGhost(touch);
+    highlightTouchTarget(touch);
+  },{passive:false});
+  car.addEventListener('touchend',e=>{
+    if(!_touchDragState)return;
+    clearTimeout(_touchDragState.longPressTimer);
+    if(_touchDragState.active)endTouchDrag(e.changedTouches[0]);
+    _touchDragState=null;
+  });
+  car.addEventListener('touchcancel',()=>{
+    if(_touchDragState){
+      clearTimeout(_touchDragState.longPressTimer);
+      cleanupTouchGhost();
+    }
+    _touchDragState=null;
+  });
+}
+function startTouchDrag(cardEl,touch){
+  if(!_touchDragState||_touchDragState.moved)return;
+  _touchDragState.active=true;
+  if(navigator.vibrate)navigator.vibrate(12);
+  cardEl.style.opacity='0.35';
+  const rect=cardEl.getBoundingClientRect();
+  const ghost=cardEl.cloneNode(true);
+  ghost.id='touchDragGhost';
+  ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:9999;opacity:0.92;transform:scale(1.06) rotate(-2deg);box-shadow:0 12px 32px rgba(0,0,0,.7);border-radius:var(--r);transition:none;`;
+  document.body.appendChild(ghost);
+  _touchDragState.ghost=ghost;
+  _touchDragState.offsetX=touch.clientX-rect.left;
+  _touchDragState.offsetY=touch.clientY-rect.top;
+}
+function moveTouchGhost(touch){
+  const st=_touchDragState;
+  if(!st||!st.ghost)return;
+  st.ghost.style.left=(touch.clientX-st.offsetX)+'px';
+  st.ghost.style.top=(touch.clientY-st.offsetY)+'px';
+}
+function highlightTouchTarget(touch){
+  const ghost=_touchDragState.ghost;
+  ghost.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  ghost.style.display='';
+  const target=el&&el.closest('[data-series-id]');
+  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+  if(target&&target.dataset.seriesId!==_touchDragState.id)target.classList.add('drag-over');
+}
+function endTouchDrag(touch){
+  const st=_touchDragState;
+  if(!st)return;
+  const ghost=st.ghost;
+  if(ghost)ghost.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  if(ghost)ghost.style.display='';
+  const target=el&&el.closest('[data-series-id]');
+  cleanupTouchGhost();
+  if(st.originalCard)st.originalCard.style.opacity='';
+  if(target&&target.dataset.seriesId!==st.id){
+    reorderPinned(st.id,target.dataset.seriesId);
+  }
+}
+function cleanupTouchGhost(){
+  const ghost=document.getElementById('touchDragGhost');
+  if(ghost)ghost.remove();
+  document.querySelectorAll('.series-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
 }
 async function reorderPinned(draggedId,targetId){
   const draggedIdx=series.findIndex(s=>s.id===draggedId);
@@ -1314,7 +1461,27 @@ async function reorderPinned(draggedId,targetId){
   await save();
   renderContent();
 }
-function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function computeExtraStats(){
+  const rated=series.filter(s=>s.rating>0);
+  const avgRating=rated.length?(rated.reduce((a,s)=>a+s.rating,0)/rated.length):0;
+  const totEN=series.reduce((a,s)=>a+(parseInt(s.chapterEN)||0),0);
+  const totTR=series.reduce((a,s)=>a+(parseInt(s.chapterTR)||0),0);
+  // Fansub sıklığı
+  const fansubCount={};
+  series.forEach(s=>(s.fansubList||[]).forEach(f=>{const key=f.trim();if(key)fansubCount[key]=(fansubCount[key]||0)+1;}));
+  const topFansub=Object.entries(fansubCount).sort((a,b)=>b[1]-a[1])[0];
+  // Bu ay eklenenler (id zaman damgalı, Date.now().toString())
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  const addedThisMonth=series.filter(s=>{const t=parseInt(s.id);return !isNaN(t)&&t>=monthStart;}).length;
+  // En uzun seri (toplam bölüm bilgisine göre)
+  const withTotal=series.filter(s=>parseInt(s.chapterTotal)>0);
+  const longest=withTotal.sort((a,b)=>(parseInt(b.chapterTotal)||0)-(parseInt(a.chapterTotal)||0))[0];
+  // En çok okunan (TR bölüm sayısına göre)
+  const mostRead=[...series].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
+  const pinnedCount=series.filter(s=>s.pinned).length;
+  return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount};
+}
 function formatNote(s){
   if(!s)return '';
   let out=esc(s);
@@ -1337,117 +1504,3 @@ function normalizeCoverUrl(u){
   console.warn('[Megami] Geçersiz kapak URL formatı, kaydedilmedi:',u);
   return '';
 }
-// ═══════════════════════════════════════════
-// RADIAL MENU
-// ═══════════════════════════════════════════
-var radialOpen = false;
-var radialLongPressTimer = null;
-var radialItems = [
-  { label: 'Ana Sayfa', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action: function(){ switchPage('home'); }, page: 'home' },
-  { label: 'Arama',    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action: function(){ switchPage('home'); setTimeout(function(){ var inp=document.getElementById('searchInput'); if(inp){inp.focus();inp.select();} },200); }, page: null },
-  { label: 'Seri Ekle',icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action: function(){ openAddSheet(); }, page: null },
-  { label: 'Ekstra',   icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action: function(){ showToast('star','Yakında! ✨'); }, page: null },
-  { label: 'İstatistik',icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action: function(){ switchPage('stats'); }, page: 'stats' },
-];
-
-function buildRadialMenu() {
-  var menu = document.getElementById('radialMenu');
-  if (!menu) return;
-
-  // 5 item, yarım daire: -160° ile -20° arası (sol üstten sağ üste)
-  var angles = [-160, -110, -90, -70, -20];
-  var radius = 90;
-
-  menu.innerHTML = '';
-  radialItems.forEach(function(item, i) {
-    var angle = angles[i] * (Math.PI / 180);
-    var x = Math.round(radius * Math.cos(angle));
-    var y = Math.round(radius * Math.sin(angle));
-
-    var el = document.createElement('div');
-    el.className = 'radial-item';
-    el.id = 'radial-item-' + i;
-    el.style.left = '50%';
-    el.style.bottom = '28px';
-    el.style.transform = 'translate(calc(-50% + ' + x + 'px), calc(-50% + ' + (-y) + 'px)) scale(0.4)';
-    el.innerHTML = '<div class="radial-btn" id="radial-btn-' + i + '">' + item.icon + '</div><span class="radial-label">' + item.label + '</span>';
-    el.addEventListener('click', function(e) {
-      e.stopPropagation();
-      item.action();
-    });
-    menu.appendChild(el);
-  });
-
-  updateRadialActive();
-}
-
-function openRadial() {
-  if (radialOpen) { closeRadial(); return; }
-  radialOpen = true;
-  var trigger = document.getElementById('radialTrigger');
-  var backdrop = document.getElementById('radialBackdrop');
-  if (trigger) trigger.classList.add('open');
-  if (backdrop) backdrop.classList.add('open');
-  document.querySelectorAll('.radial-item').forEach(function(el) {
-    el.classList.add('open');
-  });
-}
-
-function closeRadial() {
-  radialOpen = false;
-  var trigger = document.getElementById('radialTrigger');
-  var backdrop = document.getElementById('radialBackdrop');
-  if (trigger) trigger.classList.remove('open');
-  if (backdrop) backdrop.classList.remove('open');
-  document.querySelectorAll('.radial-item').forEach(function(el) {
-    el.classList.remove('open');
-  });
-}
-
-function updateRadialActive() {
-  radialItems.forEach(function(item, i) {
-    var btn = document.getElementById('radial-btn-' + i);
-    if (btn) {
-      if (item.page && item.page === currentPage) {
-        btn.classList.add('active-page');
-      } else {
-        btn.classList.remove('active-page');
-      }
-    }
-  });
-}
-
-function initRadialMenu() {
-  buildRadialMenu();
-  var trigger = document.getElementById('radialTrigger');
-  if (!trigger) return;
-
-  // Long press
-  trigger.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    radialLongPressTimer = setTimeout(openRadial, 350);
-  }, { passive: false });
-
-  trigger.addEventListener('touchend', function(e) {
-    clearTimeout(radialLongPressTimer);
-  });
-
-  trigger.addEventListener('touchmove', function(e) {
-    clearTimeout(radialLongPressTimer);
-  });
-
-  // Desktop fallback: click
-  trigger.addEventListener('mousedown', function(e) {
-    radialLongPressTimer = setTimeout(openRadial, 350);
-  });
-  trigger.addEventListener('mouseup', function() {
-    clearTimeout(radialLongPressTimer);
-  });
-  trigger.addEventListener('mouseleave', function() {
-    clearTimeout(radialLongPressTimer);
-  });
-}
-
-// Init radial on DOM ready
-document.addEventListener('DOMContentLoaded', initRadialMenu);
-if (document.readyState !== 'loading') initRadialMenu();
