@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megami-cache-v1';
+const CACHE_NAME = 'megami-cache-v2';
 const CORE_ASSETS = [
   './index.html',
   './desktop.html',
@@ -25,27 +25,16 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Cache-first for core app files; network-first for everything else (e.g. fonts, external images)
+// Core dosyalar için: önce ağdan dene (her zaman en güncel sürüm), başarısız olursa (offline) cache'e düş.
+// Diğer her şey için de aynı mantık.
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  const isCore = url.origin === location.origin;
-
-  if (isCore) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        const fetchPromise = fetch(e.request).then(networkResp => {
-          if (networkResp && networkResp.status === 200) {
-            const clone = networkResp.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-          }
-          return networkResp;
-        }).catch(() => cached);
-        return cached || fetchPromise;
-      })
-    );
-  } else {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-  }
+  e.respondWith(
+    fetch(e.request).then(networkResp => {
+      if (networkResp && networkResp.status === 200) {
+        const clone = networkResp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      }
+      return networkResp;
+    }).catch(() => caches.match(e.request))
+  );
 });

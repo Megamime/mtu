@@ -1078,7 +1078,26 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._def
 function triggerInstall(){if(!window._deferredPrompt)return;window._deferredPrompt.prompt();window._deferredPrompt.userChoice.then(()=>{window._dismissed=true;window._deferredPrompt=null;renderContent();});}
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(err=>console.warn('[Megami] Service worker kaydı başarısız:',err));
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // Yeni bir service worker sürümü kontrol edilip aktif olduğunda,
+      // kullanıcı eski (cache'lenmiş) sürümde takılı kalmasın diye sayfa otomatik yenilenir.
+      reg.addEventListener('updatefound',()=>{
+        const newWorker=reg.installing;
+        if(!newWorker)return;
+        newWorker.addEventListener('statechange',()=>{
+          if(newWorker.state==='activated'&&navigator.serviceWorker.controller){
+            location.reload();
+          }
+        });
+      });
+    }).catch(err=>console.warn('[Megami] Service worker kaydı başarısız:',err));
+    // Kontrolcü değiştiğinde (yeni SW devraldığında) de güvenlik amaçlı yenile
+    let _swRefreshed=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(_swRefreshed)return;
+      _swRefreshed=true;
+      location.reload();
+    });
   });
 }
 function openSheet(id){ document.getElementById(id).classList.remove('hidden'); }
