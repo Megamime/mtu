@@ -1381,7 +1381,7 @@ function showUndoBanner(message,onUndo){
   if(!b){
     b=document.createElement('div');
     b.id='undoBanner';
-    b.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);max-width:420px;width:calc(100% - 32px);background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:998;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    b.style.cssText='position:fixed;bottom:calc(110px + env(safe-area-inset-bottom,0px) + 12px);left:50%;transform:translateX(-50%);max-width:420px;width:calc(100% - 32px);background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:999;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
     document.body.appendChild(b);
   }
   b.innerHTML=`<span></span><button style="background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;">Geri Al</button>`;
@@ -1602,7 +1602,7 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-var RADIAL_ANGLES=[160,115,90,65,20];
+var RADIAL_ANGLES=[180,135,90,45,0];
 var RADIAL_R=100;
 
 var radialItemCenters=[];
