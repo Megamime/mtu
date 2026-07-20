@@ -1604,7 +1604,7 @@ var radialDefs=[
 
 var RADIAL_ANGLES=[180,135,90,45,0];
 var RADIAL_R=110;
-var RADIAL_X_OFFSET=-30; // negatif = sola kaydır
+var RADIAL_X_OFFSET=-27; // negatif = sola kaydır
 var RADIAL_Y_OFFSET=-24; // negatif = yukarı kaydır
 
 var radialItemCenters=[];
@@ -1704,12 +1704,12 @@ function initRadialMenu(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
 
-  // Touch: basılı tut → aç, sürükle → hover, bırak → seç
+  // Touch: basılı tut + sürükle → hover ile seç. Tek dokunuş → menüyü aç/kapat.
   trigger.addEventListener('touchstart',function(e){
     e.preventDefault();
-    radialTimer=setTimeout(function(){
-      openRadial();
-    },350);
+    if(!radialOpen){
+      radialTimer=setTimeout(function(){openRadial();},350);
+    }
   },{passive:false});
 
   trigger.addEventListener('touchmove',function(e){
@@ -1722,8 +1722,12 @@ function initRadialMenu(){
 
   trigger.addEventListener('touchend',function(e){
     clearTimeout(radialTimer);
-    if(!radialOpen) return;
     e.preventDefault();
+    if(!radialOpen){
+      // Uzun basma tamamlanmadan parmak kalktı → tek dokunuş kabul et, menüyü aç.
+      openRadial();
+      return;
+    }
     var idx=radialHovered;
     closeRadial();
     if(idx>=0) radialDefs[idx].action();
@@ -1734,12 +1738,15 @@ function initRadialMenu(){
     closeRadial();
   });
 
-  // Desktop fallback
-  trigger.addEventListener('mousedown',function(){radialTimer=setTimeout(openRadial,350);});
+  // Desktop fallback: tek tık → aç/kapat, basılı tutup sürükleme de çalışır.
+  trigger.addEventListener('mousedown',function(){
+    if(!radialOpen){radialTimer=setTimeout(openRadial,350);}
+  });
   trigger.addEventListener('mouseup',function(){
     clearTimeout(radialTimer);
-    if(radialOpen&&radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
-    else if(radialOpen) closeRadial();
+    if(!radialOpen){openRadial();return;}
+    if(radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
+    else closeRadial();
   });
 }
 
