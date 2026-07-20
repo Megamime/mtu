@@ -280,14 +280,69 @@ function switchPage(p){
   if(typeof updateRadialActive==='function') updateRadialActive();
   if(typeof closeRadial==='function') closeRadial();
 }
+const TAB_USAGE_KEY='megami_tab_usage';
+const TAB_PRIORITY_COUNT=2; // Tümü hariç, önde gösterilecek kategori sayısı
+function getTabUsage(){
+  try{return JSON.parse(localStorage.getItem(TAB_USAGE_KEY)||'{}');}catch(e){return {};}
+}
+function bumpTabUsage(cat){
+  if(cat==='all')return; // Tümü zaten her zaman sabit, sayaç gereksiz
+  const usage=getTabUsage();
+  usage[cat]=(usage[cat]||0)+1;
+  localStorage.setItem(TAB_USAGE_KEY,JSON.stringify(usage));
+}
+let _otherTabsOpen=false;
 function renderTabs(){
-  document.getElementById('catTabs').innerHTML=Object.entries(CATS).map(([k,v])=>{
+  const usage=getTabUsage();
+  const keys=Object.keys(CATS).filter(k=>k!=='all');
+  const sorted=keys.slice().sort((a,b)=>(usage[b]||0)-(usage[a]||0));
+  const priority=sorted.slice(0,TAB_PRIORITY_COUNT);
+  const rest=sorted.slice(TAB_PRIORITY_COUNT);
+  const currentInRest=rest.includes(currentCat);
+
+  function tabBtn(k){
+    const v=CATS[k];
     const n=k==='all'?series.length:series.filter(s=>s.category===k).length;
     const cnt=n>0?` <span style="opacity:.5;font-size:9px;">(${n})</span>`:'';
     return `<button class="cat-tab ${currentCat===k?'active':''}" onclick="setCat('${k}')">${ic(v.icon)} ${v.label}${cnt}</button>`;
-  }).join('');
+  }
+
+  let html=tabBtn('all')+priority.map(tabBtn).join('');
+  if(rest.length){
+    const otherLabel=currentInRest?CATS[currentCat].label:'Diğer';
+    const otherIcon=currentInRest?CATS[currentCat].icon:'chevron';
+    html+=`<div style="position:relative;display:inline-block;flex-shrink:0;">
+      <button class="cat-tab ${currentInRest?'active':''}" onclick="toggleOtherTabs(event)">${ic(otherIcon,10)} ${otherLabel} ${ic('chevron',9)}</button>
+      <div id="otherTabsMenu" class="autocomplete-dropdown ${_otherTabsOpen?'':'hidden'}" style="top:calc(100% + 4px);left:0;right:auto;min-width:180px;max-height:220px;">
+        ${rest.map(k=>{
+          const v=CATS[k];
+          const n=series.filter(s=>s.category===k).length;
+          return `<div class="autocomplete-item ${currentCat===k?'active':''}" onclick="setCat('${k}');toggleOtherTabs()">${ic(v.icon,11)} ${v.label}${n>0?`<span style="margin-left:auto;opacity:.5;font-size:10px;">${n}</span>`:''}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('catTabs').innerHTML=html;
 }
-function setCat(c){currentCat=c;selectionMode=false;selectedIds.clear();renderTabs();renderHome();}
+function toggleOtherTabs(e){
+  if(e)e.stopPropagation();
+  _otherTabsOpen=!_otherTabsOpen;
+  renderTabs();
+  if(_otherTabsOpen){
+    setTimeout(()=>{
+      document.addEventListener('click',closeOtherTabsOnce,{once:true});
+    },0);
+  }
+}
+function closeOtherTabsOnce(){
+  if(_otherTabsOpen){_otherTabsOpen=false;renderTabs();}
+}
+function setCat(c){
+  currentCat=c;selectionMode=false;selectedIds.clear();
+  bumpTabUsage(c);
+  _otherTabsOpen=false;
+  renderTabs();renderHome();
+}
 function toggleSelectionMode(){
   selectionMode=!selectionMode;
   if(!selectionMode)selectedIds.clear();
@@ -368,8 +423,17 @@ function sortSeries(arr){
   if(!opt||!opt.fn)return arr;
   return [...arr].sort(opt.fn);
 }
+function syncCatTabsActions(){
+  const bar=document.getElementById('catTabsActions');
+  if(!bar)return; // mobile'da bu element yok, orada eski inline davranış kullanılır
+  document.getElementById('selBtnLabel').innerHTML=`${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}`;
+  const sel=document.getElementById('homeSortSelect');
+  sel.innerHTML=Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('');
+}
 function renderHome(){
   const el=document.getElementById('mainContent');
+  const hasFixedActions=!!document.getElementById('catTabsActions');
+  if(hasFixedActions)syncCatTabsActions();
   let filtered=series.filter(s=>{
     const mc=currentCat==='all'||s.category===currentCat;
     const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
@@ -382,14 +446,15 @@ function renderHome(){
   }
   if(searchQ||currentCat!=='all'){
     const sorted=sortSeries(filtered);
-    const sortBar=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
+    const sortBar=hasFixedActions?'':`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
     const bulkBar=selectionMode?renderBulkBar():'';
     el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+sortBar+`<div class="flat-grid">${sorted.map((s,i)=>flatCard(s,i)).join('')}</div>`+bulkBar;
     return;
   }
   let html=banner?`<div style="padding:0">${banner}</div>`:'';
-  const homeSortBar=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
-  html+=homeSortBar;
+  if(!hasFixedActions){
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
+  }
   SECTIONS.forEach(sec=>{
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);

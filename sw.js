@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megami-cache-v2';
+const CACHE_NAME = 'megami-cache-v4';
 const CORE_ASSETS = [
   './index.html',
   './desktop.html',
