@@ -1604,7 +1604,7 @@ var radialDefs=[
 
 var RADIAL_ANGLES=[180,135,90,45,0];
 var RADIAL_R=100;
-var RADIAL_X_OFFSET=-40; // negatif = sola kaydır
+var RADIAL_X_OFFSET=-30; // negatif = sola kaydır
 
 var radialItemCenters=[];
 
