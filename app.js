@@ -1604,6 +1604,7 @@ var radialDefs=[
 
 var RADIAL_ANGLES=[180,135,90,45,0];
 var RADIAL_R=100;
+var RADIAL_X_OFFSET=-40; // negatif = sola kaydır
 
 var radialItemCenters=[];
 
@@ -1623,7 +1624,7 @@ function buildRadialItems(){
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
-    var ix=cx+RADIAL_R*Math.cos(angleRad);
+    var ix=cx+RADIAL_X_OFFSET+RADIAL_R*Math.cos(angleRad);
     var iy=cy-RADIAL_R*Math.sin(angleRad);
     // Ekran sınırı kontrolü
     var margin=40;
