@@ -1,4 +1,44 @@
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+const _coverColorCache={};
+function extractCoverColors(src){
+  return new Promise((resolve)=>{
+    if(!src){resolve(null);return;}
+    if(_coverColorCache[src]){resolve(_coverColorCache[src]);return;}
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas');
+        const sz=32; // küçük örnekleme yeterli, performans için
+        canvas.width=sz;canvas.height=sz;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,sz,sz);
+        const data=ctx.getImageData(0,0,sz,sz).data;
+        let r=0,g=0,b=0,n=0;
+        let rDark=0,gDark=0,bDark=0,nDark=0;
+        for(let i=0;i<data.length;i+=4){
+          const rr=data[i],gg=data[i+1],bb=data[i+2],aa=data[i+3];
+          if(aa<128)continue;
+          r+=rr;g+=gg;b+=bb;n++;
+          // Ayrıca en koyu %30'u da ayrı ortalayalım (gradient alt tonu için)
+          const lum=(rr*0.299+gg*0.587+bb*0.114);
+          if(lum<110){rDark+=rr;gDark+=gg;bDark+=bb;nDark++;}
+        }
+        if(n===0){resolve(null);return;}
+        const avg={r:Math.round(r/n),g:Math.round(g/n),b:Math.round(b/n)};
+        const dark=nDark>0?{r:Math.round(rDark/nDark),g:Math.round(gDark/nDark),b:Math.round(bDark/nDark)}:{r:Math.round(avg.r*0.4),g:Math.round(avg.g*0.4),b:Math.round(avg.b*0.4)};
+        const result={avg,dark};
+        _coverColorCache[src]=result;
+        resolve(result);
+      }catch(e){
+        // CORS ya da başka bir okuma hatası olursa sessizce null dön, çağıran taraf varsayılan renge düşer
+        resolve(null);
+      }
+    };
+    img.onerror=()=>resolve(null);
+    img.src=src;
+  });
+}
 
 const THEME_KEY='megami_theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -33,7 +73,7 @@ function updateThemeToggleIcon(){
   btn.innerHTML=(isLight?ic('sun',15):ic('moon',15))+(isSidebarItem?`<span class="sidebar-label">${isLight?' Aydınlık Tema':' Karanlık Tema'}</span>`:'');
 }
 applyTheme(getTheme());
-const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#e85d75" stroke="#e85d75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#e85d75" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,};
+const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#e85d75" stroke="#e85d75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#e85d75" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,share:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>`,};
 const _icCache={};
 function ic(n,s=13){
   const k=n+'_'+s;
@@ -307,22 +347,43 @@ function renderTabs(){
     return `<button class="cat-tab ${currentCat===k?'active':''}" onclick="setCat('${k}')">${ic(v.icon)} ${v.label}${cnt}</button>`;
   }
 
-  let html=tabBtn('all')+priority.map(tabBtn).join('');
+  let tabsHtml=tabBtn('all')+priority.map(tabBtn).join('');
+  let menuHtml='';
   if(rest.length){
     const otherLabel=currentInRest?CATS[currentCat].label:'Diğer';
     const otherIcon=currentInRest?CATS[currentCat].icon:'chevron';
-    html+=`<div style="position:relative;display:inline-block;flex-shrink:0;">
-      <button class="cat-tab ${currentInRest?'active':''}" onclick="toggleOtherTabs(event)">${ic(otherIcon,10)} ${otherLabel} ${ic('chevron',9)}</button>
-      <div id="otherTabsMenu" class="autocomplete-dropdown ${_otherTabsOpen?'':'hidden'}" style="top:calc(100% + 4px);left:0;right:auto;min-width:180px;max-height:220px;">
+    tabsHtml+=`<button id="otherTabsBtn" class="cat-tab ${currentInRest?'active':''}" onclick="toggleOtherTabs(event)">${ic(otherIcon,10)} ${otherLabel} ${ic('chevron',9)}</button>`;
+    menuHtml=`<div id="otherTabsMenu" class="autocomplete-dropdown ${_otherTabsOpen?'':'hidden'}" style="top:calc(100% + 4px);min-width:180px;max-height:220px;">
         ${rest.map(k=>{
           const v=CATS[k];
           const n=series.filter(s=>s.category===k).length;
           return `<div class="autocomplete-item ${currentCat===k?'active':''}" onclick="setCat('${k}');toggleOtherTabs()">${ic(v.icon,11)} ${v.label}${n>0?`<span style="margin-left:auto;opacity:.5;font-size:10px;">${n}</span>`:''}</div>`;
         }).join('')}
-      </div>
-    </div>`;
+      </div>`;
   }
-  document.getElementById('catTabs').innerHTML=html;
+  document.getElementById('catTabs').innerHTML=tabsHtml;
+  const row=document.getElementById('catTabsRow');
+  let menuHost=document.getElementById('otherTabsMenuHost');
+  if(row&&!menuHost){
+    menuHost=document.createElement('div');
+    menuHost.id='otherTabsMenuHost';
+    menuHost.style.cssText='position:relative;width:0;height:0;overflow:visible;';
+    row.appendChild(menuHost);
+  }
+  if(menuHost){
+    menuHost.innerHTML=menuHtml;
+    // Menü konumunu tetikleyici butona göre ayarla (cat-tabs kaydırmalı olduğu için sabit sol konum yanlış olabilir)
+    if(_otherTabsOpen&&rest.length){
+      const btn=document.getElementById('otherTabsBtn');
+      const menu=document.getElementById('otherTabsMenu');
+      if(btn&&menu&&row){
+        const btnRect=btn.getBoundingClientRect();
+        menu.style.position='fixed';
+        menu.style.top=(btnRect.bottom+4)+'px';
+        menu.style.left=btnRect.left+'px';
+      }
+    }
+  }
 }
 function toggleOtherTabs(e){
   if(e)e.stopPropagation();
@@ -489,7 +550,7 @@ function carouselCard(s,i,canReorder){
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
   const isSel=selectedIds.has(s.id);
-  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}')`;
+  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   const dragAttrs=canReorder&&!selectionMode?`draggable="true" data-series-id="${s.id}" ondragstart="pinDragStart(event)" ondragend="pinDragEnd(event)"`:'';
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" ${dragAttrs} style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}${canReorder&&!selectionMode?'cursor:grab;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
@@ -513,7 +574,7 @@ function flatCard(s,i){
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const isSel=selectedIds.has(s.id);
-  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}')`;
+  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
@@ -587,20 +648,8 @@ function buildCountdown(s){
   return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
 }
 
-let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
-function openDetail(id,skipHistory){
-  const s=series.find(x=>x.id===id); if(!s) return;
-  if(s.newChapter){ s.newChapter=false; save(); }
-  if(currentPage!=='detail'){
-    _detailReturnState={page:currentPage};
-  }
-  currentPage='detail';
-  currentDetailId=id;
-  const cat=CATS[s.category]||CATS.reading;
-  const bgS=s.cover?`background-image:url('${esc(s.cover)}')`:'background:var(--black4)';
-  const coverImg=s.cover
-    ?`<img class="detail-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
-    :``;
+function getSeriesDetailSections(s){
+  const id=s.id;
   const chTR=parseInt(s.chapterTR)||0, total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const alts=s.altNames||[];
@@ -628,6 +677,23 @@ function openDetail(id,skipHistory){
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
   const countdownH=buildCountdown(s);
+  return {chTR,total,pct,altH,fanH,oldCH,noteH,ratingH,logH,countdownH};
+}
+let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
+function openDetail(id,skipHistory){
+  const s=series.find(x=>x.id===id); if(!s) return;
+  if(s.newChapter){ s.newChapter=false; save(); }
+  if(currentPage!=='detail'){
+    _detailReturnState={page:currentPage};
+  }
+  currentPage='detail';
+  currentDetailId=id;
+  const cat=CATS[s.category]||CATS.reading;
+  const bgS=s.cover?`background-image:url('${esc(s.cover)}')`:'background:var(--black4)';
+  const coverImg=s.cover
+    ?`<img class="detail-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
+    :``;
+  const {chTR,total,pct,altH,fanH,oldCH,noteH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
   const el=document.getElementById('mainContent');
   el.innerHTML=`
     <div class="detail-page-backbtn" onclick="closeDetail()">${ic('chevronLeft',15)} <span>Geri</span></div>
@@ -676,11 +742,14 @@ function closeDetail(){
   currentDetailId=null;
   currentPage=returnPage;
   history.pushState({},'',location.pathname);
-  document.getElementById('navHome').classList.toggle('active',returnPage==='home');
-  document.getElementById('navStats').classList.toggle('active',returnPage==='stats');
+  const navHomeEl=document.getElementById('navHome');
+  const navStatsEl=document.getElementById('navStats');
+  if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
+  if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
   document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
   renderContent();
+  if(typeof updateRadialActive==='function') updateRadialActive();
 }
 window.addEventListener('popstate',()=>{
   const params=new URLSearchParams(location.search);
@@ -1381,7 +1450,7 @@ function showUndoBanner(message,onUndo){
   if(!b){
     b=document.createElement('div');
     b.id='undoBanner';
-    b.style.cssText='position:fixed;bottom:calc(110px + env(safe-area-inset-bottom,0px) + 12px);left:50%;transform:translateX(-50%);max-width:420px;width:calc(100% - 32px);background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:999;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    b.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);max-width:420px;width:calc(100% - 32px);background:var(--black5);border:1px solid var(--purple2);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:500;color:var(--text);z-index:998;box-shadow:0 6px 24px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:space-between;gap:8px;';
     document.body.appendChild(b);
   }
   b.innerHTML=`<span></span><button style="background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;">Geri Al</button>`;
@@ -1602,10 +1671,8 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-var RADIAL_ANGLES=[180,135,90,45,0];
-var RADIAL_R=110;
-var RADIAL_X_OFFSET=-25; // negatif = sola kaydır
-var RADIAL_Y_OFFSET=-24; // negatif = yukarı kaydır
+var RADIAL_ANGLES=[160,115,90,65,20];
+var RADIAL_R=100;
 
 var radialItemCenters=[];
 
@@ -1625,8 +1692,8 @@ function buildRadialItems(){
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
-    var ix=cx+RADIAL_X_OFFSET+RADIAL_R*Math.cos(angleRad);
-    var iy=cy+RADIAL_Y_OFFSET-RADIAL_R*Math.sin(angleRad);
+    var ix=cx+RADIAL_R*Math.cos(angleRad);
+    var iy=cy-RADIAL_R*Math.sin(angleRad);
     // Ekran sınırı kontrolü
     var margin=40;
     ix=Math.max(margin, Math.min(sw-margin, ix));
@@ -1704,12 +1771,12 @@ function initRadialMenu(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
 
-  // Touch: basılı tut + sürükle → hover ile seç. Tek dokunuş → menüyü aç/kapat.
+  // Touch: basılı tut → aç, sürükle → hover, bırak → seç
   trigger.addEventListener('touchstart',function(e){
     e.preventDefault();
-    if(!radialOpen){
-      radialTimer=setTimeout(function(){openRadial();},350);
-    }
+    radialTimer=setTimeout(function(){
+      openRadial();
+    },350);
   },{passive:false});
 
   trigger.addEventListener('touchmove',function(e){
@@ -1722,12 +1789,8 @@ function initRadialMenu(){
 
   trigger.addEventListener('touchend',function(e){
     clearTimeout(radialTimer);
+    if(!radialOpen) return;
     e.preventDefault();
-    if(!radialOpen){
-      // Uzun basma tamamlanmadan parmak kalktı → tek dokunuş kabul et, menüyü aç.
-      openRadial();
-      return;
-    }
     var idx=radialHovered;
     closeRadial();
     if(idx>=0) radialDefs[idx].action();
@@ -1738,15 +1801,12 @@ function initRadialMenu(){
     closeRadial();
   });
 
-  // Desktop fallback: tek tık → aç/kapat, basılı tutup sürükleme de çalışır.
-  trigger.addEventListener('mousedown',function(){
-    if(!radialOpen){radialTimer=setTimeout(openRadial,350);}
-  });
+  // Desktop fallback
+  trigger.addEventListener('mousedown',function(){radialTimer=setTimeout(openRadial,350);});
   trigger.addEventListener('mouseup',function(){
     clearTimeout(radialTimer);
-    if(!radialOpen){openRadial();return;}
-    if(radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
-    else closeRadial();
+    if(radialOpen&&radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
+    else if(radialOpen) closeRadial();
   });
 }
 
