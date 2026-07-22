@@ -1,4 +1,6 @@
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const _coverColorCache={};
 function extractCoverColors(src){
   return new Promise((resolve)=>{
@@ -742,10 +744,6 @@ function closeDetail(){
   currentDetailId=null;
   currentPage=returnPage;
   history.pushState({},'',location.pathname);
-  const navHomeEl=document.getElementById('navHome');
-  const navStatsEl=document.getElementById('navStats');
-  if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
-  if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
   document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
   renderContent();
@@ -1673,6 +1671,7 @@ var radialDefs=[
 
 var RADIAL_ANGLES=[160,115,90,65,20];
 var RADIAL_R=100;
+var RADIAL_X=-25;
 
 var radialItemCenters=[];
 
@@ -1692,7 +1691,7 @@ function buildRadialItems(){
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
-    var ix=cx+RADIAL_R*Math.cos(angleRad);
+    var ix=cx+RADIAL_R*Math.cos(angleRad)+RADIAL_X;
     var iy=cy-RADIAL_R*Math.sin(angleRad);
     // Ekran sınırı kontrolü
     var margin=40;
