@@ -1,6 +1,4 @@
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const _coverColorCache={};
 function extractCoverColors(src){
   return new Promise((resolve)=>{
@@ -744,12 +742,26 @@ function closeDetail(){
   currentDetailId=null;
   currentPage=returnPage;
   history.pushState({},'',location.pathname);
+  const navHomeEl=document.getElementById('navHome');
+  const navStatsEl=document.getElementById('navStats');
+  if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
+  if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
   document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
 }
 window.addEventListener('popstate',()=>{
+  // Mobile'a özel: Seri Ekle/Düzenle formu açıksa, geri tuşu önce onu kapatmalı.
+  if(typeof _formPageWasOpen!=='undefined'&&_formPageWasOpen){
+    const addEl=document.getElementById('addOverlay');
+    if(addEl&&!addEl.classList.contains('hidden')){
+      _formPageWasOpen=false;
+      addEl.classList.add('closing');
+      setTimeout(()=>{addEl.classList.add('hidden');addEl.classList.remove('closing');},260);
+      return;
+    }
+  }
   const params=new URLSearchParams(location.search);
   const seriId=params.get('seri');
   if(seriId&&series.find(x=>x.id===seriId)){
@@ -809,6 +821,10 @@ function checkFavoriteMilestone(){
   const msgs={5:'⭐ 5 favori! Zevkin belli oluyor.',15:'🌟 15 favori! Seçici bir okuyucusun.',30:'💫 30 favori! Favori listen de bir kütüphane oldu.'};
   if(msgs[favCount])setTimeout(()=>showToast('star',msgs[favCount]),900);
 }
+function showAddOverlay(){
+  document.getElementById('addOverlay').classList.remove('hidden');
+  if(typeof onAddOverlayShown==='function') onAddOverlayShown();
+}
 function openAddSheet(){
   editingId=null;altNames=[];oldCovers=[];fansubList=[];formFav=false;formPin=false;formRating=0;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
@@ -830,7 +846,7 @@ function openAddSheet(){
   document.getElementById('chapterTR').value='';document.getElementById('chapterEN').value='';
   resetCoverPreview();updateFormToggles();renderRatingStars(0);
   document.getElementById('deleteBtn').classList.add('hidden');
-  document.getElementById('addOverlay').classList.remove('hidden');
+  showAddOverlay();
 }
 function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
@@ -862,7 +878,7 @@ function openEditSheet(id){
   if(s.cover)showCoverPreview(s.cover);else resetCoverPreview();
   updateFormToggles();renderRatingStars(formRating);
   document.getElementById('deleteBtn').classList.remove('hidden');
-  document.getElementById('addOverlay').classList.remove('hidden');
+  showAddOverlay();
 }
 function toggleFormFav(){formFav=!formFav;updateFormToggles();}
 function toggleFormPin(){formPin=!formPin;updateFormToggles();}
@@ -1176,7 +1192,13 @@ function renderOldCoverPreviews(){
     <div style="position:relative;flex-shrink:0;"><img src="${esc(c)}" style="width:52px;height:73px;border-radius:7px;object-fit:cover;border:1px solid var(--line);"><button onclick="removeOldCover(${i})" style="position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;background:#8b3a3a;border:none;color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button></div>`).join('');
 }
 function removeOldCover(i){oldCovers.splice(i,1);renderOldCoverPreviews();}
-function closeSheet(id){document.getElementById(id).classList.add('hidden');}
+function closeSheet(id){
+  if(id==='addOverlay'&&typeof onAddOverlayHide==='function'){
+    onAddOverlayHide();
+    return;
+  }
+  document.getElementById(id).classList.add('hidden');
+}
 function closeOnOverlay(e,id){
   if(e.target.id!==id)return;
   if(id==='confirmOverlay'){resolveConfirm(false);return;}
@@ -1671,7 +1693,6 @@ var radialDefs=[
 
 var RADIAL_ANGLES=[160,115,90,65,20];
 var RADIAL_R=100;
-var RADIAL_X=-25;
 
 var radialItemCenters=[];
 
@@ -1691,7 +1712,7 @@ function buildRadialItems(){
 
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
-    var ix=cx+RADIAL_R*Math.cos(angleRad)+RADIAL_X;
+    var ix=cx+RADIAL_R*Math.cos(angleRad);
     var iy=cy-RADIAL_R*Math.sin(angleRad);
     // Ekran sınırı kontrolü
     var margin=40;
