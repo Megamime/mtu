@@ -44,6 +44,43 @@
 #addOverlay .autocomplete-dropdown{background:rgba(30,15,50,.92);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.16);}
 #addOverlay .autocomplete-item{color:rgba(255,255,255,.75);}
 #addOverlay .autocomplete-item:hover,#addOverlay .autocomplete-item.active{background:rgba(232,93,180,.15);color:#f0a3d0;}
+/* ===== Ana sayfa + İstatistik: Liquid Glass genel dönüşüm ===== */
+body{background:#0a0612;}
+.orb1{background:radial-gradient(ellipse,rgba(232,93,180,0.16) 0%,transparent 70%);}
+.orb2{background:radial-gradient(ellipse,rgba(124,58,237,0.14) 0%,transparent 70%);}
+.orb3{background:radial-gradient(ellipse,rgba(167,139,250,0.1) 0%,transparent 70%);}
+.header{background:rgba(20,10,35,0.55);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border-bottom:1px solid rgba(255,255,255,0.08);}
+.search-wrap{background:transparent;backdrop-filter:none;}
+.search-input{background:rgba(255,255,255,0.07);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.search-input::placeholder{color:rgba(255,255,255,.35);}
+.search-input:focus{border-color:rgba(232,93,180,.5);box-shadow:0 0 0 3px rgba(232,93,180,.12);}
+.s-icon{color:rgba(255,255,255,.4);}
+.hdr-btn{background:rgba(255,255,255,0.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,.8);}
+.streak-badge{background:rgba(232,93,180,0.14);border:1px solid rgba(232,93,180,.3);color:#f0a3d0;}
+.cat-tab{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,.55);}
+.cat-tab.active{background:rgba(232,93,180,0.18);backdrop-filter:blur(16px);border-color:rgba(232,93,180,.5);color:#f4bede;box-shadow:0 2px 12px rgba(232,93,180,.15);}
+.sec-title{color:rgba(255,255,255,.75);}
+.sec-count-pill{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,.45);}
+.sec-see-all{color:#e879b9;}
+.carousel-arrow{background:rgba(255,255,255,0.1);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.series-card{background:rgba(255,255,255,0.045);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.09);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.series-card.pinned{border-color:rgba(232,93,117,.6);}
+.series-card.favorited{border-color:rgba(201,162,39,.6);}
+.card-quick-btn{background:rgba(20,10,30,0.6);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.1);border-left:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,.75);}
+.card-title{color:rgba(255,255,255,.92);}
+.card-ch{color:rgba(255,255,255,.55);}
+.card-progress{background:rgba(255,255,255,.08);}
+#mainContent .empty{color:rgba(255,255,255,.5);}
+#mainContent .empty h3{color:rgba(255,255,255,.85);}
+.stat-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.1);}
+.stat-card.hi{background:rgba(232,93,180,0.12);border-color:rgba(232,93,180,.35);}
+.stat-value{color:#fff;}
+.stat-label{color:rgba(255,255,255,.5);}
+#mainContent .cat-stat-name,#mainContent .summary-lbl{color:rgba(255,255,255,.7);}
+#mainContent [style*="background:var(--black4)"]{background:rgba(255,255,255,0.05)!important;backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border-color:rgba(255,255,255,0.1)!important;}
+#mainContent [style*="background:var(--line)"]{background:rgba(255,255,255,.1)!important;}
+.summary-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);}
+
 /* ===== Liquid Glass detay sayfası (mobile'a özel) ===== */
 .lg-page{position:fixed;inset:0;z-index:250;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#0a0612;animation:lgPageIn .38s cubic-bezier(.22,.9,.32,1);}
 .lg-page.closing{animation:lgPageOut .3s cubic-bezier(.4,0,.6,1) forwards;}
