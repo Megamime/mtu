@@ -742,6 +742,10 @@ function closeDetail(){
   currentDetailId=null;
   currentPage=returnPage;
   history.pushState({},'',location.pathname);
+  const navHomeEl=document.getElementById('navHome');
+  const navStatsEl=document.getElementById('navStats');
+  if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
+  if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
   document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
   renderContent();
@@ -1729,15 +1733,15 @@ function buildRadialItems(){
   });
   updateRadialActive();
 }
+
+
 function openRadial(){
   radialOpen=true;
   radialHovered=-1;
   buildRadialItems();
   document.getElementById('radialTrigger').classList.add('open');
   document.getElementById('radialBackdrop').classList.add('open');
-  document.querySelectorAll('.radial-item').forEach(function(el,i){
-    setTimeout(function(){el.classList.add('open');},i*45);
-  });
+  document.querySelectorAll('.radial-item').forEach(function(el,i){setTimeout(function(){el.style.transform='translate(-50%,-50%) scale(1)';el.style.opacity='1';el.classList.add('open');},i*45);});
 }
 
 function closeRadial(){
