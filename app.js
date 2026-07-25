@@ -1,3 +1,70 @@
+// ===== Geçici debug paneli (Mac olmadan konsol loglarını telefon ekranında görmek için) =====
+(function(){
+  const _origLog=console.log, _origWarn=console.warn, _origError=console.error;
+  const _debugLines=[];
+  function _pushDebug(kind,args){
+    const text=args.map(a=>{
+      if(typeof a==='object'){try{return JSON.stringify(a);}catch(e){return String(a);}}
+      return String(a);
+    }).join(' ');
+    _debugLines.push({kind,text,time:new Date().toLocaleTimeString('tr-TR')});
+    if(_debugLines.length>200)_debugLines.shift();
+    _renderDebugPanel();
+  }
+  console.log=function(...args){_origLog.apply(console,args);_pushDebug('log',args);};
+  console.warn=function(...args){_origWarn.apply(console,args);_pushDebug('warn',args);};
+  console.error=function(...args){_origError.apply(console,args);_pushDebug('error',args);};
+
+  function _renderDebugPanel(){
+    const body=document.getElementById('debugPanelBody');
+    if(!body)return;
+    body.innerHTML=_debugLines.map(l=>{
+      const color=l.kind==='error'?'#f87171':l.kind==='warn'?'#fbbf24':'#a7f3d0';
+      return `<div style="padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.08);font-family:monospace;font-size:10.5px;color:${color};white-space:pre-wrap;word-break:break-all;"><span style="opacity:.5;">${l.time}</span> ${l.text.replace(/</g,'&lt;')}</div>`;
+    }).join('');
+    body.scrollTop=body.scrollHeight;
+  }
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    const btn=document.createElement('div');
+    btn.id='debugPanelToggle';
+    btn.textContent='⚙️';
+    btn.style.cssText='position:fixed;bottom:14px;left:14px;width:40px;height:40px;border-radius:20px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;z-index:99999;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);';
+    btn.onclick=()=>{
+      const panel=document.getElementById('debugPanel');
+      if(panel)panel.style.display=panel.style.display==='none'?'flex':'none';
+    };
+    document.body.appendChild(btn);
+
+    const panel=document.createElement('div');
+    panel.id='debugPanel';
+    panel.style.cssText='display:none;position:fixed;inset:auto 8px 62px 8px;max-height:50vh;background:rgba(10,5,15,.96);border:1px solid rgba(255,255,255,.15);border-radius:12px;z-index:99999;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.6);';
+    panel.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.12);">
+        <span style="color:#fff;font-size:12px;font-weight:600;">Debug Konsolu</span>
+        <div style="display:flex;gap:6px;">
+          <button id="debugPanelCopy" style="background:rgba(124,58,237,.3);border:1px solid rgba(124,58,237,.5);color:#c4b5fd;font-size:10.5px;padding:4px 8px;border-radius:6px;">Kopyala</button>
+          <button id="debugPanelClear" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:10.5px;padding:4px 8px;border-radius:6px;">Temizle</button>
+        </div>
+      </div>
+      <div id="debugPanelBody" style="overflow-y:auto;flex:1;"></div>`;
+    document.body.appendChild(panel);
+
+    document.getElementById('debugPanelClear').onclick=()=>{_debugLines.length=0;_renderDebugPanel();};
+    document.getElementById('debugPanelCopy').onclick=()=>{
+      const text=_debugLines.map(l=>`[${l.time}] [${l.kind}] ${l.text}`).join('\n');
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>{
+          const b=document.getElementById('debugPanelCopy');
+          b.textContent='Kopyalandı!';
+          setTimeout(()=>{b.textContent='Kopyala';},1500);
+        }).catch(()=>{alert(text);});
+      } else {
+        alert(text);
+      }
+    };
+  });
+})();
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const _coverColorCache={};
 function extractCoverColors(src){
