@@ -197,6 +197,9 @@ async function load(){
   }
 }
 let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',currentSort=localStorage.getItem('megami_sort')||'default',currentDetailId=null;
+// Safari'de input[type=text].value 512KB'ta sessizce kesildiği için, dosyadan yüklenen
+// büyük base64 kapak verisini input'a değil, bu değişkene yazıyoruz.
+let _pendingCoverData=null;
 let selectionMode=false,selectedIds=new Set();
 let altNames=[],oldCovers=[],fansubList=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
@@ -900,6 +903,7 @@ function showAddOverlay(){
 }
 function openAddSheet(){
   editingId=null;altNames=[];oldCovers=[];fansubList=[];formFav=false;formPin=false;formRating=0;
+  _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
   ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('autoIncrFreq').value='';
@@ -932,7 +936,15 @@ function openEditSheet(id){
   document.getElementById('chapterEN').value=s.chapterEN||'';
   document.getElementById('chapterTotal').value=s.chapterTotal||'';
   document.getElementById('seriesNote').value=s.note||'';
-  document.getElementById('coverUrlInput').value=s.cover||'';
+  // Safari'nin input[type=text] için 512KB kesme sorunu nedeniyle, büyük (data: ile başlayan)
+  // kapak verisini input'a yazmıyoruz, _pendingCoverData'da tutuyoruz. Kısa URL'ler input'a yazılabilir.
+  if(s.cover&&s.cover.startsWith('data:')&&s.cover.length>500000){
+    _pendingCoverData=s.cover;
+    document.getElementById('coverUrlInput').value='';
+  } else {
+    _pendingCoverData=null;
+    document.getElementById('coverUrlInput').value=s.cover||'';
+  }
   document.getElementById('altNameInput').value='';document.getElementById('fansubInput').value='';
   document.getElementById('autoIncrAmt').value=s.autoIncrAmt||'';
   document.getElementById('autoIncrFreq').value=s.autoIncrFreq||'';
@@ -968,10 +980,12 @@ function setRating(n){formRating=formRating===n?0:n;renderRatingStars(formRating
 async function saveSeries(){
   const name=document.getElementById('seriesName').value.trim();
   if(!name){showToast('warn','Seri adı zorunludur!');return;}
+  // Öncelik sırası: (1) dosyadan yüklenen büyük veri (_pendingCoverData),
+  // (2) kullanıcının URL alanına yazdığı metin, (3) önizlemedeki img.src (son çare).
   const ci=document.getElementById('coverUrlInput').value.trim();
   const cimg=document.getElementById('coverPreviewWrap').querySelector('img');
-  const cover=ci||(cimg?cimg.src:'');
-  console.log('[Megami] saveSeries kapak kaynağı:',ci?'coverUrlInput':(cimg?'img.src (fallback)':'yok'),'uzunluk:',cover.length,'son 30 karakter:',cover.slice(-30));
+  const cover=_pendingCoverData||ci||(cimg?cimg.src:'');
+  console.log('[Megami] saveSeries kapak:',_pendingCoverData?'_pendingCoverData':(ci?'coverUrlInput':(cimg?'img.src':'yok')),'uzunluk:',cover.length);
   const prevTR=editingId?(series.find(x=>x.id===editingId)?.chapterTR||0):0;
   const newTR=document.getElementById('chapterTR').value||'';
   const autoAmt=parseInt(document.getElementById('autoIncrAmt').value)||0;
@@ -1197,7 +1211,13 @@ function compressImage(src, maxW, maxH, quality){
     img.src=src;
   });
 }
-function previewCoverUrl(){const u=document.getElementById('coverUrlInput').value.trim();if(u)showCoverPreview(u);else resetCoverPreview();}
+function previewCoverUrl(){
+  const u=document.getElementById('coverUrlInput').value.trim();
+  // Kullanıcı manuel olarak URL alanına yazdıysa, önceden dosyadan yüklenmiş olabilecek
+  // _pendingCoverData artık geçersiz sayılır; input alanındaki değer önceliklidir.
+  _pendingCoverData=null;
+  if(u)showCoverPreview(u);else resetCoverPreview();
+}
 const EXT_TO_MIME={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',avif:'image/avif',heic:'image/heic',heif:'image/heif',bmp:'image/bmp',svg:'image/svg+xml'};
 function readImageFileAsDataUrl(file){
   return new Promise((resolve,reject)=>{
@@ -1239,11 +1259,12 @@ function handleCoverFile(){
   if(sizeMB>10){
     showToast('warn',`Görsel ${sizeMB.toFixed(1)}MB — telefonda kaydetme sorunlu olabilir. Sorun yaşarsan daha küçük bir dosya dene.`);
   }
-  console.log('[Megami] Seçilen dosya:',f.name,'boyut:',f.size,'bayt','type:',f.type);
   readImageFileAsDataUrl(f).then(dataUrl=>{
-    console.log('[Megami] Okunan data URL uzunluğu:',dataUrl.length,'karakter, başlık:',dataUrl.slice(0,40),'son 30 karakter:',dataUrl.slice(-30));
+    // Safari'nin input[type=text] için 512KB'ta sessizce kesme yaptığı bilinen bir sorun
+    // olduğundan, büyük base64 veriyi input'a yazmıyoruz, ayrı bir değişkende tutuyoruz.
+    _pendingCoverData=dataUrl;
+    document.getElementById('coverUrlInput').value='';
     showCoverPreview(dataUrl);
-    document.getElementById('coverUrlInput').value=dataUrl;
   }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
 }
 function showCoverPreview(src){
