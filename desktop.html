@@ -300,6 +300,7 @@ function toggleShortcutsHelp(){
   document.body.appendChild(el);
 }
 
+TAB_PRIORITY_COUNT_OVERRIDE=2; // Desktop: "Tümü" + en çok kullanılan 2 kategori önde
 async function init(){
   await load();
   await runAutoIncrement();

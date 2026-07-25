@@ -321,7 +321,12 @@ function switchPage(p){
   if(typeof closeRadial==='function') closeRadial();
 }
 const TAB_USAGE_KEY='megami_tab_usage';
-const TAB_PRIORITY_COUNT=2; // Tümü hariç, önde gösterilecek kategori sayısı
+let TAB_PRIORITY_COUNT_OVERRIDE=null; // Her layout kendi script'inde bu değeri ayarlayabilir
+function getTabPriorityCount(){
+  if(TAB_PRIORITY_COUNT_OVERRIDE!==null)return TAB_PRIORITY_COUNT_OVERRIDE;
+  // Varsayılan: catTabsActions elementi varsa (masaüstü düzeni) 2, yoksa 0.
+  return document.getElementById('catTabsActions')?2:0;
+}
 function getTabUsage(){
   try{return JSON.parse(localStorage.getItem(TAB_USAGE_KEY)||'{}');}catch(e){return {};}
 }
@@ -333,11 +338,12 @@ function bumpTabUsage(cat){
 }
 let _otherTabsOpen=false;
 function renderTabs(){
+  const tabPriorityCount=getTabPriorityCount();
   const usage=getTabUsage();
   const keys=Object.keys(CATS).filter(k=>k!=='all');
   const sorted=keys.slice().sort((a,b)=>(usage[b]||0)-(usage[a]||0));
-  const priority=sorted.slice(0,TAB_PRIORITY_COUNT);
-  const rest=sorted.slice(TAB_PRIORITY_COUNT);
+  const priority=sorted.slice(0,tabPriorityCount);
+  const rest=sorted.slice(tabPriorityCount);
   const currentInRest=rest.includes(currentCat);
 
   function tabBtn(k){
@@ -898,6 +904,7 @@ async function saveSeries(){
   const ci=document.getElementById('coverUrlInput').value.trim();
   const cimg=document.getElementById('coverPreviewWrap').querySelector('img');
   const cover=ci||(cimg?cimg.src:'');
+  console.log('[Megami] saveSeries kapak kaynağı:',ci?'coverUrlInput':(cimg?'img.src (fallback)':'yok'),'uzunluk:',cover.length,'son 30 karakter:',cover.slice(-30));
   const prevTR=editingId?(series.find(x=>x.id===editingId)?.chapterTR||0):0;
   const newTR=document.getElementById('chapterTR').value||'';
   const autoAmt=parseInt(document.getElementById('autoIncrAmt').value)||0;
@@ -1165,7 +1172,9 @@ function handleCoverFile(){
   if(sizeMB>10){
     showToast('warn',`Görsel ${sizeMB.toFixed(1)}MB — telefonda kaydetme sorunlu olabilir. Sorun yaşarsan daha küçük bir dosya dene.`);
   }
+  console.log('[Megami] Seçilen dosya:',f.name,'boyut:',f.size,'bayt','type:',f.type);
   readImageFileAsDataUrl(f).then(dataUrl=>{
+    console.log('[Megami] Okunan data URL uzunluğu:',dataUrl.length,'karakter, başlık:',dataUrl.slice(0,40),'son 30 karakter:',dataUrl.slice(-30));
     showCoverPreview(dataUrl);
     document.getElementById('coverUrlInput').value=dataUrl;
   }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
@@ -1691,7 +1700,6 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-var RADIAL_X=-25;
 var RADIAL_ANGLES=[160,115,90,65,20];
 var RADIAL_R=100;
 
@@ -1705,25 +1713,26 @@ function buildRadialItems(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
   var tr=trigger.getBoundingClientRect();
-  var cx=tr.left+tr.width/2+RADIAL_X;
+  // Trigger merkezi
+  var cx=tr.left+tr.width/2;
   var cy=tr.top+tr.height/2;
+  // Ekran genişliği — sağa taşmayı önle
   var sw=window.innerWidth;
-  var sh=window.innerHeight;
-  var margin=36;
+
   radialDefs.forEach(function(def,i){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
     var ix=cx+RADIAL_R*Math.cos(angleRad);
     var iy=cy-RADIAL_R*Math.sin(angleRad);
-    ix=Math.max(margin,Math.min(sw-margin,ix));
-    iy=Math.max(margin,Math.min(sh-margin,iy));
-    radialItemCenters.push({x:ix,y:iy,r:44});
+    // Ekran sınırı kontrolü
+    var margin=40;
+    ix=Math.max(margin, Math.min(sw-margin, ix));
+    radialItemCenters.push({x:ix,y:iy,r:40});
+
     var el=document.createElement('div');
     el.className='radial-item';
     el.id='ri-'+i;
     el.style.left=ix+'px';
     el.style.top=iy+'px';
-    el.style.transform='translate(-50%,-50%) scale(0.2)';
-    el.style.opacity='0';
     el.innerHTML='<div class="radial-btn" id="rb-'+i+'">'+def.icon+'</div>'
       +'<span class="radial-label">'+def.label+'</span>';
     (function(d){
@@ -1734,20 +1743,21 @@ function buildRadialItems(){
   updateRadialActive();
 }
 
-
 function openRadial(){
   radialOpen=true;
   radialHovered=-1;
   buildRadialItems();
   document.getElementById('radialTrigger').classList.add('open');
   document.getElementById('radialBackdrop').classList.add('open');
-  document.querySelectorAll('.radial-item').forEach(function(el,i){setTimeout(function(){el.style.transform='translate(-50%,-50%) scale(1)';el.style.opacity='1';el.classList.add('open');},i*45);});
+  document.querySelectorAll('.radial-item').forEach(function(el,i){
+    setTimeout(function(){el.classList.add('open');},i*45);
+  });
 }
 
 function closeRadial(){
   radialOpen=false;
   radialHovered=-1;
-  document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open','hovered');el.style.transform='translate(-50%,-50%) scale(0.2)';el.style.opacity='0';});
+  document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open','hovered');});
   var t=document.getElementById('radialTrigger');
   var b=document.getElementById('radialBackdrop');
   if(t) t.classList.remove('open');
