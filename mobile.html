@@ -59,8 +59,15 @@ body{background:#0a0612;}
 .s-icon{color:rgba(255,255,255,.4);}
 .hdr-btn{background:rgba(255,255,255,0.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,.8);}
 .streak-badge{background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,.3);color:#c4b5fd;}
-.cat-tab{background:rgba(35,22,50,0.5);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,.55);}
-.cat-tab.active{background:rgba(124,58,237,0.28);border-color:rgba(124,58,237,.5);color:#c4b5fd;box-shadow:0 2px 12px rgba(124,58,237,.15);}
+/* Sekme barı: Tümü/Diğer sekmeleri + Seç butonu + Sıralama select'i, hepsi tutarlı yükseklik/stil */
+.cat-tab,#catTabsActions .btn-secondary,#catTabsActions .form-select{height:32px;padding:0 12px;border-radius:9px;background:rgba(255,255,255,.06);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:11.5px;font-weight:500;box-sizing:border-box;}
+.cat-tab{display:flex;align-items:center;gap:4px;}
+.cat-tab.active{background:rgba(124,58,237,.22);border-color:rgba(124,58,237,.5);color:#c4b5fd;font-weight:600;}
+#catTabsActions{gap:6px;}
+#catTabsActions .btn-secondary{font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;width:80px;flex-shrink:0;overflow:hidden;}
+#catTabsActions .form-select{flex:1;min-width:88px;}
+#catTabsRow{position:relative;}
+#catTabsRow::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:1px;background:rgba(255,255,255,.06);}
 .sec-title{color:rgba(255,255,255,.75);}
 .sec-count-pill{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,.45);}
 .sec-see-all{color:#a78bfa;}
@@ -101,7 +108,8 @@ body{background:#0a0612;}
 .lg-cover-img{width:128px;aspect-ratio:2/3;border-radius:16px;object-fit:cover;box-shadow:0 20px 44px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);flex-shrink:0;}
 .lg-cover-ph{width:128px;aspect-ratio:2/3;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.35);flex-shrink:0;}
 .lg-title-block{flex:1;min-width:0;padding-bottom:4px;}
-.lg-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:9.5px;font-weight:600;color:#fff;margin-bottom:8px;}
+.lg-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:9.5px;font-weight:600;color:#fff;}
+.lg-badges-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
 .lg-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:#fff;line-height:1.25;text-shadow:0 2px 14px rgba(0,0,0,.5);word-break:break-word;}
 .lg-meta-row{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap;}
 .lg-meta-chip{padding:3px 9px;border-radius:7px;font-size:9.5px;color:rgba(255,255,255,.9);display:inline-flex;align-items:center;gap:4px;}
@@ -148,7 +156,7 @@ body{background:#0a0612;}
 .lg-page .countdown-icon{color:#a78bfa;}
 </style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div>
 Megami
-</div><div class="hdr-right"><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="btn-secondary" style="width:auto;padding:6px 12px;white-space:nowrap;" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" id="homeSortSelect" onchange="setSort(this.value)"></select></div></div><div class="content" id="mainContent"></div><div id="lgDetailHost"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
+</div><div class="hdr-right"><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button><select class="form-select" id="homeSortSelect" onchange="setSort(this.value)"></select></div></div><div class="content" id="mainContent"></div><div id="lgDetailHost"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
 <div id="radialMenu"></div>
 <div class="radial-trigger" id="radialTrigger">
   <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -250,7 +258,10 @@ function openDetail(id,skipHistoryOrEvent){
       <div class="lg-cover-hero">
         ${coverBlock}
         <div class="lg-title-block">
-          ${s.favorited||s.pinned?`<div class="lg-badge lg-glass">${s.pinned?ic('pin',9):ic('star',9)} ${s.pinned?'Sabitli':'Favori'}</div>`:''}
+          <div class="lg-badges-row">
+            ${s.pinned?`<div class="lg-badge lg-glass">${ic('pin',9)} Sabitli</div>`:''}
+            ${s.favorited?`<div class="lg-badge lg-glass">${ic('star',9)} Favori</div>`:''}
+          </div>
           <div class="lg-title">${esc(s.name)}</div>
           <div class="lg-meta-row">
             <span class="lg-meta-chip lg-glass">${ic(cat.icon,9)} ${cat.label}</span>
@@ -325,22 +336,12 @@ function openDetail(id,skipHistoryOrEvent){
   }
 }
 function updateDetailPageInPlace(s){
-  // Sabitleme/favorileme rozeti (Sabitli/Favori pili)
-  const heroBlock=document.querySelector('.lg-title-block');
-  if(heroBlock){
-    const existingBadge=heroBlock.querySelector('.lg-badge');
-    if(s.favorited||s.pinned){
-      const badgeHtml=`${s.pinned?ic('pin',9):ic('star',9)} ${s.pinned?'Sabitli':'Favori'}`;
-      if(existingBadge){existingBadge.innerHTML=badgeHtml;}
-      else{
-        const div=document.createElement('div');
-        div.className='lg-badge lg-glass';
-        div.innerHTML=badgeHtml;
-        heroBlock.insertBefore(div,heroBlock.firstChild);
-      }
-    } else if(existingBadge){
-      existingBadge.remove();
-    }
+  // Sabitleme/favorileme rozetleri (Sabitli ve Favori aynı anda gösterilebilir)
+  const badgesRow=document.querySelector('.lg-badges-row');
+  if(badgesRow){
+    badgesRow.innerHTML=`
+      ${s.pinned?`<div class="lg-badge lg-glass">${ic('pin',9)} Sabitli</div>`:''}
+      ${s.favorited?`<div class="lg-badge lg-glass">${ic('star',9)} Favori</div>`:''}`;
   }
   // Sabitle / Favorile buton durumları
   const pinBtn=document.querySelector('.lg-action-btn[onclick*="togglePin"]');
