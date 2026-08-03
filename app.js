@@ -492,12 +492,24 @@ function toggleSelect(id){
 }
 function renderBulkBar(){
   const n=selectedIds.size;
-  return `<div style="position:fixed;left:0;right:0;bottom:var(--nav-h,0px);z-index:150;background:var(--black2);border-top:1px solid var(--line2);padding:10px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 -6px 24px rgba(0,0,0,.5);">
-    <span style="font-size:12px;color:var(--text2);white-space:nowrap;">${n} seçili</span>
-    <select class="form-select" style="flex:1;font-size:12px;padding:7px 9px;" onchange="if(this.value){bulkSetCategory(this.value);this.value='';}"><option value="">Kategori Değiştir…</option>${Object.entries(CATS).filter(([k])=>k!=='all').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
+  const hasRadial=!!document.getElementById('radialTrigger');
+  const bottomOffset=hasRadial?'calc(96px + env(safe-area-inset-bottom,0px))':'calc(var(--nav-h,0px) + 12px)';
+  return `<div id="bulkActionBar" style="position:fixed;left:12px;right:12px;bottom:${bottomOffset};z-index:150;background:rgba(20,10,32,.85);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+    <span style="font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;flex-shrink:0;">${n} seçili</span>
+    <select class="form-select" style="flex:1;font-size:12px;padding:7px 9px;min-width:0;" onchange="if(this.value){bulkSetCategory(this.value);this.value='';}"><option value="">Kategori…</option>${Object.entries(CATS).filter(([k])=>k!=='all').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
+    <button class="hdr-btn" title="Sabitle" onclick="bulkPin()">${ic('pin',15)}</button>
     <button class="hdr-btn" title="Favorile" onclick="bulkFavorite()">${ic('star',15)}</button>
     <button class="hdr-btn" title="Sil" style="color:#f87171;" onclick="bulkDelete()">${ic('trash',15)}</button>
   </div>`;
+}
+function bulkPin(){
+  if(selectedIds.size===0)return;
+  series.forEach(s=>{if(selectedIds.has(s.id)){s.pinned=true;s.updatedAt=Date.now();}});
+  save().then(()=>{
+    showToast('check',`${selectedIds.size} seri sabitlendi.`);
+    selectionMode=false;selectedIds.clear();
+    renderTabs();renderHome();
+  });
 }
 function bulkSetCategory(cat){
   if(selectedIds.size===0)return;
