@@ -291,33 +291,22 @@ function openDetail(id,skipHistoryOrEvent){
   document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabs').style.display='none';
 
-  // Kart tıklamasından geldiysek, kapağın eski konumundan yenisine doğru kısa bir
-  // "genişleme" hissi veren geçiş oynat (FLIP tekniğinin basitleştirilmiş hâli).
+  // Kart tıklamasından geldiysek kapak görseline kısa bir "büyüyerek beliren" animasyon
+  // uygula; bu, sayfanın kendi giriş animasyonuyla (lgPageIn) birlikte oynayarak
+  // "gerçekten bir yere gittin" hissini güçlendirir.
   if(sourceRect&&s.cover){
-    requestAnimationFrame(()=>{
-      const targetImg=host.querySelector('.lg-cover-img');
-      if(!targetImg){return;}
-      const targetRect=targetImg.getBoundingClientRect();
-      const ghost=document.createElement('img');
-      ghost.src=s.cover;
-      ghost.style.cssText=`position:fixed;left:${sourceRect.left}px;top:${sourceRect.top}px;width:${sourceRect.width}px;height:${sourceRect.height}px;object-fit:cover;border-radius:10px;z-index:260;transition:all .38s cubic-bezier(.22,.9,.32,1);pointer-events:none;`;
-      document.body.appendChild(ghost);
+    const targetImg=host.querySelector('.lg-cover-img');
+    if(targetImg){
+      targetImg.style.transition='none';
+      targetImg.style.transform='scale(0.55)';
       targetImg.style.opacity='0';
-      const page=document.getElementById('lgPage');
-      if(page)page.style.animation='none';
+      // Bir sonraki frame'de gerçek boyutuna animasyonlu geçiş yaptır
       requestAnimationFrame(()=>{
-        ghost.style.left=targetRect.left+'px';
-        ghost.style.top=targetRect.top+'px';
-        ghost.style.width=targetRect.width+'px';
-        ghost.style.height=targetRect.height+'px';
-        ghost.style.borderRadius='16px';
-      });
-      setTimeout(()=>{
-        targetImg.style.transition='opacity .15s';
+        targetImg.style.transition='transform .42s cubic-bezier(.22,.9,.32,1), opacity .3s ease';
+        targetImg.style.transform='scale(1)';
         targetImg.style.opacity='1';
-        ghost.remove();
-      },380);
-    });
+      });
+    }
   }
 
   // Kapaktan renk çıkarıp arka plana uygula (varsa)
