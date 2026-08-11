@@ -1536,34 +1536,79 @@ function validateSeriesShape(arr){
   return {cleaned,skipped};
 }
 let _lastBackupBeforeImport=null;
-function importBackup(e){
-  const file=e.target.files[0]; if(!file){return;}
-  showConfirm('Mevcut verilerinin üzerine yazılacak. Emin misin?',async()=>{
+async function importBackup(e){
+  const inputEl=e.target;
+  const file=inputEl.files[0]; if(!file){return;}
+  let data;
+  try{
     const text=await file.text();
-    try{
-      const data=JSON.parse(text);
-      const imported=data.series||data;
-      if(!Array.isArray(imported)) throw new Error('Geçersiz format');
-      const {cleaned,skipped}=validateSeriesShape(imported);
-      if(cleaned.length===0) throw new Error('Dosyada geçerli seri bulunamadı');
-      // Geri alınabilmesi için mevcut veriyi bellekte sakla (sayfa açıkken geçerli)
-      _lastBackupBeforeImport=JSON.parse(JSON.stringify(series));
-      series=cleaned;
+    data=JSON.parse(text);
+  }catch(err){
+    showToast('warn','Geçersiz dosya!');
+    inputEl.value='';
+    return;
+  }
+
+  // ---- Bir arkadaştan gelen tekil seri paylaşımı — EKLEMELİ, mevcut kütüphaneye
+  // dokunmadan sadece yeni bir seri ekliyor. Tam yedekten (aşağıdaki) farklı olarak yıkıcı değil. ----
+  if(data&&data.type==='megami-series-share'&&data.series&&typeof data.series==='object'&&!Array.isArray(data.series)){
+    const incoming=data.series;
+    const name=typeof incoming.name==='string'?incoming.name.trim():'';
+    if(!name){ showToast('warn','Geçersiz seri dosyası!'); inputEl.value=''; return; }
+    showConfirm(`"${name}" serisini kütüphanene eklemek ister misin? (Kişisel not/puan gibi bilgiler dahil değildir.)`,async()=>{
+      let newId=Date.now().toString();
+      while(series.some(x=>x.id===newId)) newId=(Date.now()+Math.floor(Math.random()*1000)).toString();
+      const autoIncrNext=(incoming.autoIncrFreq&&incoming.autoIncrFreq!=='irregular'&&incoming.autoIncrFreq!=='completed')
+        ?calcNextIncr(incoming.autoIncrFreq,incoming.autoIncrDay||1,incoming.autoIncrDate||1):null;
+      const newSeries={
+        id:newId,name,
+        altNames:Array.isArray(incoming.altNames)?[...incoming.altNames]:[],
+        fansubList:Array.isArray(incoming.fansubList)?[...incoming.fansubList]:[],
+        cover:incoming.cover||'',
+        oldCovers:Array.isArray(incoming.oldCovers)?[...incoming.oldCovers]:[],
+        category:incoming.category||'reading',
+        chapterTR:incoming.chapterTR||'',chapterEN:incoming.chapterEN||'',chapterTotal:incoming.chapterTotal||'',
+        note:'',favorited:false,pinned:false,rating:0,updatedAt:Date.now(),
+        releaseDay:incoming.releaseDay||'',releaseDayNote:incoming.releaseDayNote||'',
+        returnDate:incoming.returnDate||'',
+        autoIncrAmt:incoming.autoIncrAmt||0,
+        autoIncrFreq:incoming.autoIncrFreq||'',
+        autoIncrDay:incoming.autoIncrDay||1,
+        autoIncrDate:incoming.autoIncrDate||1,
+        autoIncrNext,
+        autoIncrSkips:[],
+      };
+      series.unshift(newSeries);
       await save();
-      if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
       renderTabs(); renderContent();
       closeSheet('backupOverlay');
-      const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
-      if(_lastBackupBeforeImport&&_lastBackupBeforeImport.length>0){
-        showUndoBanner(`${series.length} seri geri yüklendi!${skipMsg}`,undoImport);
-      } else {
-        showToast('check',`${series.length} seri geri yüklendi!${skipMsg}`);
-      }
-    } catch(err){
-      showToast('warn','Geçersiz yedek dosyası!');
+      showToast('check',`"${name}" kütüphanene eklendi!`);
+    },{okLabel:'Evet, Ekle',danger:false});
+    inputEl.value='';
+    return;
+  }
+
+  // ---- Tam yedek — mevcut kütüphanenin tamamının üzerine yazar (yıkıcı, geri alınabilir) ----
+  const imported=data.series||data;
+  if(!Array.isArray(imported)){ showToast('warn','Geçersiz yedek dosyası!'); inputEl.value=''; return; }
+  showConfirm('Mevcut verilerinin üzerine yazılacak. Emin misin?',async()=>{
+    const {cleaned,skipped}=validateSeriesShape(imported);
+    if(cleaned.length===0){ showToast('warn','Dosyada geçerli seri bulunamadı'); return; }
+    // Geri alınabilmesi için mevcut veriyi bellekte sakla (sayfa açıkken geçerli)
+    _lastBackupBeforeImport=JSON.parse(JSON.stringify(series));
+    series=cleaned;
+    await save();
+    if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
+    renderTabs(); renderContent();
+    closeSheet('backupOverlay');
+    const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
+    if(_lastBackupBeforeImport&&_lastBackupBeforeImport.length>0){
+      showUndoBanner(`${series.length} seri geri yüklendi!${skipMsg}`,undoImport);
+    } else {
+      showToast('check',`${series.length} seri geri yüklendi!${skipMsg}`);
     }
   },{okLabel:'Evet, İçe Aktar'});
-  e.target.value='';
+  inputEl.value='';
 }
 async function undoImport(){
   if(!_lastBackupBeforeImport)return;

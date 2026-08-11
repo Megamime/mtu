@@ -252,7 +252,8 @@ function openDetail(id,skipHistoryOrEvent){
       <div class="lg-topbar">
         <div class="lg-iconbtn lg-glassbtn" onclick="closeDetail()">${ic('chevronLeft',16)}</div>
         <div style="display:flex;gap:8px;">
-          <div class="lg-iconbtn lg-glassbtn" onclick="shareSeriesCard('${s.id}')" title="Paylaş">${ic('share',15)}</div>
+          <div class="lg-iconbtn lg-glassbtn" onclick="shareSeriesCard('${s.id}')" title="Görsel Kart Paylaş">${ic('share',15)}</div>
+          <div class="lg-iconbtn lg-glassbtn" onclick="shareSeriesData('${s.id}')" title="Seri Verisini Aktar (arkadaşın kütüphanesine ekleyebilir)">${ic('box',15)}</div>
           <div class="lg-iconbtn lg-glassbtn" onclick="openQuick('${s.id}')" title="Hızlı Düzenle">${ic('bolt',15)}</div>
         </div>
       </div>
@@ -652,6 +653,53 @@ async function buildShareCardBlob(s){
     try{ canvas.toBlob(blob=>resolve(blob),'image/png',0.95); }
     catch(e){ resolve(null); }
   });
+}
+// ===== Seri verisini paylaş — arkadaşın kendi Megami'sine DOĞRUDAN EKLEYEBİLECEĞİ bir .json
+// dosyası üretir. Kişisel alanlar (not, puan, favori, sabitli) bilerek dışarıda bırakılıyor;
+// bunlar sana özel, arkadaşının kütüphanesine taşınması anlamlı değil. =====
+function _buildSeriesShareData(s){
+  return {
+    type:'megami-series-share',
+    version:1,
+    series:{
+      name:s.name,
+      altNames:[...(s.altNames||[])],
+      fansubList:[...(s.fansubList||[])],
+      cover:s.cover||'',
+      oldCovers:[...(s.oldCovers||[])],
+      category:s.category||'reading',
+      chapterTR:s.chapterTR||'',
+      chapterEN:s.chapterEN||'',
+      chapterTotal:s.chapterTotal||'',
+      releaseDay:s.releaseDay||'',
+      releaseDayNote:s.releaseDayNote||'',
+      returnDate:s.returnDate||'',
+      autoIncrAmt:s.autoIncrAmt||0,
+      autoIncrFreq:s.autoIncrFreq||'',
+      autoIncrDay:s.autoIncrDay||1,
+      autoIncrDate:s.autoIncrDate||1,
+    }
+  };
+}
+async function shareSeriesData(id){
+  const s=series.find(x=>x.id===id); if(!s)return;
+  const payload=_buildSeriesShareData(s);
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const slug=(s.name||'seri').toLowerCase().replace(/[^a-z0-9ğüşıöç]+/gi,'_').slice(0,40);
+  const filename=`megami-seri-${slug}.json`;
+  const text=`${s.name} — Megami'den bir seri. Bu dosyayı Megami'de Ayarlar → Yedekleme → İçe Aktar ile açarsan kütüphanene doğrudan eklenir.`;
+
+  const file=new File([blob],filename,{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:s.name,text}); return; }
+    catch(e){ if(e&&e.name==='AbortError')return; }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  showToast('check','Seri dosyası indirildi — arkadaşına gönderebilirsin!');
 }
 async function shareSeriesCard(id){
   const s=series.find(x=>x.id===id); if(!s)return;
