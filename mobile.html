@@ -8,8 +8,8 @@
 .radial-trigger.open .bar:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
 .radial-backdrop{position:fixed;inset:0;z-index:290;display:none;background:rgba(0,0,0,0);transition:background .25s;}
 .radial-backdrop.open{display:block;background:rgba(0,0,0,.4);}
-.radial-item{position:fixed;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transform:scale(0.2);transition:opacity .2s,transform .2s cubic-bezier(.34,1.4,.64,1);pointer-events:none;z-index:295;-webkit-user-select:none;user-select:none;}
-.radial-item.open{opacity:1;transform:scale(1);pointer-events:auto;}
+.radial-item{position:fixed;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transform:translate(-50%,-27px) scale(0.2);transition:opacity .2s,transform .2s cubic-bezier(.34,1.4,.64,1);pointer-events:none;z-index:295;-webkit-user-select:none;user-select:none;}
+.radial-item.open{opacity:1;transform:translate(-50%,-27px) scale(1);pointer-events:auto;}
 .radial-btn{width:54px;height:54px;border-radius:50%;background:rgba(14,14,22,0.88);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(167,139,250,.25);box-shadow:0 6px 24px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .18s;}.radial-btn:active{transform:scale(.88);}.radial-btn.active-page{border-color:rgba(124,58,237,.7);background:rgba(124,58,237,.22);color:var(--purple3);}.radial-btn.hovered{transform:scale(1.18);background:rgba(124,58,237,.28);border-color:rgba(167,139,250,.6);color:var(--purple3);box-shadow:0 0 20px rgba(124,58,237,.45),0 6px 24px rgba(0,0,0,.55);}.radial-label{font-size:10px;font-weight:600;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9);letter-spacing:.3px;white-space:nowrap;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:3px 9px;border-radius:6px;transition:all .18s;}.radial-item.hovered .radial-label{background:rgba(124,58,237,.5);}
 .radial-item:nth-child(1).open{transition-delay:.00s;}
 .radial-item:nth-child(2).open{transition-delay:.04s;}
@@ -99,8 +99,13 @@ body{background:#0a0612;}
 @keyframes lgPageOut{from{opacity:1;transform:scale(1) translateY(0);}to{opacity:0;transform:scale(.97) translateY(14px);}}
 .lg-bgfixed{position:fixed;inset:0;z-index:-1;transition:background 0.6s ease;}
 .lg-bgfixed::after{content:'';position:absolute;inset:0;backdrop-filter:blur(0px);}
-.lg-glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,0.14);box-shadow:0 8px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.15);}
-.lg-glassbtn{background:rgba(255,255,255,0.1);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(0,0,0,.22);transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
+.lg-glass{background:rgba(28,18,42,0.62);border:1px solid rgba(255,255,255,0.14);box-shadow:0 8px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.15);}
+.lg-glassbtn{background:rgba(28,18,42,0.7);border:1px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(0,0,0,.22);transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
+/* Bulanıklık (backdrop-filter), sayfa giriş animasyonu bitip lg-settled sınıfı eklendikten
+   sonra devreye giriyor. Açılış anında transform animasyonu + çoklu blur katmanı aynı
+   anda render edilirse mobil GPU'da donma hissi oluşuyordu; bu ayrım onu çözer. */
+.lg-page.lg-settled .lg-glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);}
+.lg-page.lg-settled .lg-glassbtn{background:rgba(255,255,255,0.1);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);}
 .lg-glassbtn:active{transform:scale(.93);}
 .lg-topbar{position:sticky;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 8px;display:flex;justify-content:space-between;align-items:center;z-index:20;}
 .lg-iconbtn{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;}
@@ -290,6 +295,23 @@ function openDetail(id,skipHistoryOrEvent){
     </div>`;
   document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabs').style.display='none';
+
+  // Bulanıklık katmanlarını, sayfa giriş animasyonu (lgPageIn) tamamlanana kadar erteliyoruz.
+  // Aksi halde transform animasyonu + 7-8 backdrop-filter katmanı aynı anda render edilip
+  // özellikle orta/düşük segment telefonlarda görünür bir donmaya yol açıyordu.
+  const lgPageEl=document.getElementById('lgPage');
+  if(lgPageEl){
+    const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduceMotion){
+      lgPageEl.classList.add('lg-settled');
+    } else {
+      const settle=()=>lgPageEl.classList.add('lg-settled');
+      lgPageEl.addEventListener('animationend',settle,{once:true});
+      // Güvenlik ağı: bazı tarayıcılarda animationend gecikebilir/kaçabilir, animasyon
+      // süresinden (.38s) biraz uzun bir zaman aşımıyla her durumda bulanıklığın açılmasını garanti ediyoruz.
+      setTimeout(settle,420);
+    }
+  }
 
   // Kart tıklamasından geldiysek kapak görseline kısa bir "büyüyerek beliren" animasyon
   // uygula; bu, sayfanın kendi giriş animasyonuyla (lgPageIn) birlikte oynayarak

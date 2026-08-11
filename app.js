@@ -1800,8 +1800,11 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-var RADIAL_ANGLES=[160,115,90,65,20];
-var RADIAL_R=100;
+// Eşit aralıklı 5 açı (~37.5° arayla) — eskiden ortadaki üç öğe (Arama/Seri Ekle/Ekstra)
+// 25°'lik dar aralıklarla birbirine giriyordu. R de büyütüldü ki buton+etiket genişliği
+// (~54-90px) komşu öğelerle çakışmasın.
+var RADIAL_ANGLES=[165,127,90,53,15];
+var RADIAL_R=120;
 
 var radialItemCenters=[];
 
@@ -1823,8 +1826,9 @@ function buildRadialItems(){
     var angleRad=RADIAL_ANGLES[i]*Math.PI/180;
     var ix=cx+RADIAL_R*Math.cos(angleRad);
     var iy=cy-RADIAL_R*Math.sin(angleRad);
-    // Ekran sınırı kontrolü
-    var margin=40;
+    // Ekran sınırı kontrolü — etiketler butondan geniş olabildiği için (~90px'e kadar)
+    // yarısı kadar (45-50px) pay bırakıyoruz, aksi halde ekran kenarındaki etiketler taşabilir.
+    var margin=50;
     ix=Math.max(margin, Math.min(sw-margin, ix));
     radialItemCenters.push({x:ix,y:iy,r:40});
 
