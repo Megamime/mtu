@@ -1800,10 +1800,8 @@ var radialDefs=[
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 
-// Eşit aralıklı 5 açı (~37.5° arayla) — eskiden ortadaki üç öğe (Arama/Seri Ekle/Ekstra)
-// 25°'lik dar aralıklarla birbirine giriyordu. R de büyütüldü ki buton+etiket genişliği
-// (~54-90px) komşu öğelerle çakışmasın.
-var RADIAL_ANGLES=[165,127,90,53,15];
+// Arama ve Ekstra, kullanıcı isteğiyle orta-üste (Seri Ekle) doğru çok hafif kaydırıldı (127->124, 53->56).
+var RADIAL_ANGLES=[165,124,90,56,15];
 var RADIAL_R=120;
 
 var radialItemCenters=[];
