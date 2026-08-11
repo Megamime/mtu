@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/><meta name="theme-color" content="#050507"/><meta name="apple-mobile-web-app-capable" content="yes"/><meta name="mobile-web-app-capable" content="yes"/><meta name="format-detection" content="telephone=no"/><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/><meta name="apple-mobile-web-app-title" content="Megami"/><link rel="manifest" href="manifest.json"/><link rel="icon" href="icon-192.png"/><link rel="apple-touch-icon" href="icon-192.png"/><title>Megami</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/><style>:root{--black:#050507;--black2:#09090e;--black3:#0e0e16;--black4:#14141f;--black5:#1a1a28;--line:#1e1e2e;--line2:#27273a;--purple:#7c3aed;--purple2:#8b5cf6;--purple3:#a78bfa;--purple4:#c4b5fd;--purpleG:rgba(124,58,237,0.12);--purpleGS:rgba(124,58,237,0.05);--text:#e8e4f5;--text2:#9490b8;--text3:#4e4a6a;--gold:#c9a227;--gold2:rgba(201,162,39,0.15);--pin:#e85d75;--pinG:rgba(232,93,117,0.15);--green:#34d399;--nav-h:70px;--r:12px;}[data-theme="light"]{--black:#f7f5fb;--black2:#ffffff;--black3:#f0edf7;--black4:#ffffff;--black5:#ece7f6;--line:#e3ddf0;--line2:#d6cdec;--purple:#7c3aed;--purple2:#7c3aed;--purple3:#6d28d9;--purple4:#5b21b6;--purpleG:rgba(124,58,237,0.08);--purpleGS:rgba(124,58,237,0.04);--text:#211c33;--text2:#5d5578;--text3:#8981a3;--gold:#a97e0a;--gold2:rgba(169,126,10,0.12);--pin:#c73e5c;--pinG:rgba(199,62,92,0.1);--green:#0d9668;}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}html,body{height:100%;height:-webkit-fill-available;overflow:hidden;background:var(--black);color:var(--text);font-family:'Outfit',sans-serif;-webkit-font-smoothing:antialiased;}#app{height:100dvh;min-height:-webkit-fill-available;display:flex;flex-direction:column;overflow:hidden;position:relative;}.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:drift ease-in-out infinite alternate;}.orb1{width:400px;height:400px;top:-130px;left:-110px;background:radial-gradient(ellipse,rgba(124,58,237,0.13) 0%,transparent 70%);animation-duration:22s;}.orb2{width:280px;height:280px;bottom:-90px;right:-70px;background:radial-gradient(ellipse,rgba(139,92,246,0.07) 0%,transparent 70%);animation-duration:28s;animation-direction:alternate-reverse;}.orb3{width:220px;height:220px;top:38%;left:55%;background:radial-gradient(ellipse,rgba(167,139,250,0.05) 0%,transparent 70%);animation-duration:34s;}@keyframes drift{from{transform:translate(0,0) scale(1);}to{transform:translate(28px,18px) scale(1.07);}}.header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--line);background:rgba(5,5,7,0.93);backdrop-filter:blur(28px);}[data-theme="light"] .header,[data-theme="light"] .search-wrap,[data-theme="light"] .nav{background:rgba(247,245,251,0.93);}.logo{display:flex;align-items:center;gap:8px;font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--text);user-select:none;cursor:default;}.logo-mark{width:28px;height:28px;background:var(--purple);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 0 14px rgba(124,58,237,0.45);transition:transform .3s;}.logo-mark:active{transform:rotate(20deg) scale(1.1);}.hdr-right{display:flex;gap:6px;}.hdr-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line2);background:var(--black4);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;}.hdr-btn:active{transform:scale(.88);color:var(--purple3);}.streak-badge{display:flex;align-items:center;gap:4px;background:var(--purpleG);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--purple3);cursor:pointer;}.search-wrap{position:relative;z-index:10;padding:8px 14px;background:rgba(5,5,7,0.78);backdrop-filter:blur(14px);}.search-box{position:relative;}.search-input{width:100%;background:var(--black4);border:1px solid var(--line);border-radius:10px;padding:8px 13px 8px 36px;color:var(--text);font-size:16px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}.search-input::placeholder{color:var(--text3);}.search-input:focus{border-color:var(--purple2);box-shadow:0 0 0 3px rgba(124,58,237,.1);}.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;}.cat-tabs{position:relative;z-index:10;display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;}.cat-tabs::-webkit-scrollbar{display:none;}.cat-tabs-row{position:relative;z-index:10;display:flex;align-items:center;gap:6px;padding:0 14px 9px;overflow-x:auto;scrollbar-width:none;}.cat-tabs-row::-webkit-scrollbar{display:none;}.cat-tabs-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-#homeSortSelect{flex:1;min-width:90px;}.cat-tab{flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--text3);font-size:11px;font-weight:500;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;}.cat-tab.active{background:var(--black5);border-color:var(--purple);color:var(--purple3);}.cat-tab:active{transform:scale(.93);}.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overflow-x:clip;position:relative;z-index:5;padding:8px 0 160px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;}.content::-webkit-scrollbar{width:3px;}.content::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px;}.flat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 12px;}.home-sec{margin-bottom:4px;}.sec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;}.sec-header-left{display:flex;align-items:center;gap:6px;}.sec-title{font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px;}.sec-count-pill{background:var(--black5);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;font-size:9.5px;color:var(--text3);}.sec-see-all{font-size:11px;color:var(--purple3);cursor:pointer;padding:3px 6px;border-radius:6px;transition:background .15s;}.sec-see-all:active{background:var(--purpleG);}.carousel-wrap{position:relative;}.carousel-arrow{position:absolute;top:35%;z-index:10;width:28px;height:28px;border-radius:50%;background:rgba(20,20,31,0.92);border:1px solid var(--line2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px);transition:all .18s;box-shadow:0 2px 8px rgba(0,0,0,.5);}.carousel-arrow:active{background:var(--purpleG);color:var(--purple3);}.carousel-arrow.left{left:4px;}.carousel-arrow.right{right:4px;}.carousel{display:flex;gap:9px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scroll-padding-left:14px;}.carousel::-webkit-scrollbar{display:none;}.series-card{flex-shrink:0;width:120px;scroll-snap-align:start;background:var(--black4);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .2s,transform .18s;animation:cardIn .3s cubic-bezier(.34,1.4,.64,1) both;position:relative;}@keyframes cardIn{from{opacity:0;transform:translateY(8px) scale(.93)}to{opacity:1;transform:translateY(0) scale(1)}}.series-card:active{transform:scale(.94);}.series-card.pinned{border-color:var(--pin);}.series-card.favorited{border-color:var(--gold);}.series-card.drag-over{outline:2px dashed var(--purple2);outline-offset:2px;transform:scale(1.03);}.card-cover-wrap{position:relative;}.card-cover{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--black3);image-rendering:auto;}.card-cover-ph{width:100%;aspect-ratio:2/3;background:linear-gradient(160deg,var(--black3),var(--black5));display:flex;align-items:center;justify-content:center;color:var(--text3);}.card-overlay-badges{position:absolute;top:5px;left:5px;right:5px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;}.pin-badge{background:var(--pin);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#fff;}.fav-badge{background:var(--gold);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#000;}.card-quick-btn{position:absolute;bottom:0;right:0;width:32px;height:32px;border-radius:10px 0 0 0;background:rgba(9,9,14,0.88);border-top:1px solid var(--line2);border-left:1px solid var(--line2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;backdrop-filter:blur(4px);transition:all .15s;}.card-quick-btn:active{background:var(--purpleG);color:var(--purple3);}.card-progress{height:2px;background:var(--line);}.card-progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple3));}.card-body{padding:7px 8px 8px;}.card-cat-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 5px;border-radius:4px;font-size:8px;font-weight:600;margin-bottom:4px;}.card-title{font-size:10.5px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.card-ch{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text2);}.b-reading{background:rgba(124,58,237,.18);color:#a78bfa;}.b-current{background:rgba(52,211,153,.15);color:#34d399;}.b-current-en{background:rgba(56,189,248,.15);color:#38bdf8;}.b-current-both{background:rgba(167,139,250,.18);color:#a78bfa;}.b-stockpile{background:rgba(251,191,36,.13);color:#f59e0b;}.b-paused{background:rgba(100,116,139,.18);color:#94a3b8;}.b-dropped{background:rgba(239,68,68,.14);color:#f87171;}.b-completed{background:rgba(59,130,246,.15);color:#60a5fa;}.b-planned{background:rgba(236,72,153,.13);color:#f472b6;}.b-season{background:rgba(167,139,250,.14);color:#c4b5fd;}:root{--nav-h:0px;}
+.cat-tab{flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--text3);font-size:11px;font-weight:500;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;}.cat-tab.active{background:var(--black5);border-color:var(--purple);color:var(--purple3);}.cat-tab:active{transform:scale(.93);}.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overflow-x:clip;position:relative;z-index:5;padding:8px 0 160px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;}.content::-webkit-scrollbar{width:3px;}.content::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px;}.flat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 12px;}.home-sec{margin-bottom:4px;}.sec-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;}.sec-header-left{display:flex;align-items:center;gap:6px;}.sec-title{font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px;}.sec-count-pill{background:var(--black5);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;font-size:9.5px;color:var(--text3);}.sec-see-all{font-size:11px;color:var(--purple3);cursor:pointer;padding:3px 6px;border-radius:6px;transition:background .15s;}.sec-see-all:active{background:var(--purpleG);}.carousel-wrap{position:relative;}.carousel-arrow{position:absolute;top:35%;z-index:10;width:28px;height:28px;border-radius:50%;background:rgba(20,20,31,0.92);border:1px solid var(--line2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px);transition:all .18s;box-shadow:0 2px 8px rgba(0,0,0,.5);}.carousel-arrow:active{background:var(--purpleG);color:var(--purple3);}.carousel-arrow.left{left:4px;}.carousel-arrow.right{right:4px;}.carousel{display:flex;gap:9px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scroll-padding-left:14px;}.carousel::-webkit-scrollbar{display:none;}.series-card{flex-shrink:0;width:120px;scroll-snap-align:start;background:var(--black4);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .2s,transform .18s;animation:cardIn .3s cubic-bezier(.34,1.4,.64,1) both;position:relative;}@keyframes cardIn{from{opacity:0;transform:translateY(8px) scale(.93)}to{opacity:1;transform:translateY(0) scale(1)}}.series-card:active{transform:scale(.94);}.series-card.pinned{border-color:var(--pin);}.series-card.favorited{border-color:var(--gold);}.series-card.drag-over{outline:2px dashed var(--purple2);outline-offset:2px;transform:scale(1.03);}.card-cover-wrap{position:relative;}.card-cover{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--black3);image-rendering:auto;}.card-cover-ph{width:100%;aspect-ratio:2/3;background:linear-gradient(160deg,var(--black3),var(--black5));display:flex;align-items:center;justify-content:center;color:var(--text3);}.card-overlay-badges{position:absolute;top:5px;left:5px;right:5px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;}.pin-badge{background:var(--pin);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#fff;}.fav-badge{background:var(--gold);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#000;}.card-quick-btn{position:absolute;bottom:0;right:0;width:32px;height:32px;border-radius:10px 0 0 0;background:rgba(9,9,14,0.88);border-top:1px solid var(--line2);border-left:1px solid var(--line2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;backdrop-filter:blur(4px);transition:all .15s;}.card-quick-btn:active{background:var(--purpleG);color:var(--purple3);}.card-progress{height:2px;background:var(--line);}.card-progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple3));}.card-body{padding:7px 8px 8px;}.card-cat-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 5px;border-radius:4px;font-size:8px;font-weight:600;margin-bottom:4px;}.card-title{font-size:10.5px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}.card-ch{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text2);}.b-reading{background:rgba(124,58,237,.18);color:#a78bfa;}.b-current{background:rgba(52,211,153,.15);color:#34d399;}.b-current-en{background:rgba(56,189,248,.15);color:#38bdf8;}.b-current-both{background:rgba(167,139,250,.18);color:#a78bfa;}.b-stockpile{background:rgba(251,191,36,.13);color:#f59e0b;}.b-paused{background:rgba(100,116,139,.18);color:#94a3b8;}.b-dropped{background:rgba(239,68,68,.14);color:#f87171;}.b-completed{background:rgba(59,130,246,.15);color:#60a5fa;}.b-planned{background:rgba(236,72,153,.13);color:#f472b6;}.b-season{background:rgba(167,139,250,.14);color:#c4b5fd;}:root{--nav-h:0px;}
 .radial-trigger{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:linear-gradient(155deg,var(--purple2),var(--purple));box-shadow:0 0 28px rgba(124,58,237,.55),0 4px 18px rgba(0,0,0,.65);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;z-index:300;transition:box-shadow .25s;border:2px solid rgba(167,139,250,.3);-webkit-user-select:none;user-select:none;touch-action:none;}
 .radial-trigger.open{box-shadow:0 0 36px rgba(124,58,237,.75),0 4px 22px rgba(0,0,0,.7);}
 .radial-trigger .bar{width:22px;height:2px;background:#fff;border-radius:2px;transition:all .28s cubic-bezier(.4,0,.2,1);transform-origin:center;}
@@ -22,9 +22,9 @@
 #addOverlay.closing{animation:lgPageOut .28s cubic-bezier(.4,0,.6,1) forwards;}
 #addOverlay .sheet{width:100%;max-height:none;background:transparent;border-radius:0;border:none;animation:none;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px));}
 #addOverlay .sheet-handle{display:none;}
-#addOverlay .sheet-header{position:sticky;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 12px;border-bottom:none;background:linear-gradient(180deg,rgba(18,8,31,.85) 60%,transparent);backdrop-filter:blur(8px);z-index:5;}
+#addOverlay .sheet-header{position:sticky;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 12px;border-bottom:none;background:linear-gradient(180deg,rgba(18,8,31,.93) 60%,transparent);z-index:5;}
 #addOverlay .sheet-title{font-size:17px;color:#fff;}
-#addOverlay .close-btn{width:36px;height:36px;border-radius:18px;background:rgba(255,255,255,0.1);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,0.18);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,0.22);}
+#addOverlay .close-btn{width:36px;height:36px;border-radius:18px;background:rgba(28,18,42,0.72);border:1px solid rgba(255,255,255,0.18);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,0.22);}
 #addOverlay .form-body{padding:6px 16px 16px;}
 #addOverlay .form-label{color:rgba(255,255,255,.55);}
 #addOverlay .form-input,#addOverlay .form-select,#addOverlay .form-textarea{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#fff;}
@@ -32,9 +32,9 @@
 #addOverlay .form-input:focus,#addOverlay .form-select:focus,#addOverlay .form-textarea:focus{border-color:rgba(124,58,237,.6);box-shadow:0 0 0 3px rgba(124,58,237,.12);}
 #addOverlay .form-select option{background:#1a0f2e;color:#fff;}
 #addOverlay .btn-primary{background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 4px 20px rgba(124,58,237,.35);}
-#addOverlay .btn-ghost{background:rgba(255,255,255,0.08);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,.85);}
+#addOverlay .btn-ghost{background:rgba(28,18,42,0.65);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,.85);}
 #addOverlay .btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#fca5a5;}
-#addOverlay .btn-secondary{background:rgba(255,255,255,0.07);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,.75);}
+#addOverlay .btn-secondary{background:rgba(28,18,42,0.62);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,.75);}
 #addOverlay .btn-secondary.fav-active{background:rgba(201,162,39,.2);border-color:rgba(201,162,39,.5);color:#e8c766;}
 #addOverlay .btn-secondary.pin-active{background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.5);color:#c4b5fd;}
 #addOverlay .alt-tag,#addOverlay .fansub-tag{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.85);}
@@ -43,7 +43,10 @@
 #addOverlay .file-btn{background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.18);color:rgba(255,255,255,.5);}
 #addOverlay .star-pick{color:rgba(255,255,255,.25);}
 #addOverlay .star-pick.lit{color:#f0c869;}
-#addOverlay .autocomplete-dropdown{background:rgba(30,15,50,.92);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.16);}
+#addOverlay .autocomplete-dropdown{background:rgba(24,12,38,.97);border:1px solid rgba(255,255,255,.16);}
+#addOverlay.settled .close-btn{background:rgba(255,255,255,0.1);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+#addOverlay.settled .btn-ghost{background:rgba(255,255,255,0.08);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+#addOverlay.settled .btn-secondary{background:rgba(255,255,255,0.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
 #addOverlay .autocomplete-item{color:rgba(255,255,255,.75);}
 #addOverlay .autocomplete-item:hover,#addOverlay .autocomplete-item.active{background:rgba(124,58,237,.15);color:#c4b5fd;}
 /* ===== Ana sayfa + İstatistik: Liquid Glass genel dönüşüm ===== */
@@ -92,18 +95,18 @@ body{background:#0a0612;}
 #mainContent [style*="background:var(--line)"]{background:rgba(255,255,255,.1)!important;}
 .summary-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);}
 
-/* ===== Liquid Glass detay sayfası (mobile'a özel) ===== */
-.lg-page{position:fixed;inset:0;z-index:250;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#0a0612;animation:lgPageIn .38s cubic-bezier(.22,.9,.32,1);}
-.lg-page.closing{animation:lgPageOut .3s cubic-bezier(.4,0,.6,1) forwards;}
-@keyframes lgPageIn{from{opacity:0;transform:scale(.97) translateY(14px);}to{opacity:1;transform:scale(1) translateY(0);}}
-@keyframes lgPageOut{from{opacity:1;transform:scale(1) translateY(0);}to{opacity:0;transform:scale(.97) translateY(14px);}}
+/* ===== Liquid Glass detay sayfası (mobile'a özel) — artık Ana Sayfa/İstatistik ile
+   aynı şekilde #mainContent içine gömülen normal bir "sekme" içeriği. Önceden tam ekran
+   sabit bir katman (pencere/modal) olarak açılıp kapanıyordu; artık diğer sekmeler gibi
+   anında içerik değişimi ile çalışıyor, ayrı bir giriş/çıkış animasyonu yok. */
+.lg-page{position:relative;background:#0a0612;animation:lgPageIn .38s cubic-bezier(.22,.9,.32,1);}
 .lg-bgfixed{position:fixed;inset:0;z-index:-1;transition:background 0.6s ease;}
 .lg-bgfixed::after{content:'';position:absolute;inset:0;backdrop-filter:blur(0px);}
 .lg-glass{background:rgba(28,18,42,0.62);border:1px solid rgba(255,255,255,0.14);box-shadow:0 8px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.15);}
 .lg-glassbtn{background:rgba(28,18,42,0.7);border:1px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(0,0,0,.22);transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
-/* Bulanıklık (backdrop-filter), sayfa giriş animasyonu bitip lg-settled sınıfı eklendikten
-   sonra devreye giriyor. Açılış anında transform animasyonu + çoklu blur katmanı aynı
-   anda render edilirse mobil GPU'da donma hissi oluşuyordu; bu ayrım onu çözer. */
+/* Bulanıklık, sayfa giriş animasyonu bitip lg-settled sınıfı eklenene kadar erteleniyor —
+   aksi halde transform animasyonu + çoklu blur katmanı aynı anda render edilip eski donma
+   sorunu geri dönüyordu. */
 .lg-page.lg-settled .lg-glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);}
 .lg-page.lg-settled .lg-glassbtn{background:rgba(255,255,255,0.1);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);}
 .lg-glassbtn:active{transform:scale(.93);}
@@ -140,7 +143,7 @@ body{background:#0a0612;}
 .lg-log-dot{width:6px;height:6px;border-radius:50%;background:#a78bfa;flex-shrink:0;}
 .lg-log-text{font-size:11.5px;color:rgba(255,255,255,.8);flex:1;}
 .lg-log-time{font-size:10px;color:rgba(255,255,255,.45);}
-@media (prefers-reduced-motion: reduce){.lg-page,.lg-page.closing{animation:none!important;}}
+@media (prefers-reduced-motion: reduce){#addOverlay,#addOverlay.closing,.lg-page{animation:none!important;}}
 /* expandTags/expandOldCovers/expandLog gibi fonksiyonlar eski sınıf isimlerini üretmeye devam ediyor;
    Liquid Glass sayfası kapsamında bunları görsel olarak uyumlu hale getiriyoruz. */
 .lg-page .alt-tag,.lg-page .fansub-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:7px;font-size:10.5px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);}
@@ -161,7 +164,7 @@ body{background:#0a0612;}
 .lg-page .countdown-icon{color:#a78bfa;}
 </style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div>
 Megami
-</div><div class="hdr-right"><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button><select class="form-select" id="homeSortSelect" onchange="setSort(this.value)"></select></div></div><div class="content" id="mainContent"></div><div id="lgDetailHost"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
+</div><div class="hdr-right"><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
 <div id="radialMenu"></div>
 <div class="radial-trigger" id="radialTrigger">
   <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -211,31 +214,24 @@ init();
 function renderContent(){
   if(currentPage==='home')renderHome();
   else if(currentPage==='stats')renderStats();
-  // currentPage==='detail' ise lgDetailHost zaten openDetail() tarafından dolduruldu, tekrar render etmeye gerek yok.
+  // currentPage==='detail' ise içerik zaten openDetail() tarafından #mainContent'e yazıldı,
+  // diğer sekmelerde olduğu gibi burada tekrar render etmeye gerek yok.
 }
 
-// ===== Liquid Glass detay sayfası (mobile'a özel) =====
+// ===== Seri detay sayfası (mobile'a özel Liquid Glass görünüm) =====
+// Not: Artık Ana Sayfa/İstatistik ile birebir aynı mekanizmayla çalışıyor — içerik doğrudan
+// #mainContent'e yazılıyor, ayrı bir sabit katman/pencere ve giriş-çıkış animasyonu yok.
 function openDetail(id,skipHistoryOrEvent){
   const s=series.find(x=>x.id===id); if(!s) return;
   if(s.newChapter){ s.newChapter=false; save(); }
   const skipHistory=skipHistoryOrEvent===true;
 
   // Sayfa zaten bu seri için açıksa (favorileme/sabitleme gibi küçük bir aksiyon sonrası
-  // çağrıldıysak), tüm sayfayı sıfırdan inşa etmek yerine sadece değişen kısımları
-  // güncelliyoruz. Bu, backdrop-filter/animasyonların gereksiz yere tekrar tetiklenip
-  // telefonu ısıtmasını ve donma hissini önler.
+  // çağrıldıysak), tüm sayfayı sıfırdan inşa etmek yerine sadece değişen kısımları güncelliyoruz.
   const existingPage=document.getElementById('lgPage');
   if(skipHistory&&existingPage&&currentDetailId===id){
     updateDetailPageInPlace(s);
     return;
-  }
-  // Kart tıklamasından gelen gerçek bir olay varsa, tıklanan kapak görselinin ekran
-  // konumunu alıp FLIP tarzı bir "genişleme" geçişi için kullanıyoruz.
-  let sourceRect=null;
-  if(skipHistoryOrEvent&&skipHistoryOrEvent.currentTarget){
-    const cardEl=skipHistoryOrEvent.currentTarget;
-    const coverEl=cardEl.querySelector('.card-cover,.card-cover-ph');
-    if(coverEl)sourceRect=coverEl.getBoundingClientRect();
   }
   if(currentPage!=='detail'){
     _detailReturnState={page:currentPage};
@@ -249,8 +245,8 @@ function openDetail(id,skipHistoryOrEvent){
     ?`<img class="lg-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
     :`<div class="lg-cover-ph">${ic('img',30)}</div>`;
 
-  const host=document.getElementById('lgDetailHost');
-  host.innerHTML=`
+  const el=document.getElementById('mainContent');
+  el.innerHTML=`
     <div class="lg-page" id="lgPage">
       <div class="lg-bgfixed" id="lgBgFixed" style="background:linear-gradient(165deg,#4a1454 0%,#2a1040 40%,#12081f 75%,#08050f 100%);"></div>
       <div class="lg-topbar">
@@ -293,12 +289,12 @@ function openDetail(id,skipHistoryOrEvent){
         ${logH?`<div class="lg-card lg-glass">${logH}</div>`:''}
       </div>
     </div>`;
+  el.scrollTop=0;
   document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabs').style.display='none';
 
-  // Bulanıklık katmanlarını, sayfa giriş animasyonu (lgPageIn) tamamlanana kadar erteliyoruz.
-  // Aksi halde transform animasyonu + 7-8 backdrop-filter katmanı aynı anda render edilip
-  // özellikle orta/düşük segment telefonlarda görünür bir donmaya yol açıyordu.
+  // Bulanıklık katmanlarını, sayfa giriş animasyonu (lgPageIn) bitene kadar erteliyoruz —
+  // aksi halde transform animasyonu + çoklu backdrop-filter aynı anda render edilip donmaya yol açıyor.
   const lgPageEl=document.getElementById('lgPage');
   if(lgPageEl){
     const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -307,27 +303,7 @@ function openDetail(id,skipHistoryOrEvent){
     } else {
       const settle=()=>lgPageEl.classList.add('lg-settled');
       lgPageEl.addEventListener('animationend',settle,{once:true});
-      // Güvenlik ağı: bazı tarayıcılarda animationend gecikebilir/kaçabilir, animasyon
-      // süresinden (.38s) biraz uzun bir zaman aşımıyla her durumda bulanıklığın açılmasını garanti ediyoruz.
-      setTimeout(settle,420);
-    }
-  }
-
-  // Kart tıklamasından geldiysek kapak görseline kısa bir "büyüyerek beliren" animasyon
-  // uygula; bu, sayfanın kendi giriş animasyonuyla (lgPageIn) birlikte oynayarak
-  // "gerçekten bir yere gittin" hissini güçlendirir.
-  if(sourceRect&&s.cover){
-    const targetImg=host.querySelector('.lg-cover-img');
-    if(targetImg){
-      targetImg.style.transition='none';
-      targetImg.style.transform='scale(0.55)';
-      targetImg.style.opacity='0';
-      // Bir sonraki frame'de gerçek boyutuna animasyonlu geçiş yaptır
-      requestAnimationFrame(()=>{
-        targetImg.style.transition='transform .42s cubic-bezier(.22,.9,.32,1), opacity .3s ease';
-        targetImg.style.transform='scale(1)';
-        targetImg.style.opacity='1';
-      });
+      setTimeout(settle,420); // animationend kaçarsa güvenlik ağı
     }
   }
 
@@ -379,25 +355,17 @@ function updateDetailPageInPlace(s){
   }
 }
 function closeDetail(){
+  // Artık Ana Sayfa/İstatistik sekmeleri arasında geçiş (switchPage) ile birebir aynı
+  // mekanizma: anında içerik değişimi, ayrı bir kapanış animasyonu/katmanı yok.
   const returnPage=(_detailReturnState&&_detailReturnState.page)||'home';
   _detailReturnState=null;
   currentDetailId=null;
-  const page=document.getElementById('lgPage');
-  const finish=()=>{
-    currentPage=returnPage;
-    history.pushState({},'',location.pathname);
-    document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
-    document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
-    document.getElementById('lgDetailHost').innerHTML='';
-    renderContent();
-    if(typeof updateRadialActive==='function') updateRadialActive();
-  };
-  if(page){
-    page.classList.add('closing');
-    setTimeout(finish,280);
-  } else {
-    finish();
-  }
+  currentPage=returnPage;
+  history.pushState({},'',location.pathname);
+  document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
+  document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
+  renderContent();
+  if(typeof updateRadialActive==='function') updateRadialActive();
 }
 function shareSeriesCard(id){
   const s=series.find(x=>x.id===id); if(!s)return;
@@ -414,7 +382,20 @@ let _formPageWasOpen=false;
 function onAddOverlayShown(){
   const wasAlreadyOpen=_formPageWasOpen;
   _formPageWasOpen=true;
-  document.getElementById('addOverlay').classList.remove('closing');
+  const el=document.getElementById('addOverlay');
+  el.classList.remove('closing');
+  // Bulanıklık katmanlarını (close-btn/btn-ghost/btn-secondary), sayfa giriş animasyonu
+  // (lgPageIn) bitene kadar erteliyoruz — aksi halde transform animasyonu + çoklu
+  // backdrop-filter aynı anda render edilip "Düzenle"ye basınca birkaç saniyelik donmaya yol açıyordu.
+  el.classList.remove('settled');
+  const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion){
+    el.classList.add('settled');
+  } else {
+    const settle=()=>el.classList.add('settled');
+    el.addEventListener('animationend',settle,{once:true});
+    setTimeout(settle,420); // animationend kaçarsa güvenlik ağı
+  }
   if(!wasAlreadyOpen){
     const qs=editingId?('edit='+encodeURIComponent(editingId)):'form=add';
     const targetUrl=location.pathname+'?'+qs;
@@ -427,6 +408,9 @@ function onAddOverlayHide(){
   const el=document.getElementById('addOverlay');
   if(!el||el.classList.contains('hidden')){_formPageWasOpen=false;return;}
   _formPageWasOpen=false;
+  // Kapanış animasyonu başlamadan bulanıklığı kaldırıyoruz — zaten tamamen bulanıklaşmış
+  // bir sayfayı transformla dışarı kaydırmak da aynı donma sorununu tersten yaratıyordu.
+  el.classList.remove('settled');
   el.classList.add('closing');
   setTimeout(()=>{
     el.classList.add('hidden');

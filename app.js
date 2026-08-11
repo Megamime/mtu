@@ -577,7 +577,7 @@ function syncCatTabsActions(){
   if(!bar)return; // mobile'da bu element yok, orada eski inline davranış kullanılır
   document.getElementById('selBtnLabel').innerHTML=`${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}`;
   const sel=document.getElementById('homeSortSelect');
-  sel.innerHTML=Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('');
+  if(sel)sel.innerHTML=Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join(''); // mobile.html'de artık bu select yok
 }
 function renderHome(){
   const el=document.getElementById('mainContent');
