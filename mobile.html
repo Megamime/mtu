@@ -406,20 +406,105 @@ function _shareCardWrapText(ctx,text,maxWidth,maxLines){
   return lines;
 }
 async function buildShareCardBlob(s){
-  const W=1080,H=1350;
+  const W=1080;
+
+  // ÖNEMLİ: Sayfa Google Fonts'tan Playfair Display'in SADECE 700 ağırlığını yüklüyor
+  // (bkz. <link ...family=Playfair+Display:wght@700>). Önceki sürümde başlık için 800
+  // isteniyordu — yüklü olmayan bir ağırlık istenince tarayıcı tamamen farklı bir yedek
+  // fonta düşüyor, bu da satır yüksekliklerini bozup alt bölümlerle çakışmaya yol açıyordu.
+  // Şimdi her yerde gerçekten yüklü olan ağırlıklar kullanılıyor.
+  try{
+    await Promise.all([
+      document.fonts.load("700 54px 'Playfair Display'"),
+      document.fonts.load("700 40px 'Playfair Display'"),
+      document.fonts.load("700 34px 'Outfit'"),
+      document.fonts.load("600 30px 'Outfit'"),
+      document.fonts.load("600 26px 'Outfit'"),
+      document.fonts.load("600 24px 'Outfit'"),
+      document.fonts.load("600 22px 'Outfit'"),
+      document.fonts.load("500 26px 'Outfit'")
+    ]);
+  }catch(e){}
+
+  // ---- Ölçüm: metin genişliklerini hesaplamak için gerçek çizim yapmayan geçici context ----
+  const meas=document.createElement('canvas').getContext('2d');
+
+  // Başlık — çok uzun/tek kelimelik isimlerde bile taşmasın diye gerekirse fontu küçültüyoruz
+  let nameFontSize=54;
+  meas.font=`700 ${nameFontSize}px 'Playfair Display',serif`;
+  let nameLines=_shareCardWrapText(meas,s.name,W-180,2);
+  while(nameFontSize>34&&nameLines.some(l=>meas.measureText(l).width>W-180)){
+    nameFontSize-=4;
+    meas.font=`700 ${nameFontSize}px 'Playfair Display',serif`;
+    nameLines=_shareCardWrapText(meas,s.name,W-180,2);
+  }
+
+  const cat=CATS[s.category]||CATS.reading;
+  const catLabel=cat.label.toUpperCase();
+  meas.font="600 24px 'Outfit',sans-serif";
+  const catW=meas.measureText(catLabel).width+40;
+
+  // Alternatif adlar — sığdığı kadarını göster, kalanını "+N" ile özetle
+  const altNames=(s.altNames||[]).filter(Boolean);
+  let altLine='';
+  if(altNames.length){
+    meas.font="500 26px 'Outfit',sans-serif";
+    const maxAltW=W-200;
+    for(let n=altNames.length;n>=1;n--){
+      const remaining=altNames.length-n;
+      const candidate=altNames.slice(0,n).join(' · ')+(remaining>0?`  +${remaining}`:'');
+      if(meas.measureText(candidate).width<=maxAltW||n===1){ altLine=candidate; break; }
+    }
+    while(meas.measureText(altLine).width>maxAltW&&altLine.length>3) altLine=altLine.slice(0,-2)+'…';
+  }
+
+  // Çeviri/fansub ekibi — küçük rozet çipleri (en fazla 3 + "+N")
+  const fansubs=(s.fansubList||[]).filter(Boolean);
+  const fansubChips=fansubs.slice(0,3);
+  const fansubExtra=fansubs.length-fansubChips.length;
+  meas.font="600 22px 'Outfit',sans-serif";
+  const chipPadX=16,chipGap=10,chipH=40;
+  const chipLabels=fansubChips.slice();
+  if(fansubExtra>0)chipLabels.push('+'+fansubExtra);
+  const chipWidths=chipLabels.map(t=>meas.measureText(t).width+chipPadX*2);
+  const chipsRowW=chipWidths.reduce((a,b)=>a+b,0)+chipGap*Math.max(0,chipWidths.length-1);
+
+  const chTR=parseInt(s.chapterTR)||0, total=parseInt(s.chapterTotal)||0;
+  const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
+  meas.font="600 30px 'Outfit',sans-serif";
+  const chapterText=`Bölüm ${chTR}${total>0?' / '+total:''}`;
+  let chapterFontSize=30;
+  if(chTR>0&&meas.measureText(chapterText).width>W-140){
+    // Çok büyük bölüm numaralarında (ör. 4 haneli) taşmayı önlemek için otomatik küçült
+    chapterFontSize=26;
+    meas.font=`600 ${chapterFontSize}px 'Outfit',sans-serif`;
+  }
+
+  // ---- Dikey yerleşim planı: her blok kendi konumunu belirliyor, kart yüksekliği tamamen
+  // buradan çıkıyor — hiçbir blok sabit bir sınıra göre değil, bir öncekinin bittiği yere
+  // göre konumlanıyor, bu yüzden hiçbir kombinasyonda üst üste binme oluşamaz. ----
+  const coverW=612,coverH=864,coverX=(W-coverW)/2,coverY=88;
+  let y=coverY+coverH+58;
+  const nameY=y; const nameLineH=nameFontSize+16; y+=nameFontSize+(nameLines.length-1)*nameLineH;
+  let altY=null;
+  if(altLine){ y+=30; altY=y; y+=28; }
+  let chipsY=null;
+  if(chipLabels.length){ y+=26; chipsY=y; y+=chipH; }
+  let ratingY=null;
+  if(s.rating){ y+=36; ratingY=y; y+=30; }
+  let chapterY=null,barY=null; const barW=560,barH=14;
+  if(chTR>0){
+    y+=36; chapterY=y; y+=chapterFontSize;
+    if(total>0){ y+=24; barY=y; y+=barH; }
+  }
+  const contentBottom=y;
+  const brandY=contentBottom+64;
+  const taglineY=brandY+34;
+  const H=Math.round(taglineY+58);
+
   const canvas=document.createElement('canvas');
   canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
-
-  // Fontlar yüklü değilse bekle (aksi halde ilk çizimde sistem fontuna düşer)
-  try{
-    await Promise.all([
-      document.fonts.load("800 54px 'Playfair Display'"),
-      document.fonts.load("700 34px 'Outfit'"),
-      document.fonts.load("600 30px 'Outfit'"),
-      document.fonts.load("600 26px 'Outfit'")
-    ]);
-  }catch(e){}
 
   // Arka plan — kapaktan renk çıkarılabiliyorsa onu, olmazsa varsayılan mor gradyanı kullan
   let bgColors=null;
@@ -434,14 +519,19 @@ async function buildShareCardBlob(s){
     grad.addColorStop(0,'#4a1454'); grad.addColorStop(0.45,'#2a1040'); grad.addColorStop(1,'#08050f');
   }
   ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
-  // Hafif vinyet
-  const vig=ctx.createRadialGradient(W/2,H*0.35,W*0.2,W/2,H*0.55,W*0.9);
-  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.35)');
+  const vig=ctx.createRadialGradient(W/2,H*0.32,W*0.2,W/2,H*0.5,W*0.9);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.4)');
   ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
+  const bottomFade=ctx.createLinearGradient(0,brandY-90,0,H);
+  bottomFade.addColorStop(0,'rgba(5,3,10,0)'); bottomFade.addColorStop(1,'rgba(5,3,10,0.55)');
+  ctx.fillStyle=bottomFade; ctx.fillRect(0,brandY-90,W,H-(brandY-90));
+
+  // İnce dış çerçeve — kartın tek başına bir görsel obje hissini güçlendiriyor
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=2;
+  _shareCardRoundRect(ctx,10,10,W-20,H-20,32); ctx.stroke();
 
   // Kapak görseli
   const coverImg=await _shareCardLoadImg(s.cover);
-  const coverW=612,coverH=864, coverX=(W-coverW)/2, coverY=118;
   ctx.save();
   ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=50; ctx.shadowOffsetY=22;
   _shareCardRoundRect(ctx,coverX,coverY,coverW,coverH,26);
@@ -459,63 +549,83 @@ async function buildShareCardBlob(s){
   } else {
     ctx.fillStyle='#241533'; ctx.fillRect(coverX,coverY,coverW,coverH);
   }
+  // Kapağın üst kısmına hafif bir gölge — üzerine bindirilen rozetin okunurluğu için
+  const coverShade=ctx.createLinearGradient(0,coverY,0,coverY+coverH);
+  coverShade.addColorStop(0,'rgba(0,0,0,0.35)'); coverShade.addColorStop(0.18,'rgba(0,0,0,0)');
+  ctx.fillStyle=coverShade; ctx.fillRect(coverX,coverY,coverW,coverH);
+  ctx.restore();
   ctx.strokeStyle='rgba(255,255,255,0.14)'; ctx.lineWidth=2;
   _shareCardRoundRect(ctx,coverX+1,coverY+1,coverW-2,coverH-2,25); ctx.stroke();
+
+  // Kategori rozeti — artık ayrı bir satır değil, kapağın sol üst köşesine bindirilmiş
+  const badgeX=coverX+18,badgeY=coverY+18,badgeH=44;
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=14;
+  _shareCardRoundRect(ctx,badgeX,badgeY,catW,badgeH,22);
+  ctx.fillStyle='rgba(10,6,18,0.72)'; ctx.fill();
   ctx.restore();
-
-  let y=coverY+coverH+72;
-
-  // Kategori rozeti
-  const cat=CATS[s.category]||CATS.reading;
-  ctx.font="600 26px 'Outfit',sans-serif";
-  const catLabel=cat.label.toUpperCase();
-  const catW=ctx.measureText(catLabel).width+44;
-  _shareCardRoundRect(ctx,(W-catW)/2,y,catW,50,25);
-  ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.lineWidth=1.5;
-  _shareCardRoundRect(ctx,(W-catW)/2,y,catW,50,25); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1.5;
+  _shareCardRoundRect(ctx,badgeX,badgeY,catW,badgeH,22); ctx.stroke();
+  ctx.font="600 24px 'Outfit',sans-serif";
   ctx.fillStyle='#e9d8ff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(catLabel,W/2,y+27);
-  y+=50+40;
+  ctx.fillText(catLabel,badgeX+catW/2,badgeY+badgeH/2+1);
 
   // Seri adı
-  ctx.font="800 54px 'Playfair Display',serif";
+  ctx.font=`700 ${nameFontSize}px 'Playfair Display',serif`;
   ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  const nameLines=_shareCardWrapText(ctx,s.name,W-160,2);
-  nameLines.forEach((line,i)=>{ ctx.fillText(line,W/2,y+54+i*62); });
-  y+=54+(nameLines.length-1)*62+56;
+  nameLines.forEach((line,i)=>{ ctx.fillText(line,W/2,nameY+nameFontSize+i*nameLineH); });
+
+  // Alternatif adlar
+  if(altY!==null){
+    ctx.font="500 26px 'Outfit',sans-serif";
+    ctx.fillStyle='rgba(255,255,255,0.55)';
+    ctx.fillText(altLine,W/2,altY+22);
+  }
+
+  // Çeviri ekibi rozetleri
+  if(chipsY!==null){
+    let cx=(W-chipsRowW)/2;
+    ctx.font="600 22px 'Outfit',sans-serif";
+    chipLabels.forEach((label,i)=>{
+      const cw=chipWidths[i];
+      _shareCardRoundRect(ctx,cx,chipsY,cw,chipH,20);
+      ctx.fillStyle='rgba(139,92,246,0.18)'; ctx.fill();
+      ctx.strokeStyle='rgba(196,181,253,0.35)'; ctx.lineWidth=1.3;
+      _shareCardRoundRect(ctx,cx,chipsY,cw,chipH,20); ctx.stroke();
+      ctx.fillStyle='#dcd0fb'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(label,cx+cw/2,chipsY+chipH/2+1);
+      cx+=cw+chipGap;
+    });
+  }
 
   // Puan (varsa)
-  if(s.rating){
+  if(ratingY!==null){
     ctx.font="34px sans-serif";
     const stars='★★★★★'.slice(0,s.rating)+'☆☆☆☆☆'.slice(0,5-s.rating);
-    ctx.fillStyle='#fbbf24';
-    ctx.fillText(stars,W/2,y+30);
-    y+=34+34;
+    ctx.fillStyle='#fbbf24'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillText(stars,W/2,ratingY+30);
   }
 
   // Bölüm / ilerleme
-  const chTR=parseInt(s.chapterTR)||0, total=parseInt(s.chapterTotal)||0;
-  const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
-  if(chTR>0){
-    ctx.font="600 30px 'Outfit',sans-serif";
-    ctx.fillStyle='rgba(255,255,255,0.9)';
-    ctx.fillText(`Bölüm ${chTR}${total>0?' / '+total:''}`,W/2,y+30);
-    y+=30+28;
-    if(total>0){
-      const barW=520,barX=(W-barW)/2,barH=14;
-      _shareCardRoundRect(ctx,barX,y,barW,barH,7);
-      ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fill();
-      _shareCardRoundRect(ctx,barX,y,barW*(pct/100),barH,7);
-      const barGrad=ctx.createLinearGradient(barX,0,barX+barW,0);
-      barGrad.addColorStop(0,'#8b5cf6'); barGrad.addColorStop(1,'#c4b5fd');
-      ctx.fillStyle=barGrad; ctx.fill();
-      y+=barH+16;
-    }
+  if(chapterY!==null){
+    ctx.font=`600 ${chapterFontSize}px 'Outfit',sans-serif`;
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillText(chapterText,W/2,chapterY+chapterFontSize*0.78);
+  }
+  if(barY!==null){
+    const barX=(W-barW)/2;
+    _shareCardRoundRect(ctx,barX,barY,barW,barH,7);
+    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fill();
+    _shareCardRoundRect(ctx,barX,barY,barW*(pct/100),barH,7);
+    const barGrad=ctx.createLinearGradient(barX,0,barX+barW,0);
+    barGrad.addColorStop(0,'#8b5cf6'); barGrad.addColorStop(1,'#c4b5fd');
+    ctx.fillStyle=barGrad; ctx.fill();
+    ctx.font="600 22px 'Outfit',sans-serif";
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(`%${pct}`,barX+barW+18,barY+barH/2+1);
   }
 
   // Alt marka — Megami
-  const brandY=H-72;
   ctx.font="700 40px 'Playfair Display',serif";
   ctx.fillStyle='#ffffff';
   const brandText='Megami';
@@ -530,13 +640,13 @@ async function buildShareCardBlob(s){
   ctx.moveTo(0,-15); ctx.bezierCurveTo(-1.2,-4,-4,-1.2,-15,0); ctx.bezierCurveTo(-4,1.2,-1.2,4,0,15); ctx.bezierCurveTo(1.2,4,4,1.2,15,0); ctx.bezierCurveTo(4,-1.2,1.2,-4,0,-15);
   ctx.closePath(); ctx.fill();
   ctx.restore();
-  ctx.textAlign='left';
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle='#ffffff';
   ctx.fillText(brandText,bx+sparkW+14,brandY);
   ctx.font="600 22px 'Outfit',sans-serif";
   ctx.fillStyle='rgba(255,255,255,0.55)';
   ctx.textAlign='center';
-  ctx.fillText('Manga & Fansub Takip Kütüphanem',W/2,brandY+34);
+  ctx.fillText('Manga & Fansub Takip Kütüphanem',W/2,taglineY);
 
   return new Promise(resolve=>{
     try{ canvas.toBlob(blob=>resolve(blob),'image/png',0.95); }
@@ -545,7 +655,19 @@ async function buildShareCardBlob(s){
 }
 async function shareSeriesCard(id){
   const s=series.find(x=>x.id===id); if(!s)return;
-  const text=`${s.name} — Megami'de takip ediyorum${s.chapterTR?' (Bölüm '+s.chapterTR+')':''}`;
+  // Görsele sığmayan/sığdırılması can sıkıcı olacak bilgiler (tam alt ad listesi, tam çeviri
+  // ekibi listesi, kişisel not özeti) buraya, paylaşım metnine (WhatsApp/Mesajlar'da görselle
+  // birlikte giden yazı) ekleniyor — görsel kart sade kalıyor, detay burada taşınıyor.
+  const lines=[`${s.name} — Megami'de takip ediyorum`];
+  if(s.chapterTR) lines.push(`📖 Bölüm ${s.chapterTR}${s.chapterTotal?' / '+s.chapterTotal:''}`);
+  if(s.rating) lines.push(`⭐ ${s.rating}/5`);
+  if(s.altNames&&s.altNames.length) lines.push(`🏷️ Alternatif adlar: ${s.altNames.join(', ')}`);
+  if(s.fansubList&&s.fansubList.length) lines.push(`👥 Çeviri: ${s.fansubList.join(', ')}`);
+  if(s.note){
+    const noteExcerpt=s.note.length>140?s.note.slice(0,140).trim()+'…':s.note;
+    lines.push(`💭 "${noteExcerpt}"`);
+  }
+  const text=lines.join('\n');
   showToast('bolt','Kart hazırlanıyor…');
   let blob=null;
   try{ blob=await buildShareCardBlob(s); }catch(e){ blob=null; }
