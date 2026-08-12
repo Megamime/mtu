@@ -1029,7 +1029,7 @@ function openAddSheet(){
   editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
-  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt','readUrlInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('autoIncrFreq').value='';
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
@@ -1060,6 +1060,7 @@ function openEditSheet(id){
   document.getElementById('chapterEN').value=s.chapterEN||'';
   document.getElementById('chapterTotal').value=s.chapterTotal||'';
   document.getElementById('seriesNote').value=s.note||'';
+  const originalNameEl=document.getElementById('originalNameInput'); if(originalNameEl)originalNameEl.value=s.originalName||'';
   const readUrlEl=document.getElementById('readUrlInput'); if(readUrlEl)readUrlEl.value=s.readUrl||'';
   // Safari'nin input[type=text] için 512KB kesme sorunu nedeniyle, büyük (data: ile başlayan)
   // kapak verisini input'a yazmıyoruz, _pendingCoverData'da tutuyoruz. Kısa URL'ler input'a yazılabilir.
@@ -1134,6 +1135,7 @@ async function saveSeries(){
     chapterTR:newTR,chapterEN:document.getElementById('chapterEN').value||'',
     chapterTotal:document.getElementById('chapterTotal').value||'',
     note:document.getElementById('seriesNote').value.trim(),
+    originalName:(document.getElementById('originalNameInput')?.value||'').trim(),
     readUrl:(document.getElementById('readUrlInput')?.value||'').trim(),
     favorited:formFav,pinned:formPin,rating:formRating,updatedAt:Date.now(),
     releaseDay,releaseDayNote,returnDate:document.getElementById('returnDate').value||'',
@@ -1737,6 +1739,7 @@ async function importBackup(e){
         ?calcNextIncr(incoming.autoIncrFreq,incoming.autoIncrDay||1,incoming.autoIncrDate||1):null;
       const newSeries={
         id:newId,name,
+        originalName:incoming.originalName||'',
         altNames:Array.isArray(incoming.altNames)?[...incoming.altNames]:[],
         fansubList:Array.isArray(incoming.fansubList)?[...incoming.fansubList]:[],
         genres:Array.isArray(incoming.genres)?[...incoming.genres]:[],
@@ -2026,7 +2029,7 @@ var radialDefs=[
   {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
   {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
   {label:'Seri Ekle', page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
-  {label:'Ekstra',    page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>', action:function(){showToast('star','Yakında! ✨');}},
+  {label:'Liste',      page:'list',  icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>', action:function(){switchPage('list');}},
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}
 ];
 

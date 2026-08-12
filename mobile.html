@@ -119,6 +119,7 @@ body{background:#0a0612;}
 .lg-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:9.5px;font-weight:600;color:#fff;}
 .lg-badges-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
 .lg-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:#fff;line-height:1.25;text-shadow:0 2px 14px rgba(0,0,0,.5);word-break:break-word;}
+.lg-title-original{font-size:12px;color:rgba(255,255,255,.55);font-style:italic;margin-top:2px;word-break:break-word;}
 .lg-meta-row{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap;}
 .lg-meta-chip{padding:3px 9px;border-radius:7px;font-size:9.5px;color:rgba(255,255,255,.9);display:inline-flex;align-items:center;gap:4px;}
 .lg-body{position:relative;padding:20px 16px calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;}
@@ -186,6 +187,23 @@ body{background:#0a0612;}
 .timeline-series{font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .timeline-text{font-size:10.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .timeline-time{font-size:9.5px;color:var(--text3);flex-shrink:0;}
+.list-tabs-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;}
+.list-tabs-row::-webkit-scrollbar{display:none;}
+.list-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9px;background:var(--black4);border:1px solid var(--line);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .18s;}
+.list-tab.active{background:var(--purpleG);border-color:var(--purple2);color:var(--purple3);}
+.list-tab-count{font-size:9.5px;color:var(--text3);background:var(--black5);border-radius:8px;padding:1px 6px;margin-left:1px;}
+.list-tab.active .list-tab-count{color:var(--purple3);background:rgba(124,58,237,.18);}
+.list-row{display:flex;gap:11px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+.list-row:last-child{border-bottom:none;}
+.list-row-cover{width:42px;height:58px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--black5);}
+.list-row-cover-ph{display:flex;align-items:center;justify-content:center;color:var(--text3);}
+.list-row-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.list-row-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;}
+.list-row-sub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.list-row-cat{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:600;color:var(--text3);}
+.list-row-ch{font-size:10.5px;color:var(--text2);display:inline-flex;align-items:center;gap:3px;}
+.list-row-genre{font-size:10px;color:var(--text3);}
+.list-row-rating{font-size:10px;color:var(--gold);letter-spacing:-1px;}
 </style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div>
 Megami
 </div><div class="hdr-right"><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
@@ -194,7 +212,7 @@ Megami
   <div class="bar"></div><div class="bar"></div><div class="bar"></div>
 </div></div><div class="overlay hidden" id="addOverlay" onclick="closeOnOverlay(event,'addOverlay')"><div class="sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div><div class="sheet-header"><span class="sheet-title" id="addSheetTitle">Yeni Seri</span><button class="close-btn" onclick="closeSheet('addOverlay')">&#x2715;</button></div><div class="form-body"><div class="btn-row"><button class="btn-secondary" id="favToggle" onclick="toggleFormFav()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Favori
 </button><button class="btn-secondary" id="pinToggle" onclick="toggleFormPin()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg> Sabitle
-</button></div><div><label class="form-label">Kapak Görseli</label><div class="cover-row"><div id="coverPreviewWrap"><div class="cover-preview-ph" id="coverPlaceholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div></div><div class="cover-inputs"><input class="form-input" type="text" id="coverUrlInput" placeholder="URL gir (JPG, PNG, GIF, WebP…)" oninput="previewCoverUrl()"/><label class="file-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Dosyadan Seç (GIF dahil)<input type="file" accept="image/*,.gif" id="coverFileInput" onchange="handleCoverFile()"/></label></div></div></div><div><label class="form-label">Eski Kapaklar</label><label class="file-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Eski Kapak Ekle<input type="file" accept="image/*" id="oldCoverFileInput" onchange="handleOldCoverFile()" multiple/></label><div style="display:flex;gap:7px;margin-top:7px;overflow-x:auto;padding-bottom:4px;" id="oldCoversPreviews"></div></div><div><label class="form-label">Seri Adı *</label><input class="form-input" type="text" id="seriesName" placeholder="Seri adını girin…"/></div><div><label class="form-label">Alternatif Adlar</label><div class="add-row"><input class="form-input" type="text" id="altNameInput" placeholder="Alternatif ad ekle…"/><div class="add-icon-btn" onclick="addAltName()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div><div class="alt-tags-wrap" id="altTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Fansub / Çeviri Ekibi</label><div class="add-row" style="position:relative;"><input class="form-input" type="text" id="fansubInput" placeholder="Ekip adı ekle…" autocomplete="off" oninput="renderFansubSuggestions()" onfocus="renderFansubSuggestions()"/><div class="add-icon-btn" onclick="addFansub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div id="fansubSuggestWrap" class="autocomplete-dropdown hidden"></div></div><div class="alt-tags-wrap" id="fansubTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Tür</label><div class="genre-preset-grid" id="genrePresetWrap"></div><div class="add-row" style="margin-top:8px;"><input class="form-input" type="text" id="customGenreInput" placeholder="Listede yok mu? Kendi türünü yaz…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomGenre();}"/><div class="add-icon-btn" onclick="addCustomGenre()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div><div class="alt-tags-wrap" id="customGenreTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Okuma Linki <span style="font-weight:400;color:var(--text3);">(opsiyonel — detay sayfasındaki "Oku" butonu buraya götürür)</span></label><input class="form-input" type="text" id="readUrlInput" placeholder="https://…"/></div><div style="background:var(--black4);border:1px solid var(--line);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:10px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;display:flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+</button></div><div><label class="form-label">Kapak Görseli</label><div class="cover-row"><div id="coverPreviewWrap"><div class="cover-preview-ph" id="coverPlaceholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div></div><div class="cover-inputs"><input class="form-input" type="text" id="coverUrlInput" placeholder="URL gir (JPG, PNG, GIF, WebP…)" oninput="previewCoverUrl()"/><label class="file-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Dosyadan Seç (GIF dahil)<input type="file" accept="image/*,.gif" id="coverFileInput" onchange="handleCoverFile()"/></label></div></div></div><div><label class="form-label">Eski Kapaklar</label><label class="file-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Eski Kapak Ekle<input type="file" accept="image/*" id="oldCoverFileInput" onchange="handleOldCoverFile()" multiple/></label><div style="display:flex;gap:7px;margin-top:7px;overflow-x:auto;padding-bottom:4px;" id="oldCoversPreviews"></div></div><div><label class="form-label">Seri Adı *</label><input class="form-input" type="text" id="seriesName" placeholder="Seri adını girin…"/></div><div><label class="form-label">Orijinal Ad <span style="font-weight:400;color:var(--text3);">(opsiyonel — detay sayfasında Türkçe adın yanında küçük gösterilir, ör. 日本語タイトル)</span></label><input class="form-input" type="text" id="originalNameInput" placeholder="Orijinal dildeki adı…"/></div><div><label class="form-label">Alternatif Adlar</label><div class="add-row"><input class="form-input" type="text" id="altNameInput" placeholder="Alternatif ad ekle…"/><div class="add-icon-btn" onclick="addAltName()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div><div class="alt-tags-wrap" id="altTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Fansub / Çeviri Ekibi</label><div class="add-row" style="position:relative;"><input class="form-input" type="text" id="fansubInput" placeholder="Ekip adı ekle…" autocomplete="off" oninput="renderFansubSuggestions()" onfocus="renderFansubSuggestions()"/><div class="add-icon-btn" onclick="addFansub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div id="fansubSuggestWrap" class="autocomplete-dropdown hidden"></div></div><div class="alt-tags-wrap" id="fansubTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Tür</label><div class="genre-preset-grid" id="genrePresetWrap"></div><div class="add-row" style="margin-top:8px;"><input class="form-input" type="text" id="customGenreInput" placeholder="Listede yok mu? Kendi türünü yaz…" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomGenre();}"/><div class="add-icon-btn" onclick="addCustomGenre()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div><div class="alt-tags-wrap" id="customGenreTagsWrap" style="margin-top:7px;"></div></div><div><label class="form-label">Okuma Linki <span style="font-weight:400;color:var(--text3);">(opsiyonel — detay sayfasındaki "Oku" butonu buraya götürür)</span></label><input class="form-input" type="text" id="readUrlInput" placeholder="https://…"/></div><div style="background:var(--black4);border:1px solid var(--line);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:10px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;display:flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 Yayınlanma & Otomatik Artırma
 </div><div class="form-row"><div><label class="form-label" style="margin-bottom:4px;">Sıklık</label><select class="form-select" id="autoIncrFreq" onchange="updateIncrExtra()"><option value="">— Belirtilmemiş —</option><option value="daily">Her gün</option><option value="weekly">Her hafta</option><option value="monthly">Her ay</option><option value="irregular">Düzensiz</option><option value="completed">Tamamlandı</option></select></div><div id="incrAmtWrap"><label class="form-label" style="margin-bottom:4px;">Miktar</label><input class="form-input" type="number" id="autoIncrAmt" placeholder="1" min="0"/></div></div><div id="incrDayWrap" style="display:none;"><label class="form-label" style="margin-bottom:4px;">Haftanın Günü <span style="color:var(--text3);font-size:8.5px;">(yayınlanma = artırma günü)</span></label><select class="form-select" id="autoIncrDay"><option value="1">Pazartesi</option><option value="2">Salı</option><option value="3">Çarşamba</option><option value="4">Perşembe</option><option value="5">Cuma</option><option value="6">Cumartesi</option><option value="0">Pazar</option></select></div><div id="incrDateWrap" style="display:none;"><label class="form-label" style="margin-bottom:4px;">Ayın Günü <span style="color:var(--text3);font-size:8.5px;">(yayınlanma = artırma tarihi)</span></label><select class="form-select" id="autoIncrDate"><option value="1">1. gün</option><option value="2">2. gün</option><option value="3">3. gün</option><option value="4">4. gün</option><option value="5">5. gün</option><option value="6">6. gün</option><option value="7">7. gün</option><option value="8">8. gün</option><option value="9">9. gün</option><option value="10">10. gün</option><option value="11">11. gün</option><option value="12">12. gün</option><option value="13">13. gün</option><option value="14">14. gün</option><option value="15">15. gün</option><option value="16">16. gün</option><option value="17">17. gün</option><option value="18">18. gün</option><option value="19">19. gün</option><option value="20">20. gün</option><option value="21">21. gün</option><option value="22">22. gün</option><option value="23">23. gün</option><option value="24">24. gün</option><option value="25">25. gün</option><option value="26">26. gün</option><option value="27">27. gün</option><option value="28">28. gün</option></select></div><div id="incrIrregularWrap" style="display:none;"><label class="form-label" style="margin-bottom:4px;">Yayınlanma Notu</label><input class="form-input" type="text" id="releaseDayNote" placeholder="Örn: Genellikle ayın 25'inde, bazen 2 haftada bir…"/></div><div style="font-size:11px;color:var(--text3);display:flex;align-items:flex-start;gap:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Haftalık/Aylık seçilince bölüm o gün otomatik eklenir. <b style="color:var(--text2);">Sezon Arası</b>'nda durur.</span></div></div><div><label class="form-label">Kategori *</label><select class="form-select" id="seriesCategory" onchange="toggleReturnDate()"><option value="reading">Okuyorum</option><option value="current">TR Güncel</option><option value="current_en">EN Güncel</option><option value="current_both">TR+EN Güncel</option><option value="stockpile">Bölüm Biriktiriyorum</option><option value="paused">Ara Verdim</option><option value="dropped">Bıraktım</option><option value="completed">Bitti</option><option value="planned">Planlıyorum</option><option value="season">Sezon Arası</option></select></div><div><label class="form-label">Bölüm Takibi</label><div class="form-row"><div><label class="form-label" style="margin-bottom:4px;">Türkçe</label><input class="form-input" type="number" id="chapterTR" placeholder="0" min="0"/></div><div><label class="form-label" style="margin-bottom:4px;">İngilizce</label><input class="form-input" type="number" id="chapterEN" placeholder="—" min="0"/></div></div></div><div><label class="form-label">Toplam Bölüm <span style="color:var(--text3);font-size:8.5px;">(ilerleme çubuğu için)</span></label><input class="form-input" type="number" id="chapterTotal" placeholder="Örn: 200" min="0"/></div><div><label class="form-label">Puan</label><div class="star-row" id="ratingStars"></div></div><div><label class="form-label">Kişisel Not</label><textarea class="form-textarea" id="seriesNote" placeholder="Bu seri hakkında notların…"></textarea><div style="font-size:10px;color:var(--text3);margin-top:4px;">**kalın**, *italik* ve linkler otomatik biçimlenir.</div></div><div id="returnDateWrap" style="display:none;"><label class="form-label">Geri Dönüş Tarihi <span style="color:var(--text3);font-size:8.5px;">(sezon arası için)</span></label><input class="form-input" type="date" id="returnDate"/></div><button class="btn-primary" onclick="saveSeries()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Kaydet</button><button class="btn-danger hidden" id="deleteBtn" onclick="deleteSeries()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> Seriyi Sil</button></div></div></div><div class="overlay hidden" id="quickOverlay" onclick="closeOnOverlay(event,'quickOverlay')"><div class="quick-sheet" onclick="event.stopPropagation()"><div class="sheet-handle"></div><div class="quick-header"><div class="quick-title" id="quickTitle">Hızlı Menü</div><div class="quick-sub" id="quickSub"></div></div><div class="quick-body"><div class="stepper-box"><div class="stepper-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> Türkçe Bölüm</div><div class="stepper-row"><div class="stepper-btn" onclick="stepCh('TR',-1)">−</div><input class="stepper-input" type="number" id="quickTR" min="0"/><div class="stepper-btn" onclick="stepCh('TR',1)">+</div></div><div class="preset-row"><div class="preset-btn" onclick="stepCh('TR',5)">+5</div><div class="preset-btn" onclick="stepCh('TR',10)">+10</div><div class="preset-btn" onclick="stepCh('TR',25)">+25</div><div class="preset-btn" onclick="stepCh('TR',50)">+50</div></div></div><div class="stepper-box"><div class="stepper-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a15 15 0 0 1 4 9 15 15 0 0 1-4 9 15 15 0 0 1-4-9 15 15 0 0 1 4-9z"/></svg> İngilizce Bölüm</div><div class="stepper-row"><div class="stepper-btn" onclick="stepCh('EN',-1)">−</div><input class="stepper-input" type="number" id="quickEN" min="0"/><div class="stepper-btn" onclick="stepCh('EN',1)">+</div></div><div class="preset-row"><div class="preset-btn" onclick="stepCh('EN',5)">+5</div><div class="preset-btn" onclick="stepCh('EN',10)">+10</div><div class="preset-btn" onclick="stepCh('EN',25)">+25</div><div class="preset-btn" onclick="stepCh('EN',50)">+50</div></div></div><div><div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Durum Değiştir</div><div class="status-grid" id="statusGrid"></div></div></div><div class="quick-footer"><div id="skipWrap" style="display:none;margin-bottom:8px;"><button id="skipBtn" onclick="toggleSkip()" style="width:100%;padding:10px;border-radius:11px;background:var(--black5);border:1px solid var(--line2);color:var(--text2);font-size:12px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .18s;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
 Bu Periyodu Atla
@@ -239,6 +257,7 @@ init();
 function renderContent(){
   if(currentPage==='home')renderHome();
   else if(currentPage==='stats')renderStats();
+  else if(currentPage==='list')renderListPage();
   // currentPage==='detail' ise içerik zaten openDetail() tarafından #mainContent'e yazıldı,
   // diğer sekmelerde olduğu gibi burada tekrar render etmeye gerek yok.
 }
@@ -290,6 +309,7 @@ function openDetail(id,skipHistoryOrEvent){
             ${s.favorited?`<div class="lg-badge lg-glass">${ic('star',9)} Favori</div>`:''}
           </div>
           <div class="lg-title">${esc(s.name)}</div>
+          ${s.originalName?`<div class="lg-title-original">${esc(s.originalName)}</div>`:''}
           <div class="lg-meta-row">
             <span class="lg-meta-chip lg-glass">${ic(cat.icon,9)} ${cat.label}</span>
             ${s.chapterTR?`<span class="lg-meta-chip lg-glass">${ic('tr',9)} ${s.chapterTR}${total>0?'/'+total:''}</span>`:''}
@@ -474,6 +494,14 @@ async function buildShareCardBlob(s){
   meas.font="600 24px 'Outfit',sans-serif";
   const catW=meas.measureText(catLabel).width+40;
 
+  // Orijinal ad — Türkçe başlığın hemen altında, küçük ve italik bir altyazı olarak
+  meas.font="italic 500 28px 'Outfit',sans-serif";
+  let originalName=(s.originalName||'').trim();
+  if(originalName){
+    const maxOrigW=W-180;
+    while(meas.measureText(originalName).width>maxOrigW&&originalName.length>3) originalName=originalName.slice(0,-2)+'…';
+  }
+
   // Alternatif adlar — sığdığı kadarını göster, kalanını "+N" ile özetle
   const altNames=(s.altNames||[]).filter(Boolean);
   let altLine='';
@@ -516,6 +544,8 @@ async function buildShareCardBlob(s){
   const coverW=612,coverH=864,coverX=(W-coverW)/2,coverY=88;
   let y=coverY+coverH+58;
   const nameY=y; const nameLineH=nameFontSize+16; y+=nameFontSize+(nameLines.length-1)*nameLineH;
+  let originalNameY=null;
+  if(originalName){ y+=26; originalNameY=y; y+=26; }
   let altY=null;
   if(altLine){ y+=30; altY=y; y+=28; }
   let chipsY=null;
@@ -604,6 +634,13 @@ async function buildShareCardBlob(s){
   ctx.font=`700 ${nameFontSize}px 'Playfair Display',serif`;
   ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   nameLines.forEach((line,i)=>{ ctx.fillText(line,W/2,nameY+nameFontSize+i*nameLineH); });
+
+  // Orijinal ad
+  if(originalNameY!==null){
+    ctx.font="italic 500 28px 'Outfit',sans-serif";
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.fillText(originalName,W/2,originalNameY+20);
+  }
 
   // Alternatif adlar
   if(altY!==null){
@@ -699,6 +736,7 @@ function _buildSeriesShareData(s){
     version:1,
     series:{
       name:s.name,
+      originalName:s.originalName||'',
       altNames:[...(s.altNames||[])],
       fansubList:[...(s.fansubList||[])],
       genres:[...(s.genres||[])],
@@ -745,7 +783,7 @@ async function shareSeriesCard(id){
   // Görsele sığmayan/sığdırılması can sıkıcı olacak bilgiler (tam alt ad listesi, tam çeviri
   // ekibi listesi, kişisel not özeti) buraya, paylaşım metnine (WhatsApp/Mesajlar'da görselle
   // birlikte giden yazı) ekleniyor — görsel kart sade kalıyor, detay burada taşınıyor.
-  const lines=[`${s.name} — Megami'de takip ediyorum`];
+  const lines=[`${s.name}${s.originalName?' ('+s.originalName+')':''} — Megami'de takip ediyorum`];
   if(s.genres&&s.genres.length) lines.push(`🎭 ${s.genres.join(', ')}`);
   if(s.chapterTR) lines.push(`📖 Bölüm ${s.chapterTR}${s.chapterTotal?' / '+s.chapterTotal:''}`);
   if(s.rating) lines.push(`⭐ ${s.rating}/5`);
@@ -909,6 +947,56 @@ function renderTimelineHTML(){
         <div class="timeline-time">${new Date(e.ts).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</div>
       </div>`).join('')}
   `).join('');
+}
+// ===== Liste Sayfası — MyAnimeList tarzı: durum sekmeleri + kapak yerine satır satır,
+// daha detaylı bilgili görünüm. Ana Sayfa'nın kart/carousel görünümünden bağımsız kendi
+// filtre durumunu (listCat) tutar. =====
+let listCat='all';
+function setListCat(c){ listCat=c; renderListPage(); }
+function renderListPage(){
+  const el=document.getElementById('mainContent');
+  const statusKeys=Object.keys(CATS).filter(k=>k!=='all');
+  const tabsHTML=['all',...statusKeys].map(k=>{
+    const count=k==='all'?series.length:series.filter(s=>s.category===k).length;
+    if(k!=='all'&&count===0) return '';
+    const label=k==='all'?'Tümü':CATS[k].label;
+    const icon=k==='all'?'grid4':CATS[k].icon;
+    return `<div class="list-tab ${listCat===k?'active':''}" onclick="setListCat('${k}')">${ic(icon,11)} ${label} <span class="list-tab-count">${count}</span></div>`;
+  }).join('');
+
+  const filtered=series.filter(s=>listCat==='all'||s.category===listCat)
+    .sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+
+  const rowsHTML=filtered.length?filtered.map(s=>{
+    const cat=CATS[s.category]||CATS.reading;
+    const total=parseInt(s.chapterTotal)||0;
+    const chTR=s.chapterTR?`${ic('tr',9)} ${s.chapterTR}${total>0?'/'+total:''}`:'';
+    const chEN=s.chapterEN?`${ic('globe',9)} ${s.chapterEN}`:'';
+    const ratingStr=s.rating?`<span class="list-row-rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:'';
+    const genreStr=(s.genres&&s.genres.length)?`<span class="list-row-genre">${esc(s.genres.slice(0,2).join(' · '))}</span>`:'';
+    const coverEl=s.cover?`<img class="list-row-cover" src="${esc(s.cover)}" loading="lazy" onerror="this.style.visibility='hidden'">`:`<div class="list-row-cover list-row-cover-ph">${ic('img',14)}</div>`;
+    const pinIco=s.pinned?ic('pinFill',11):'';
+    const favIco=s.favorited?ic('starFill',11):'';
+    return `<div class="list-row" onclick="openDetail('${s.id}',event)">
+      ${coverEl}
+      <div class="list-row-info">
+        <div class="list-row-title">${esc(s.name)} ${pinIco}${favIco}</div>
+        <div class="list-row-sub">
+          <span class="list-row-cat ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</span>
+          ${chTR?`<span class="list-row-ch">${chTR}</span>`:''}
+          ${chEN?`<span class="list-row-ch">${chEN}</span>`:''}
+        </div>
+        ${genreStr||ratingStr?`<div class="list-row-sub">${genreStr}${ratingStr}</div>`:''}
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty" style="padding:50px 24px;"><div class="empty-icon">${ic('layers',34)}</div><h3>Bu durumda seri yok</h3><p>Farklı bir sekme dene.</p></div>`;
+
+  el.innerHTML=`<div style="padding:10px 14px 0;">
+    <div class="list-tabs-row">${tabsHTML}</div>
+  </div>
+  <div style="padding:2px 14px 20px;">${rowsHTML}</div>`;
+  document.getElementById('searchWrap').style.display='none';
+  document.getElementById('catTabs').style.display='none';
 }
 function renderStats(){
   const el=document.getElementById('mainContent');
