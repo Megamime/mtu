@@ -149,7 +149,7 @@ function ic(n,s=13){
   _icCache[k]=v; return v;
 }
 const SK='mangavault_v3';
-const DB_NAME='MegamiDB', DB_VER=1, STORE='series';
+const DB_NAME='MegamiDB', DB_VER=2, STORE='series', LOG_STORE='activityLog';
 let db=null;
 function openDB(){
   return new Promise((resolve,reject)=>{
@@ -159,6 +159,10 @@ function openDB(){
       const d=e.target.result;
       if(!d.objectStoreNames.contains(STORE))
         d.createObjectStore(STORE,{keyPath:'id'});
+      if(!d.objectStoreNames.contains(LOG_STORE)){
+        const logStore=d.createObjectStore(LOG_STORE,{keyPath:'logId',autoIncrement:true});
+        logStore.createIndex('seriesId','seriesId',{unique:false});
+      }
     };
     req.onsuccess=e=>{db=e.target.result;resolve(db);};
     req.onerror=e=>{console.error('IndexedDB error',e);reject(e);};
@@ -171,6 +175,55 @@ async function save(){
   st.clear();
   series.forEach(s=>st.put(s));
   return new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+}
+// ===== Sınırsız aktivite arşivi — eskiden localStorage'da seri başına son 20 kayıtla
+// sınırlıydı (mv_log_<id>). Artık IndexedDB'de, sınır olmadan, tüm geçmiş boyunca saklanıyor.
+// Sayfa render'ları senkron kalabilsin diye tüm kayıtlar açılışta belleğe (activityLog) yükleniyor. =====
+let activityLog=[];
+async function loadActivityLog(){
+  const d=await openDB();
+  const tx=d.transaction(LOG_STORE,'readonly');
+  const req=tx.objectStore(LOG_STORE).getAll();
+  await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
+  activityLog=req.result||[];
+  // Eski localStorage tabanlı (20 kayıtla sınırlı) günlükleri bir kereye mahsus yeni,
+  // sınırsız arşive taşı — sonra eski anahtarları temizle.
+  let migratedAny=false;
+  for(const s of series){
+    const oldKey='mv_log_'+s.id;
+    const oldRaw=localStorage.getItem(oldKey);
+    if(!oldRaw) continue;
+    if(activityLog.some(l=>l.seriesId===s.id)){ localStorage.removeItem(oldKey); continue; }
+    try{
+      const oldLog=JSON.parse(oldRaw);
+      if(Array.isArray(oldLog)&&oldLog.length){
+        for(const entry of oldLog){
+          await addLog(s.id,entry.text,entry.ts);
+        }
+        migratedAny=true;
+      }
+    }catch(e){}
+    localStorage.removeItem(oldKey);
+  }
+  if(migratedAny){
+    const tx2=d.transaction(LOG_STORE,'readonly');
+    const req2=tx2.objectStore(LOG_STORE).getAll();
+    await new Promise((res,rej)=>{req2.onsuccess=res;req2.onerror=rej;});
+    activityLog=req2.result||[];
+  }
+}
+async function addLog(seriesId,text,ts){
+  const entry={seriesId,text,ts:ts||Date.now()};
+  activityLog.push(entry);
+  try{
+    const d=await openDB();
+    const tx=d.transaction(LOG_STORE,'readwrite');
+    const req=tx.objectStore(LOG_STORE).add(entry);
+    await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
+  }catch(e){ console.error('[Megami] Aktivite kaydı yazılamadı:',e); }
+}
+function getSeriesLog(seriesId){
+  return activityLog.filter(l=>l.seriesId===seriesId).sort((a,b)=>b.ts-a.ts);
 }
 async function load(){
   try{
@@ -201,7 +254,7 @@ let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',curr
 // büyük base64 kapak verisini input'a değil, bu değişkene yazıyoruz.
 let _pendingCoverData=null;
 let selectionMode=false,selectedIds=new Set();
-let altNames=[],oldCovers=[],fansubList=[],formFav=false,formPin=false,formRating=0;
+let altNames=[],oldCovers=[],fansubList=[],genres=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
 const SECTIONS=[
   {key:'pinned',  label:'Sabitlenmiş',                      icon:'pin',      cats:null, pinnedOnly:true},
@@ -213,6 +266,24 @@ const SECTIONS=[
   {key:'dropped', label:'Bırakılanlar',                     icon:'xcirc',    cats:['dropped']},
   {key:'favs',    label:'Favoriler',                        icon:'starFill', cats:null, favsOnly:true},
 ];
+// Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
+const GENRES_PRESET=['Aksiyon','Macera','Komedi','Dram','Fantastik','Isekai','Romantizm','Bilim Kurgu','Korku','Gizem','Doğaüstü','Dilim Hayat','Psikolojik','Tarihi','Askeri','Spor','Ecchi','Harem','Gerilim','Trajedi'];
+let currentGenre=null;
+
+// Fansub (çeviri ekibi) logo/website bilgisi — seri başına değil, İSİM başına global bir
+// kayıt defterinde tutuluyor. Böylece "SadScans" gibi bir ekibin logosunu/linkini bir kere
+// girersin, o ekibi kullandığın her seride otomatik görünür; her seride tekrar tekrar
+// girmek zorunda kalmazsın.
+let fansubMeta={};
+try{ fansubMeta=JSON.parse(localStorage.getItem('megami_fansub_meta')||'{}'); }catch(e){ fansubMeta={}; }
+function saveFansubMeta(){ try{ localStorage.setItem('megami_fansub_meta',JSON.stringify(fansubMeta)); }catch(e){} }
+function getFansubMeta(name){ return fansubMeta[name]||{logo:'',url:''}; }
+function setFansubMeta(name,logo,url){
+  if(!name)return;
+  fansubMeta[name]={logo:(logo||'').trim(),url:(url||'').trim()};
+  saveFansubMeta();
+}
+
 const CATS={
   all:      {label:'Tümü',          icon:'grid4',    badge:''},
   reading:  {label:'Okuyorum',      icon:'book',     badge:'b-reading'},
@@ -480,6 +551,38 @@ function setCat(c){
   _otherTabsOpen=false;
   renderTabs();renderHome();
 }
+function getAllUsedGenres(){
+  const set=new Set();
+  series.forEach(s=>(s.genres||[]).forEach(g=>{if(g&&g.trim())set.add(g.trim());}));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'tr'));
+}
+function openGenreFilter(){
+  const used=getAllUsedGenres();
+  const wrap=document.getElementById('genreFilterList');
+  if(!wrap)return;
+  if(used.length===0){
+    wrap.innerHTML=`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye tür eklenmemiş. Bir seriyi düzenleyip tür ekleyebilirsin.</p>`;
+  } else {
+    wrap.innerHTML=`<div class="genre-filter-grid">${used.map(g=>
+      `<div class="genre-chip ${currentGenre===g?'active':''}" onclick="setGenreFilter('${esc(g).replace(/'/g,"\\'")}')">${esc(g)}</div>`
+    ).join('')}</div>`;
+  }
+  document.getElementById('genreFilterOverlay').classList.remove('hidden');
+}
+function closeGenreFilter(){ document.getElementById('genreFilterOverlay').classList.add('hidden'); }
+function setGenreFilter(g){
+  currentGenre=currentGenre===g?null:g; // aynı türe tekrar basınca filtre kalkar
+  closeGenreFilter();
+  renderHome();
+  updateGenreFilterBtn();
+}
+function clearGenreFilter(){ currentGenre=null; closeGenreFilter(); renderHome(); updateGenreFilterBtn(); }
+function updateGenreFilterBtn(){
+  const btn=document.getElementById('genreFilterBtn');
+  if(!btn)return;
+  btn.classList.toggle('active',!!currentGenre);
+  btn.title=currentGenre?`Tür filtresi: ${currentGenre}`:'Türe göre filtrele';
+}
 function toggleSelectionMode(){
   selectionMode=!selectionMode;
   if(!selectionMode)selectedIds.clear();
@@ -585,8 +688,9 @@ function renderHome(){
   if(hasFixedActions)syncCatTabsActions();
   let filtered=series.filter(s=>{
     const mc=currentCat==='all'||s.category===currentCat;
+    const mg=!currentGenre||(s.genres||[]).includes(currentGenre);
     const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
-    return mc&&ms;
+    return mc&&mg&&ms;
   });
   const banner='';
   if(!filtered.length){
@@ -637,6 +741,7 @@ function carouselCard(s,i,canReorder){
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
+  const genreBadge=(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:'';
   const isSel=selectedIds.has(s.id);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
@@ -649,6 +754,7 @@ function carouselCard(s,i,canReorder){
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
+      ${genreBadge}
       ${ratingDots}
     </div></div>`;
 }
@@ -671,6 +777,7 @@ function flatCard(s,i){
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
+      ${(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:''}
     </div></div>`;
 }
 function openQuick(id){
@@ -747,8 +854,19 @@ function getSeriesDetailSections(s){
     </div></div>`:'';
   const fans=s.fansubList||[];
   const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub / Çeviri Ekibi</div><div class="alt-tags-wrap" id="fanWrap-${id}">
-      ${fans.slice(0,FANSUB_LIMIT).map(f=>`<span class="fansub-tag">${ic('bolt',9)} ${esc(f)}</span>`).join('')}
+      ${fans.slice(0,FANSUB_LIMIT).map(f=>{
+        const meta=getFansubMeta(f);
+        const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:13px;height:13px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
+        const inner=`${logo} ${esc(f)}`;
+        return meta.url
+          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-tag" style="text-decoration:none;">${inner}</a>`
+          :`<span class="fansub-tag">${inner}</span>`;
+      }).join('')}
       ${fans.length>FANSUB_LIMIT?`<span class="fansub-tag more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;opacity:.8;">+${fans.length-FANSUB_LIMIT} daha</span>`:''}
+    </div></div>`:'';
+  const gens=s.genres||[];
+  const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
+      ${gens.map(g=>`<span class="genre-chip-static">${esc(g)}</span>`).join('')}
     </div></div>`:'';
   const oldC=s.oldCovers||[];
   const oldCH=oldC.length?`<div><div class="detail-sec-title">${ic('img',10)} Eski Kapaklar</div><div class="old-covers-row" id="oldCRow-${id}">
@@ -759,13 +877,13 @@ function getSeriesDetailSections(s){
   const ratingH=s.rating?`<div style="display:flex;align-items:center;gap:6px;">
     ${[1,2,3,4,5].map(n=>`<span style="font-size:18px;line-height:1;">${n<=s.rating?'★':'☆'}</span>`).join('')}
     <span style="font-size:11px;color:var(--text3);">${s.rating}/5</span></div>`:'';
-  const log=JSON.parse(localStorage.getItem('mv_log_'+id)||'[]').reverse();
+  const log=getSeriesLog(id);
   const logH=log.length?`<div><div class="detail-sec-title">${ic('clock',10)} Son Güncellemeler</div><div style="background:var(--black4);border:1px solid var(--line);border-radius:10px;padding:10px 12px;" id="logWrap-${id}">
       ${log.slice(0,LOG_LIMIT).map(l=>`<div class="log-entry"><div class="log-dot"></div><div class="log-text">${esc(l.text)}</div><div class="log-time">${timeAgo(l.ts)}</div></div>`).join('')}
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
   const countdownH=buildCountdown(s);
-  return {chTR,total,pct,altH,fanH,oldCH,noteH,ratingH,logH,countdownH};
+  return {chTR,total,pct,altH,fanH,genreH,oldCH,noteH,ratingH,logH,countdownH};
 }
 let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
 function openDetail(id,skipHistory){
@@ -874,7 +992,7 @@ function expandOldCovers(id){
   row.innerHTML=(s.oldCovers||[]).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('');
 }
 function expandLog(id){
-  const log=JSON.parse(localStorage.getItem('mv_log_'+id)||'[]').reverse();
+  const log=getSeriesLog(id);
   const wrap=document.getElementById('logWrap-'+id); if(!wrap) return;
   wrap.innerHTML=log.map(l=>`<div class="log-entry"><div class="log-dot"></div><div class="log-text">${esc(l.text)}</div><div class="log-time">${timeAgo(l.ts)}</div></div>`).join('');
 }
@@ -884,12 +1002,6 @@ function timeAgo(ts){
   if(d<3600000)return Math.floor(d/60000)+' dk önce';
   if(d<86400000)return Math.floor(d/3600000)+' saat önce';
   return Math.floor(d/86400000)+' gün önce';
-}
-function addLog(id,text){
-  const log=JSON.parse(localStorage.getItem('mv_log_'+id)||'[]');
-  log.push({text,ts:Date.now()});
-  if(log.length>20)log.shift();
-  localStorage.setItem('mv_log_'+id,JSON.stringify(log));
 }
 async function togglePin(id){
   const s=series.find(x=>x.id===id);if(!s)return;
@@ -914,10 +1026,10 @@ function showAddOverlay(){
   if(typeof onAddOverlayShown==='function') onAddOverlayShown();
 }
 function openAddSheet(){
-  editingId=null;altNames=[];oldCovers=[];fansubList=[];formFav=false;formPin=false;formRating=0;
+  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
-  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt'].forEach(id=>document.getElementById(id).value='');
+  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt','readUrlInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('autoIncrFreq').value='';
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
@@ -933,13 +1045,13 @@ function openAddSheet(){
   document.getElementById('oldCoversPreviews').innerHTML='';
   document.getElementById('seriesCategory').value='reading';
   document.getElementById('chapterTR').value='';document.getElementById('chapterEN').value='';
-  resetCoverPreview();updateFormToggles();renderRatingStars(0);
+  resetCoverPreview();updateFormToggles();renderRatingStars(0);renderGenreUI();
   document.getElementById('deleteBtn').classList.add('hidden');
   showAddOverlay();
 }
 function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
-  editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];
+  editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
   document.getElementById('addSheetTitle').textContent='Seriyi Düzenle';
   document.getElementById('seriesName').value=s.name||'';
@@ -948,6 +1060,7 @@ function openEditSheet(id){
   document.getElementById('chapterEN').value=s.chapterEN||'';
   document.getElementById('chapterTotal').value=s.chapterTotal||'';
   document.getElementById('seriesNote').value=s.note||'';
+  const readUrlEl=document.getElementById('readUrlInput'); if(readUrlEl)readUrlEl.value=s.readUrl||'';
   // Safari'nin input[type=text] için 512KB kesme sorunu nedeniyle, büyük (data: ile başlayan)
   // kapak verisini input'a yazmıyoruz, _pendingCoverData'da tutuyoruz. Kısa URL'ler input'a yazılabilir.
   if(s.cover&&s.cover.startsWith('data:')&&s.cover.length>500000){
@@ -971,7 +1084,7 @@ function openEditSheet(id){
   const noIncr=!s.autoIncrFreq||s.autoIncrFreq==='irregular'||s.autoIncrFreq==='completed';
   document.getElementById('incrAmtWrap').style.opacity=noIncr?'0.35':'1';
   document.getElementById('incrAmtWrap').style.pointerEvents=noIncr?'none':'';
-  renderAltTags();renderFansubTags();renderOldCoverPreviews();
+  renderAltTags();renderFansubTags();renderOldCoverPreviews();renderGenreUI();
   if(s.cover)showCoverPreview(s.cover);else resetCoverPreview();
   updateFormToggles();renderRatingStars(formRating);
   document.getElementById('deleteBtn').classList.remove('hidden');
@@ -1014,13 +1127,14 @@ async function saveSeries(){
   else if(autoFreq==='completed') releaseDay='Tamamlandı';
   const data={
     id:editingId||Date.now().toString(),name,
-    altNames:[...altNames],fansubList:[...fansubList],
+    altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
     category:document.getElementById('seriesCategory').value,
     chapterTR:newTR,chapterEN:document.getElementById('chapterEN').value||'',
     chapterTotal:document.getElementById('chapterTotal').value||'',
     note:document.getElementById('seriesNote').value.trim(),
+    readUrl:(document.getElementById('readUrlInput')?.value||'').trim(),
     favorited:formFav,pinned:formPin,rating:formRating,updatedAt:Date.now(),
     releaseDay,releaseDayNote,returnDate:document.getElementById('returnDate').value||'',
     autoIncrAmt:autoAmt||0,
@@ -1040,7 +1154,11 @@ async function saveSeries(){
   if(editingId){
     const idx=series.findIndex(x=>x.id===editingId);if(idx>=0)series[idx]=data;
     if(newTR&&newTR!==String(prevTR)) addLog(editingId,`TR bölüm ${prevTR}→${newTR}`);
-  } else series.unshift(data);
+    if(prevState&&prevState.category!=='completed'&&data.category==='completed') addLog(editingId,'Bitti olarak işaretlendi 🎉');
+  } else {
+    series.unshift(data);
+    addLog(data.id,'Kütüphaneye eklendi');
+  }
   try{
     await save();
   } catch(err){
@@ -1160,6 +1278,56 @@ function toggleSkip(){
     btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu Periyodu Atla`;
   }
 }
+function toggleGenrePreset(g){
+  const i=genres.indexOf(g);
+  if(i>=0) genres.splice(i,1); else genres.push(g);
+  renderGenreUI();
+}
+function addCustomGenre(){
+  const input=document.getElementById('customGenreInput'); if(!input)return;
+  const v=input.value.trim(); if(!v)return;
+  if(!genres.some(g=>g.toLowerCase()===v.toLowerCase())) genres.push(v);
+  input.value='';
+  renderGenreUI();
+}
+function removeGenre(g){
+  const i=genres.indexOf(g); if(i>=0) genres.splice(i,1);
+  renderGenreUI();
+}
+function renderGenreUI(){
+  const presetWrap=document.getElementById('genrePresetWrap');
+  const customWrap=document.getElementById('customGenreTagsWrap');
+  if(!presetWrap||!customWrap)return; // sayfa henüz bu elemanları içermiyorsa (eski önbellek) sessizce çık
+  presetWrap.innerHTML=GENRES_PRESET.map(g=>
+    `<div class="genre-chip ${genres.includes(g)?'active':''}" onclick="toggleGenrePreset('${esc(g).replace(/'/g,"\\'")}')">${esc(g)}</div>`
+  ).join('');
+  const customGenres=genres.filter(g=>!GENRES_PRESET.includes(g));
+  customWrap.innerHTML=customGenres.map(g=>
+    `<span class="alt-tag">${esc(g)}<button onclick="removeGenre('${esc(g).replace(/'/g,"\\'")}')">&#x2715;</button></span>`
+  ).join('');
+}
+function openFansubMetaEditor(i){
+  const name=fansubList[i]; if(!name)return;
+  const meta=getFansubMeta(name);
+  document.getElementById('fansubMetaName').textContent=name;
+  document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
+  document.getElementById('fansubMetaUrlInput').value=meta.url||'';
+  window._fansubMetaEditingName=name;
+  document.getElementById('fansubMetaOverlay').classList.remove('hidden');
+}
+function closeFansubMetaEditor(){
+  document.getElementById('fansubMetaOverlay').classList.add('hidden');
+  window._fansubMetaEditingName=null;
+}
+function saveFansubMetaFromForm(){
+  const name=window._fansubMetaEditingName; if(!name)return;
+  const logo=document.getElementById('fansubMetaLogoInput').value.trim();
+  const url=document.getElementById('fansubMetaUrlInput').value.trim();
+  setFansubMeta(name,logo,url);
+  closeFansubMetaEditor();
+  renderFansubTags();
+  showToast('check',`"${name}" için logo/link kaydedildi.`);
+}
 function addAltName(){const v=document.getElementById('altNameInput').value.trim();if(!v)return;altNames.push(v);document.getElementById('altNameInput').value='';renderAltTags();}
 document.getElementById('altNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAltName();});
 function removeAltName(i){altNames.splice(i,1);renderAltTags();}
@@ -1184,7 +1352,14 @@ document.addEventListener('click',e=>{
   if(wrap&&input&&e.target!==input&&!wrap.contains(e.target))hideFansubSuggestions();
 });
 function removeFansub(i){fansubList.splice(i,1);renderFansubTags();}
-function renderFansubTags(){document.getElementById('fansubTagsWrap').innerHTML=fansubList.map((f,i)=>`<span class="fansub-tag">${ic('bolt',9)} ${esc(f)}<button onclick="removeFansub(${i})">&#x2715;</button></span>`).join('');}
+function renderFansubTags(){
+  document.getElementById('fansubTagsWrap').innerHTML=fansubList.map((f,i)=>{
+    const meta=getFansubMeta(f);
+    const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:14px;height:14px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
+    const linkDot=meta.url?`<span style="width:5px;height:5px;border-radius:50%;background:var(--purple3);display:inline-block;" title="Link kayıtlı"></span>`:'';
+    return `<span class="fansub-tag">${logoImg} ${esc(f)} ${linkDot}<button onclick="openFansubMetaEditor(${i})" title="Logo/Link Ekle" style="opacity:.85;">${ic('edit',10)}</button><button onclick="removeFansub(${i})">&#x2715;</button></span>`;
+  }).join('');
+}
 function getAllKnownFansubs(){
   const set=new Set();
   series.forEach(s=>(s.fansubList||[]).forEach(f=>{if(f&&f.trim())set.add(f.trim());}));
@@ -1564,11 +1739,13 @@ async function importBackup(e){
         id:newId,name,
         altNames:Array.isArray(incoming.altNames)?[...incoming.altNames]:[],
         fansubList:Array.isArray(incoming.fansubList)?[...incoming.fansubList]:[],
+        genres:Array.isArray(incoming.genres)?[...incoming.genres]:[],
         cover:incoming.cover||'',
         oldCovers:Array.isArray(incoming.oldCovers)?[...incoming.oldCovers]:[],
         category:incoming.category||'reading',
         chapterTR:incoming.chapterTR||'',chapterEN:incoming.chapterEN||'',chapterTotal:incoming.chapterTotal||'',
         note:'',favorited:false,pinned:false,rating:0,updatedAt:Date.now(),
+        readUrl:incoming.readUrl||'',
         releaseDay:incoming.releaseDay||'',releaseDayNote:incoming.releaseDayNote||'',
         returnDate:incoming.returnDate||'',
         autoIncrAmt:incoming.autoIncrAmt||0,
@@ -1579,6 +1756,14 @@ async function importBackup(e){
         autoIncrSkips:[],
       };
       series.unshift(newSeries);
+      // Gönderen tarafın çeviri ekibi logo/link bilgisi dosyaya eklenmişse, sende henüz
+      // kayıtlı olmayan ekipler için bu bilgiyi de al (var olanların üzerine yazma).
+      if(data.fansubMetaSnapshot&&typeof data.fansubMetaSnapshot==='object'){
+        Object.entries(data.fansubMetaSnapshot).forEach(([fname,meta])=>{
+          if(!fansubMeta[fname]&&meta&&(meta.logo||meta.url)) fansubMeta[fname]={logo:meta.logo||'',url:meta.url||''};
+        });
+        saveFansubMeta();
+      }
       await save();
       renderTabs(); renderContent();
       closeSheet('backupOverlay');
