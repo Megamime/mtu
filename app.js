@@ -853,16 +853,16 @@ function getSeriesDetailSections(s){
       ${alts.length>ALT_LIMIT?`<span class="alt-tag more-toggle" onclick="expandTags('altWrap-${id}','${id}','alts')" style="cursor:pointer;border-color:var(--purple);color:var(--purple3);">+${alts.length-ALT_LIMIT} daha</span>`:''}
     </div></div>`:'';
   const fans=s.fansubList||[];
-  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub / Çeviri Ekibi</div><div class="alt-tags-wrap" id="fanWrap-${id}">
+  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub / Çeviri Ekibi</div><div class="fansub-card-row" id="fanWrap-${id}">
       ${fans.slice(0,FANSUB_LIMIT).map(f=>{
         const meta=getFansubMeta(f);
-        const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:13px;height:13px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
-        const inner=`${logo} ${esc(f)}`;
+        const logo=meta.logo?`<img src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
+        const inner=`${logo}<span class="fansub-card-name">${esc(f)}</span>`;
         return meta.url
-          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-tag" style="text-decoration:none;">${inner}</a>`
-          :`<span class="fansub-tag">${inner}</span>`;
+          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`
+          :`<div class="fansub-card">${inner}</div>`;
       }).join('')}
-      ${fans.length>FANSUB_LIMIT?`<span class="fansub-tag more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;opacity:.8;">+${fans.length-FANSUB_LIMIT} daha</span>`:''}
+      ${fans.length>FANSUB_LIMIT?`<div class="fansub-card more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
     </div></div>`:'';
   const gens=s.genres||[];
   const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
@@ -873,7 +873,8 @@ function getSeriesDetailSections(s){
       ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('')}
       ${oldC.length>4?`<div class="old-cover-more" onclick="expandOldCovers('${id}')" style="flex-shrink:0;width:60px;height:84px;border-radius:7px;border:1px dashed var(--line2);background:var(--black3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;">+${oldC.length-4}</div>`:''}
     </div></div>`:'';
-  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Kişisel Not</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
+  const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Kişisel Düşüncem</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
+  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Not</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
   const ratingH=s.rating?`<div style="display:flex;align-items:center;gap:6px;">
     ${[1,2,3,4,5].map(n=>`<span style="font-size:18px;line-height:1;">${n<=s.rating?'★':'☆'}</span>`).join('')}
     <span style="font-size:11px;color:var(--text3);">${s.rating}/5</span></div>`:'';
@@ -883,7 +884,7 @@ function getSeriesDetailSections(s){
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
   const countdownH=buildCountdown(s);
-  return {chTR,total,pct,altH,fanH,genreH,oldCH,noteH,ratingH,logH,countdownH};
+  return {chTR,total,pct,altH,fanH,genreH,oldCH,noteH,opinionH,ratingH,logH,countdownH};
 }
 let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
 function openDetail(id,skipHistory){
@@ -899,7 +900,7 @@ function openDetail(id,skipHistory){
   const coverImg=s.cover
     ?`<img class="detail-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
     :``;
-  const {chTR,total,pct,altH,fanH,oldCH,noteH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
+  const {chTR,total,pct,altH,fanH,oldCH,noteH,opinionH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
   const el=document.getElementById('mainContent');
   el.innerHTML=`
     <div class="detail-page-backbtn" onclick="closeDetail()">${ic('chevronLeft',15)} <span>Geri</span></div>
@@ -927,7 +928,7 @@ function openDetail(id,skipHistory){
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:5px;"><span>İlerleme</span><span>%${pct}</span></div>
         <div style="height:5px;background:var(--black3);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--purple),var(--purple3));border-radius:3px;"></div></div>
       </div>`:''}
-      ${countdownH}${altH}${fanH}${oldCH}${noteH}${logH}
+      ${countdownH}${altH}${fanH}${oldCH}${opinionH}${noteH}${logH}
       <div class="detail-action-row">
         <div class="action-chip ${s.pinned?'chip-pin':''}" onclick="togglePin('${s.id}')">${s.pinned?ic('pinFill',13):ic('pin',13)} ${s.pinned?'Sabiti Kaldır':'Sabitle'}</div>
         <div class="action-chip ${s.favorited?'chip-fav':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('starFill',13):ic('star',13)} ${s.favorited?'Favoriden Çıkar':'Favorile'}</div>
@@ -983,7 +984,12 @@ function expandTags(wrapId, seriesId, type){
   if(type==='alts'){
     wrap.innerHTML=items.map(a=>`<span class="alt-tag">${esc(a)}</span>`).join('');
   } else {
-    wrap.innerHTML=items.map(f=>`<span class="fansub-tag">${ic('bolt',9)} ${esc(f)}</span>`).join('');
+    wrap.innerHTML=items.map(f=>{
+      const meta=getFansubMeta(f);
+      const logo=meta.logo?`<img src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
+      const inner=`${logo}<span class="fansub-card-name">${esc(f)}</span>`;
+      return meta.url?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`:`<div class="fansub-card">${inner}</div>`;
+    }).join('');
   }
 }
 function expandOldCovers(id){
@@ -1029,7 +1035,7 @@ function openAddSheet(){
   editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
-  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('autoIncrFreq').value='';
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
@@ -1060,6 +1066,7 @@ function openEditSheet(id){
   document.getElementById('chapterEN').value=s.chapterEN||'';
   document.getElementById('chapterTotal').value=s.chapterTotal||'';
   document.getElementById('seriesNote').value=s.note||'';
+  const opinionEl=document.getElementById('seriesOpinion'); if(opinionEl)opinionEl.value=s.opinion||'';
   const originalNameEl=document.getElementById('originalNameInput'); if(originalNameEl)originalNameEl.value=s.originalName||'';
   const readUrlEl=document.getElementById('readUrlInput'); if(readUrlEl)readUrlEl.value=s.readUrl||'';
   // Safari'nin input[type=text] için 512KB kesme sorunu nedeniyle, büyük (data: ile başlayan)
@@ -1135,6 +1142,7 @@ async function saveSeries(){
     chapterTR:newTR,chapterEN:document.getElementById('chapterEN').value||'',
     chapterTotal:document.getElementById('chapterTotal').value||'',
     note:document.getElementById('seriesNote').value.trim(),
+    opinion:(document.getElementById('seriesOpinion')?.value||'').trim(),
     originalName:(document.getElementById('originalNameInput')?.value||'').trim(),
     readUrl:(document.getElementById('readUrlInput')?.value||'').trim(),
     favorited:formFav,pinned:formPin,rating:formRating,updatedAt:Date.now(),
@@ -1315,7 +1323,26 @@ function openFansubMetaEditor(i){
   document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
   document.getElementById('fansubMetaUrlInput').value=meta.url||'';
   window._fansubMetaEditingName=name;
+  renderFansubMetaLogoPreview(meta.logo||'');
   document.getElementById('fansubMetaOverlay').classList.remove('hidden');
+}
+function renderFansubMetaLogoPreview(src){
+  const wrap=document.getElementById('fansubMetaLogoPreviewWrap');
+  if(!wrap)return;
+  wrap.innerHTML=src
+    ?`<img src="${esc(src)}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--line2);" onerror="this.style.display='none'">`
+    :`<div style="width:56px;height:56px;border-radius:12px;background:var(--black4);border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;color:var(--text3);">${ic('img',20)}</div>`;
+}
+function previewFansubMetaLogo(){
+  renderFansubMetaLogoPreview(document.getElementById('fansubMetaLogoInput').value.trim());
+}
+function handleFansubMetaLogoFile(){
+  const f=document.getElementById('fansubMetaLogoFileInput').files[0]; if(!f)return;
+  if(!isImageFile(f)){ showToast('warn','Lütfen bir görsel dosyası seç.'); return; }
+  readImageFileAsDataUrl(f).then(dataUrl=>compressImage(dataUrl,200,200,0.85)).then(compressed=>{
+    document.getElementById('fansubMetaLogoInput').value=compressed;
+    renderFansubMetaLogoPreview(compressed);
+  }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
 }
 function closeFansubMetaEditor(){
   document.getElementById('fansubMetaOverlay').classList.add('hidden');
@@ -2079,6 +2106,33 @@ function computeExtraStats(){
   const mostRead=[...series].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
   const pinnedCount=series.filter(s=>s.pinned).length;
   return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount};
+}
+// ===== Kişiselleştirilmiş istatistikler — tür dağılımı, fansub liderlik tablosu, puan
+// dağılımı, en eski seri gibi daha "kişiye özel" ve görsel açıdan zengin veriler. =====
+function computePersonalizedStats(){
+  // Tür dağılımı (tag cloud için)
+  const genreCounts={};
+  series.forEach(s=>(s.genres||[]).forEach(g=>{const k=(g||'').trim();if(k)genreCounts[k]=(genreCounts[k]||0)+1;}));
+  const genreDist=Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]);
+
+  // Fansub liderlik tablosu (ilk 5)
+  const fansubCount={};
+  series.forEach(s=>(s.fansubList||[]).forEach(f=>{const k=(f||'').trim();if(k)fansubCount[k]=(fansubCount[k]||0)+1;}));
+  const fansubLeaderboard=Object.entries(fansubCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // Puan dağılımı (1-5 yıldız histogramı)
+  const ratingDist=[0,0,0,0,0,0]; // index 0 kullanılmıyor, 1-5 arası
+  series.forEach(s=>{ if(s.rating>=1&&s.rating<=5) ratingDist[s.rating]++; });
+  const maxRatingCount=Math.max(1,...ratingDist.slice(1));
+
+  // En eski seri (id zaman damgalı olduğu için kütüphaneye eklenme sırasını verir)
+  let oldestSeries=null,oldestTs=Infinity;
+  series.forEach(s=>{
+    const t=parseInt(s.id);
+    if(!isNaN(t)&&t<oldestTs){oldestTs=t;oldestSeries=s;}
+  });
+
+  return {genreDist,fansubLeaderboard,ratingDist,maxRatingCount,oldestSeries,oldestTs};
 }
 function formatNote(s){
   if(!s)return '';
