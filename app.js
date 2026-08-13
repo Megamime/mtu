@@ -1543,6 +1543,87 @@ if('serviceWorker' in navigator){
   });
 }
 function openSheet(id){ document.getElementById(id).classList.remove('hidden'); }
+
+// ===== Sahte(!) ama kütüphane verinden beslenen profil sistemi. Backend/hesap yok — tamamen
+// bu cihaza, localStorage'a özel. Avatar emoji ya da kendi yüklediğin bir fotoğraf olabilir. =====
+const PROFILE_AVATARS=['🍥','🐉','⚔️','🌸','🎭','📖','🔥','✨','💜','🎌','👹','🦋'];
+const PROFILE_RANKS=[
+  {min:0,  label:'Çaylak Okuyucu'},
+  {min:10, label:'Sayfa Avcısı'},
+  {min:25, label:'Manga Tutkunu'},
+  {min:50, label:'Kütüphane Efendisi'},
+  {min:100,label:'Fansub Bilgesi'},
+  {min:200,label:'Efsanevi Okuyucu'},
+];
+let _profileAvatarPending='🍥';
+function getProfile(){
+  let p={};
+  try{ p=JSON.parse(localStorage.getItem('megami_profile')||'{}'); }catch(e){}
+  return {avatar:p.avatar||'🍥',name:p.name||'',bio:p.bio||''};
+}
+function isImageAvatar(a){ return typeof a==='string'&&(a.startsWith('data:')||a.startsWith('http')); }
+function avatarHTML(a,size){
+  return isImageAvatar(a)?`<img src="${esc(a)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:a;
+}
+function saveProfileData(p){ localStorage.setItem('megami_profile',JSON.stringify(p)); }
+function getProfileRank(){
+  const n=series.length;
+  let rank=PROFILE_RANKS[0].label;
+  PROFILE_RANKS.forEach(r=>{ if(n>=r.min) rank=r.label; });
+  return rank;
+}
+function getMemberSinceLabel(){
+  const addedEntries=activityLog.filter(l=>l.text==='Kütüphaneye eklendi');
+  if(!addedEntries.length) return 'Yeni';
+  const earliest=Math.min(...addedEntries.map(l=>l.ts));
+  return new Date(earliest).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+}
+function updateProfileAvatarBtn(){
+  const btn=document.getElementById('profileAvatarBtn');
+  if(btn) btn.innerHTML=avatarHTML(getProfile().avatar);
+}
+function openProfileSheet(){
+  const p=getProfile();
+  _profileAvatarPending=p.avatar;
+  document.getElementById('profileAvatarBig').innerHTML=avatarHTML(p.avatar);
+  document.getElementById('profileRankLabel').textContent=getProfileRank();
+  document.getElementById('profileNameInput').value=p.name;
+  document.getElementById('profileBioInput').value=p.bio;
+  document.getElementById('profileAvatarGrid').innerHTML=PROFILE_AVATARS.map(a=>
+    `<div class="profile-avatar-opt ${a===p.avatar?'active':''}" onclick="pickProfileAvatar('${a}')">${a}</div>`
+  ).join('');
+  // Not: rütbe ve üyelik tarihi burada özellikle var çünkü bunlar İstatistik sayfasında
+  // yok — "Toplam Seri"/"Bitirilen" gibi zaten orada olan sayıları burada TEKRARLAMIYORUZ,
+  // bu gerçekten gereksiz olurdu.
+  document.getElementById('profileStatsGrid').innerHTML=`
+    <div class="profile-stat-card"><div class="profile-stat-num" style="font-size:13px;">${esc(getProfileRank())}</div><div class="profile-stat-label">Rütbe</div></div>
+    <div class="profile-stat-card"><div class="profile-stat-num" style="font-size:13px;">${esc(getMemberSinceLabel())}</div><div class="profile-stat-label">Üyelik</div></div>
+  `;
+  openSheet('profileOverlay');
+}
+function pickProfileAvatar(a){
+  _profileAvatarPending=a;
+  document.getElementById('profileAvatarBig').innerHTML=avatarHTML(a);
+  document.querySelectorAll('.profile-avatar-opt').forEach(el=>el.classList.toggle('active',el.textContent===a));
+}
+function handleProfileAvatarFile(){
+  const f=document.getElementById('profileAvatarFileInput').files[0]; if(!f)return;
+  if(!isImageFile(f)){ showToast('warn','Lütfen bir görsel dosyası seç.'); return; }
+  readImageFileAsDataUrl(f).then(dataUrl=>compressImage(dataUrl,240,240,0.85)).then(compressed=>{
+    _profileAvatarPending=compressed;
+    document.getElementById('profileAvatarBig').innerHTML=avatarHTML(compressed);
+    document.querySelectorAll('.profile-avatar-opt').forEach(el=>el.classList.remove('active'));
+  }).catch(err=>{showToast('warn',err.message||'Görsel yüklenemedi.');});
+}
+function previewProfileName(){} // ileride canlı önizleme için ayrılmış, şu an gerek yok
+function saveProfile(){
+  const name=document.getElementById('profileNameInput').value.trim();
+  const bio=document.getElementById('profileBioInput').value.trim();
+  saveProfileData({avatar:_profileAvatarPending,name,bio});
+  updateProfileAvatarBtn();
+  closeSheet('profileOverlay');
+  showToast('check','Profil kaydedildi!');
+}
 const lbState={scale:1,x:0,y:0,minScale:1,maxScale:5};
 let lbDragging=false,lbDragStart={x:0,y:0},lbStartPos={x:0,y:0};
 let lbPinchStartDist=0,lbPinchStartScale=1;
@@ -2024,7 +2105,7 @@ function normalizeCoverUrl(u){
 // ═══════════════════════════════════════════
 // RADIAL MENU
 // ═══════════════════════════════════════════
-var radialOpen=false, radialTimer=null, radialHovered=-1;
+var radialOpen=false, radialTimer=null, radialHovered=-1, radialStaggerTimers=[];
 var radialDefs=[
   {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
   {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
@@ -2084,14 +2165,25 @@ function openRadial(){
   buildRadialItems();
   document.getElementById('radialTrigger').classList.add('open');
   document.getElementById('radialBackdrop').classList.add('open');
+  // Önceki bir açılıştan kalan bekleyen zamanlayıcı varsa (art arda hızlı aç/kapa
+  // durumunda) önce onları temizle, aksi halde eski öğeler yanlış zamanda açılabilir.
+  radialStaggerTimers.forEach(clearTimeout);
+  radialStaggerTimers=[];
   document.querySelectorAll('.radial-item').forEach(function(el,i){
-    setTimeout(function(){el.classList.add('open');},i*45);
+    var t=setTimeout(function(){el.classList.add('open');},i*45);
+    radialStaggerTimers.push(t);
   });
 }
 
 function closeRadial(){
   radialOpen=false;
   radialHovered=-1;
+  // KRİTİK: açılış animasyonu bitmeden kapatılırsa, henüz ateşlenmemiş kademeli
+  // "aç" zamanlayıcıları burada iptal edilmezse, menü tamamen kapandıktan SONRA
+  // gecikmeli olarak ateşlenip öğeleri tekrar görünür/etkileşimli hale getiriyordu —
+  // ortada tepkisiz, arka planı olmayan bir öğe kalıp "donmuş" gibi görünüyordu.
+  radialStaggerTimers.forEach(clearTimeout);
+  radialStaggerTimers=[];
   document.querySelectorAll('.radial-item').forEach(function(el){el.classList.remove('open','hovered');});
   var t=document.getElementById('radialTrigger');
   var b=document.getElementById('radialBackdrop');
@@ -2135,12 +2227,20 @@ function initRadialMenu(){
   var trigger=document.getElementById('radialTrigger');
   if(!trigger) return;
 
-  // Touch: basılı tut → aç, sürükle → hover, bırak → seç
+  var wasOpenBeforeThisTouch=false;
+
+  // Touch akışı, iki alternatif kullanım şeklini destekler:
+  // 1) Basılı tut (350ms) + parmağı sürükleyip bir öğenin üzerinde bırak → o öğe seçilir.
+  // 2) Kısa bir dokunuş → menü açılır ve AÇIK KALIR; sonra istediğin öğeye ayrıca dokunursun.
+  //    Menü açıkken tetiğe tekrar dokunmak (bir öğeye değil) menüyü kapatır.
   trigger.addEventListener('touchstart',function(e){
     e.preventDefault();
-    radialTimer=setTimeout(function(){
-      openRadial();
-    },350);
+    wasOpenBeforeThisTouch=radialOpen;
+    if(!radialOpen){
+      radialTimer=setTimeout(function(){
+        openRadial();
+      },350);
+    }
   },{passive:false});
 
   trigger.addEventListener('touchmove',function(e){
@@ -2153,11 +2253,22 @@ function initRadialMenu(){
 
   trigger.addEventListener('touchend',function(e){
     clearTimeout(radialTimer);
-    if(!radialOpen) return;
     e.preventDefault();
+    if(wasOpenBeforeThisTouch){
+      // Menü zaten açıkken tetiğe tekrar dokunuldu → kapat (aç/kapa).
+      closeRadial();
+      return;
+    }
+    if(!radialOpen) return; // Kısa dokunuş, 350ms dolmadan bitti → hiçbir şey açılmadı, iş yok.
     var idx=radialHovered;
-    closeRadial();
-    if(idx>=0) radialDefs[idx].action();
+    if(idx>=0){
+      // Basılı tutup bir öğenin üzerine sürükleyip öyle bıraktı → doğrudan seç.
+      closeRadial();
+      radialDefs[idx].action();
+    }
+    // idx<0: ya kısa bir dokunuşla yeni açıldı, ya da uzun bastı ama hiçbir öğeye
+    // sürüklemeden tetiğin üzerinde bıraktı. İki durumda da menüyü AÇIK bırakıyoruz;
+    // kullanıcı şimdi istediği öğeye ayrıca dokunabilir.
   },{passive:false});
 
   trigger.addEventListener('touchcancel',function(){
@@ -2165,12 +2276,16 @@ function initRadialMenu(){
     closeRadial();
   });
 
-  // Desktop fallback
-  trigger.addEventListener('mousedown',function(){radialTimer=setTimeout(openRadial,350);});
+  // Desktop fallback (fare) — aynı iki alternatif mantık
+  trigger.addEventListener('mousedown',function(){
+    wasOpenBeforeThisTouch=radialOpen;
+    if(!radialOpen) radialTimer=setTimeout(openRadial,350);
+  });
   trigger.addEventListener('mouseup',function(){
     clearTimeout(radialTimer);
-    if(radialOpen&&radialHovered>=0){var idx=radialHovered;closeRadial();radialDefs[idx].action();}
-    else if(radialOpen) closeRadial();
+    if(wasOpenBeforeThisTouch){ closeRadial(); return; }
+    if(!radialOpen) return;
+    if(radialHovered>=0){ var idx=radialHovered; closeRadial(); radialDefs[idx].action(); }
   });
 }
 
