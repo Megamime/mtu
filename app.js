@@ -254,7 +254,7 @@ let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',curr
 // büyük base64 kapak verisini input'a değil, bu değişkene yazıyoruz.
 let _pendingCoverData=null;
 let selectionMode=false,selectedIds=new Set();
-let altNames=[],oldCovers=[],fansubList=[],genres=[],formFav=false,formPin=false,formRating=0;
+let altNames=[],oldCovers=[],fansubList=[],genres=[],formLinks=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
 const SECTIONS=[
   {key:'pinned',  label:'Sabitlenmiş',                      icon:'pin',      cats:null, pinnedOnly:true},
@@ -868,6 +868,26 @@ function getSeriesDetailSections(s){
   const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
       ${gens.map(g=>`<span class="genre-chip-static">${esc(g)}</span>`).join('')}
     </div></div>`:'';
+  // Bağlantılı Seriler — "Ana Seri" bağlantıları ardışık bir zincir (→) olarak, "Yan Seri"
+  // bağlantıları ise ayrı, dallanan bir sırada gösteriliyor (paralel/spin-off hissi için).
+  const rawLinks=s.links||[];
+  const mainLinkedSeries=rawLinks.filter(l=>l.type==='main').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
+  const sideLinkedSeries=rawLinks.filter(l=>l.type==='side').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
+  function linkCardHTML(ls,isSide){
+    const cov=ls.cover?`<img src="${esc(ls.cover)}" class="series-link-cover">`:`<div class="series-link-cover series-link-cover-ph">${ic('img',13)}</div>`;
+    return `<div class="series-link-card${isSide?' side':''}" onclick="openDetail('${ls.id}')">${cov}<span class="series-link-name">${esc(ls.name)}</span></div>`;
+  }
+  let linksH='';
+  if(mainLinkedSeries.length||sideLinkedSeries.length){
+    linksH=`<div><div class="detail-sec-title">${ic('layers',10)} Bağlantılı Seriler</div>`;
+    if(mainLinkedSeries.length){
+      linksH+=`<div class="series-link-row">${linkCardHTML({id:s.id,name:s.name,cover:s.cover},false)}${mainLinkedSeries.map(ls=>`<span class="series-link-arrow">→</span>${linkCardHTML(ls,false)}`).join('')}</div>`;
+    }
+    if(sideLinkedSeries.length){
+      linksH+=`<div class="series-link-side-label">◈ Yan Seriler</div><div class="series-link-row side-row">${sideLinkedSeries.map(ls=>linkCardHTML(ls,true)).join('')}</div>`;
+    }
+    linksH+=`</div>`;
+  }
   const oldC=s.oldCovers||[];
   const oldCH=oldC.length?`<div><div class="detail-sec-title">${ic('img',10)} Eski Kapaklar</div><div class="old-covers-row" id="oldCRow-${id}">
       ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('')}
@@ -884,7 +904,7 @@ function getSeriesDetailSections(s){
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
   const countdownH=buildCountdown(s);
-  return {chTR,total,pct,altH,fanH,genreH,oldCH,noteH,opinionH,ratingH,logH,countdownH};
+  return {chTR,total,pct,altH,fanH,genreH,linksH,oldCH,noteH,opinionH,ratingH,logH,countdownH};
 }
 let _detailReturnState=null; // detay sayfasına girmeden önceki sayfa/scroll durumu
 function openDetail(id,skipHistory){
@@ -900,7 +920,7 @@ function openDetail(id,skipHistory){
   const coverImg=s.cover
     ?`<img class="detail-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
     :``;
-  const {chTR,total,pct,altH,fanH,oldCH,noteH,opinionH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
+  const {chTR,total,pct,altH,fanH,genreH,linksH,oldCH,noteH,opinionH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
   const el=document.getElementById('mainContent');
   el.innerHTML=`
     <div class="detail-page-backbtn" onclick="closeDetail()">${ic('chevronLeft',15)} <span>Geri</span></div>
@@ -928,7 +948,7 @@ function openDetail(id,skipHistory){
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:5px;"><span>İlerleme</span><span>%${pct}</span></div>
         <div style="height:5px;background:var(--black3);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--purple),var(--purple3));border-radius:3px;"></div></div>
       </div>`:''}
-      ${countdownH}${altH}${fanH}${oldCH}${opinionH}${noteH}${logH}
+      ${countdownH}${altH}${fanH}${linksH}${oldCH}${opinionH}${noteH}${logH}
       <div class="detail-action-row">
         <div class="action-chip ${s.pinned?'chip-pin':''}" onclick="togglePin('${s.id}')">${s.pinned?ic('pinFill',13):ic('pin',13)} ${s.pinned?'Sabiti Kaldır':'Sabitle'}</div>
         <div class="action-chip ${s.favorited?'chip-fav':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('starFill',13):ic('star',13)} ${s.favorited?'Favoriden Çıkar':'Favorile'}</div>
@@ -1032,7 +1052,7 @@ function showAddOverlay(){
   if(typeof onAddOverlayShown==='function') onAddOverlayShown();
 }
 function openAddSheet(){
-  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formFav=false;formPin=false;formRating=0;
+  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formLinks=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
   ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -1051,13 +1071,15 @@ function openAddSheet(){
   document.getElementById('oldCoversPreviews').innerHTML='';
   document.getElementById('seriesCategory').value='reading';
   document.getElementById('chapterTR').value='';document.getElementById('chapterEN').value='';
-  resetCoverPreview();updateFormToggles();renderRatingStars(0);renderGenreUI();
+  resetCoverPreview();updateFormToggles();renderRatingStars(0);renderGenreUI();renderLinkChips();
+  const linkSearchEl=document.getElementById('linkSearchInput'); if(linkSearchEl)linkSearchEl.value='';
   document.getElementById('deleteBtn').classList.add('hidden');
   showAddOverlay();
 }
 function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
   editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];
+  formLinks=[...(s.links||[])];window._originalLinksSnapshot=JSON.stringify(formLinks);
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
   document.getElementById('addSheetTitle').textContent='Seriyi Düzenle';
   document.getElementById('seriesName').value=s.name||'';
@@ -1092,7 +1114,8 @@ function openEditSheet(id){
   const noIncr=!s.autoIncrFreq||s.autoIncrFreq==='irregular'||s.autoIncrFreq==='completed';
   document.getElementById('incrAmtWrap').style.opacity=noIncr?'0.35':'1';
   document.getElementById('incrAmtWrap').style.pointerEvents=noIncr?'none':'';
-  renderAltTags();renderFansubTags();renderOldCoverPreviews();renderGenreUI();
+  renderAltTags();renderFansubTags();renderOldCoverPreviews();renderGenreUI();renderLinkChips();
+  const linkSearchEl2=document.getElementById('linkSearchInput'); if(linkSearchEl2)linkSearchEl2.value='';
   if(s.cover)showCoverPreview(s.cover);else resetCoverPreview();
   updateFormToggles();renderRatingStars(formRating);
   document.getElementById('deleteBtn').classList.remove('hidden');
@@ -1135,7 +1158,7 @@ async function saveSeries(){
   else if(autoFreq==='completed') releaseDay='Tamamlandı';
   const data={
     id:editingId||Date.now().toString(),name,
-    altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],
+    altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],links:[...formLinks],
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
     category:document.getElementById('seriesCategory').value,
@@ -1169,6 +1192,7 @@ async function saveSeries(){
     series.unshift(data);
     addLog(data.id,'Kütüphaneye eklendi');
   }
+  syncSeriesLinks(data.id,data.links,window._originalLinksSnapshot||'[]');
   try{
     await save();
   } catch(err){
@@ -1357,6 +1381,68 @@ function saveFansubMetaFromForm(){
   renderFansubTags();
   showToast('check',`"${name}" için logo/link kaydedildi.`);
 }
+// ===== Bağlantılı Seriler — "Ana Seri" (ardışık devam, ör. Mirai Nikki → Redial) ve
+// "Yan Seri" (paralel, ör. spin-off/alternatif versiyon) olarak iki türde bağlantı.
+// Bir seriye bağlantı eklendiğinde karşı taraftaki seriye de otomatik ekleniyor (senkron). =====
+function searchLinkableSeries(){
+  const q=document.getElementById('linkSearchInput').value.trim().toLowerCase();
+  const dd=document.getElementById('linkSuggestions');
+  if(!dd)return;
+  if(!q){ dd.classList.add('hidden'); dd.innerHTML=''; return; }
+  const linkedIds=new Set(formLinks.map(l=>l.id));
+  const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&s.name.toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){ dd.classList.add('hidden'); dd.innerHTML='<div class="autocomplete-item" style="opacity:.6;cursor:default;">Eşleşme yok</div>'; dd.classList.remove('hidden'); return; }
+  dd.innerHTML=matches.map(s=>`
+    <div class="autocomplete-item" style="justify-content:space-between;gap:8px;">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.name)}</span>
+      <div style="display:flex;gap:5px;flex-shrink:0;">
+        <button type="button" onclick="event.stopPropagation();addSeriesLink('${s.id}','main')" style="font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--purpleG);border:1px solid var(--purple2);color:var(--purple3);cursor:pointer;">+ Ana Seri</button>
+        <button type="button" onclick="event.stopPropagation();addSeriesLink('${s.id}','side')" style="font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--black5);border:1px solid var(--line2);color:var(--text2);cursor:pointer;">+ Yan Seri</button>
+      </div>
+    </div>`).join('');
+  dd.classList.remove('hidden');
+}
+function hideLinkSuggestions(){ const dd=document.getElementById('linkSuggestions'); if(dd)dd.classList.add('hidden'); }
+function addSeriesLink(targetId,type){
+  if(formLinks.some(l=>l.id===targetId)) return;
+  formLinks.push({id:targetId,type});
+  const inp=document.getElementById('linkSearchInput'); if(inp)inp.value='';
+  hideLinkSuggestions();
+  renderLinkChips();
+}
+function removeSeriesLink(targetId){
+  formLinks=formLinks.filter(l=>l.id!==targetId);
+  renderLinkChips();
+}
+function renderLinkChips(){
+  const wrap=document.getElementById('linkChipsWrap'); if(!wrap) return;
+  if(!formLinks.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=formLinks.map(l=>{
+    const s=series.find(x=>x.id===l.id);
+    if(!s) return '';
+    const isMain=l.type==='main';
+    return `<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':''}">${esc(s.name)} <b style="font-size:8.5px;opacity:.75;font-weight:700;">${isMain?'ANA SERİ':'YAN SERİ'}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
+  }).join('');
+}
+// Bir seriye bağlantı eklenip/kaldırıldığında karşı taraftaki seriyi de günceller —
+// elle iki kere eklemek zorunda kalmıyorsun.
+function syncSeriesLinks(seriesId,newLinks,oldLinksJSON){
+  let oldLinks=[]; try{ oldLinks=JSON.parse(oldLinksJSON||'[]'); }catch(e){}
+  const newIds=new Set(newLinks.map(l=>l.id));
+  newLinks.forEach(l=>{
+    const target=series.find(x=>x.id===l.id); if(!target) return;
+    target.links=target.links||[];
+    const existing=target.links.find(tl=>tl.id===seriesId);
+    if(existing) existing.type=l.type;
+    else target.links.push({id:seriesId,type:l.type});
+  });
+  oldLinks.forEach(l=>{
+    if(!newIds.has(l.id)){
+      const target=series.find(x=>x.id===l.id);
+      if(target&&target.links) target.links=target.links.filter(tl=>tl.id!==seriesId);
+    }
+  });
+}
 function addAltName(){const v=document.getElementById('altNameInput').value.trim();if(!v)return;altNames.push(v);document.getElementById('altNameInput').value='';renderAltTags();}
 document.getElementById('altNameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addAltName();});
 function removeAltName(i){altNames.splice(i,1);renderAltTags();}
@@ -1379,6 +1465,9 @@ document.addEventListener('click',e=>{
   const wrap=document.getElementById('fansubSuggestWrap');
   const input=document.getElementById('fansubInput');
   if(wrap&&input&&e.target!==input&&!wrap.contains(e.target))hideFansubSuggestions();
+  const linkWrap=document.getElementById('linkSuggestions');
+  const linkInput=document.getElementById('linkSearchInput');
+  if(linkWrap&&linkInput&&e.target!==linkInput&&!linkWrap.contains(e.target))hideLinkSuggestions();
 });
 function removeFansub(i){fansubList.splice(i,1);renderFansubTags();}
 function renderFansubTags(){
