@@ -682,6 +682,91 @@ function syncCatTabsActions(){
   const sel=document.getElementById('homeSortSelect');
   if(sel)sel.innerHTML=Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join(''); // mobile.html'de artık bu select yok
 }
+// ===== Günlük Özet — "Megami'yi açtığında" görünen, bildirim tarzı bir kart: bugün yeni
+// bölüm gelen seriler, sezon arasından dönenler, ve güncel olmayıp okumaya devam ettiğin
+// seriler için "kaldığın yer" hatırlatması. =====
+function getTodaysNewChapters(){
+  const todayStr=new Date().toDateString();
+  const sorted=[...activityLog].sort((a,b)=>b.ts-a.ts);
+  const seen=new Set();
+  const results=[];
+  sorted.forEach(l=>{
+    if(!l.text||!l.text.startsWith('TR bölüm ')) return;
+    if(new Date(l.ts).toDateString()!==todayStr) return;
+    if(seen.has(l.seriesId)) return;
+    const s=series.find(x=>x.id===l.seriesId);
+    if(!s) return;
+    seen.add(l.seriesId);
+    results.push(s);
+  });
+  return results;
+}
+function getReturnedFromHiatus(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  return series.filter(s=>{
+    if(s.category!=='season'||!s.returnDate) return false;
+    const rd=new Date(s.returnDate); rd.setHours(0,0,0,0);
+    return rd<=today;
+  });
+}
+function getUnfinishedReading(){
+  return series.filter(s=>s.category==='reading'&&s.chapterTR);
+}
+function dismissDailyDigest(){
+  localStorage.setItem('megami_digest_dismissed',new Date().toDateString());
+  const el=document.getElementById('dailyDigestCard');
+  if(el) el.remove();
+}
+// Header'daki zil butonu — ana sayfadaki kapatılabilir kartın aksine, bu HER ZAMAN mevcut
+// durumu gösterir (kapatma durumundan etkilenmez), çünkü kullanıcı burayı özellikle "bildirimlerimi
+// göster" diye açıyor.
+function updateNotificationBadge(){
+  const badge=document.getElementById('notifBadge');
+  if(!badge)return;
+  const count=getTodaysNewChapters().length+getReturnedFromHiatus().length;
+  if(count>0){ badge.textContent=count>99?'99+':count; badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
+}
+function openNotificationsSheet(){
+  const body=document.getElementById('notifSheetBody');
+  if(!body)return;
+  const newCh=getTodaysNewChapters();
+  const returned=getReturnedFromHiatus();
+  const reading=getUnfinishedReading();
+  const notifItem=(s,showCh)=>{
+    const cov=s.cover?`<img src="${esc(s.cover)}" style="width:38px;height:53px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:38px;height:53px;border-radius:7px;background:var(--black5);display:flex;align-items:center;justify-content:center;color:var(--text3);flex-shrink:0;">${ic('img',15)}</div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span style="flex:1;font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span style="font-size:10.5px;font-weight:700;color:var(--purple3);background:var(--purpleG);border-radius:6px;padding:2px 7px;flex-shrink:0;">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
+  };
+  const section=(title,icon,items,showCh)=>items.length?`<div style="margin-bottom:16px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px;display:flex;align-items:center;gap:5px;">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
+  const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+section('Kaldığın Yerden Devam Et','bookmark',reading,true);
+  body.innerHTML=html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`;
+  openSheet('notifOverlay');
+}
+function buildDailyDigestHTML(){
+  if(localStorage.getItem('megami_digest_dismissed')===new Date().toDateString()) return '';
+  const newCh=getTodaysNewChapters();
+  const returned=getReturnedFromHiatus();
+  const reading=getUnfinishedReading();
+  if(!newCh.length&&!returned.length&&!reading.length) return '';
+  const digestItem=(s,showCh)=>{
+    const cov=s.cover?`<img src="${esc(s.cover)}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
+    return `<div class="digest-item" onclick="openDetail('${s.id}')">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
+  };
+  let sections='';
+  if(newCh.length){
+    sections+=`<div class="digest-section"><div class="digest-section-title">${ic('bolt',10)} Bugün Yeni Bölüm Geldi</div><div class="digest-row-list">${newCh.slice(0,4).map(s=>digestItem(s,true)).join('')}${newCh.length>4?`<div class="digest-more">+${newCh.length-4} daha</div>`:''}</div></div>`;
+  }
+  if(returned.length){
+    sections+=`<div class="digest-section"><div class="digest-section-title">${ic('checkcirc',10)} Sezon Arasından Döndü</div><div class="digest-row-list">${returned.slice(0,4).map(s=>digestItem(s,false)).join('')}${returned.length>4?`<div class="digest-more">+${returned.length-4} daha</div>`:''}</div></div>`;
+  }
+  if(reading.length){
+    sections+=`<div class="digest-section"><div class="digest-section-title">${ic('bookmark',10)} Kaldığın Yerden Devam Et</div><div class="digest-row-list">${reading.slice(0,4).map(s=>digestItem(s,true)).join('')}${reading.length>4?`<div class="digest-more" onclick="setCat('reading')">+${reading.length-4} daha</div>`:''}</div></div>`;
+  }
+  return `<div class="daily-digest-card" id="dailyDigestCard">
+    <div class="digest-header"><span class="digest-title">${ic('sparkle',12)} Bugün Neler Oldu?</span><button class="digest-close" onclick="dismissDailyDigest()">&#x2715;</button></div>
+    ${sections}
+  </div>`;
+}
 function renderHome(){
   const el=document.getElementById('mainContent');
   const hasFixedActions=!!document.getElementById('catTabsActions');
@@ -692,7 +777,7 @@ function renderHome(){
     const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
     return mc&&mg&&ms;
   });
-  const banner='';
+  const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?buildDailyDigestHTML():'';
   if(!filtered.length){
     el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>${series.length===0?'Kütüphane Boş':'Sonuç Bulunamadı'}</h3><p>${series.length===0?'+ butonuna basarak ilk serini ekleyebilirsin.':'Farklı bir arama veya kategori dene.'}</p></div>`;
     return;
@@ -868,23 +953,26 @@ function getSeriesDetailSections(s){
   const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
       ${gens.map(g=>`<span class="genre-chip-static">${esc(g)}</span>`).join('')}
     </div></div>`:'';
-  // Bağlantılı Seriler — "Ana Seri" bağlantıları ardışık bir zincir (→) olarak, "Yan Seri"
-  // bağlantıları ise ayrı, dallanan bir sırada gösteriliyor (paralel/spin-off hissi için).
+  // Bağlantılı Seriler — "Ana Seri" bağlantıları artık her serinin kendi mainOrder'ına göre
+  // SIRALI bir zincir (→) olarak gösteriliyor (hangi seri sayfasından bakarsan bak aynı sıra
+  // çıkıyor, çünkü sıra numarası linke değil serinin kendisine ait). "Yan Seri" bağlantıları
+  // ise ayrı bir sırada, varsa kısa bir açıklamayla birlikte gösteriliyor.
   const rawLinks=s.links||[];
   const mainLinkedSeries=rawLinks.filter(l=>l.type==='main').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
-  const sideLinkedSeries=rawLinks.filter(l=>l.type==='side').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
+  const sideLinks=rawLinks.filter(l=>l.type==='side').map(l=>({series:series.find(x=>x.id===l.id),desc:l.desc||''})).filter(x=>x.series);
   function linkCardHTML(ls,isSide){
     const cov=ls.cover?`<img src="${esc(ls.cover)}" class="series-link-cover">`:`<div class="series-link-cover series-link-cover-ph">${ic('img',13)}</div>`;
     return `<div class="series-link-card${isSide?' side':''}" onclick="openDetail('${ls.id}')">${cov}<span class="series-link-name">${esc(ls.name)}</span></div>`;
   }
   let linksH='';
-  if(mainLinkedSeries.length||sideLinkedSeries.length){
+  if(mainLinkedSeries.length||sideLinks.length){
     linksH=`<div><div class="detail-sec-title">${ic('layers',10)} Bağlantılı Seriler</div>`;
     if(mainLinkedSeries.length){
-      linksH+=`<div class="series-link-row">${linkCardHTML({id:s.id,name:s.name,cover:s.cover},false)}${mainLinkedSeries.map(ls=>`<span class="series-link-arrow">→</span>${linkCardHTML(ls,false)}`).join('')}</div>`;
+      const chain=[s,...mainLinkedSeries].sort((a,b)=>(a.mainOrder||9999)-(b.mainOrder||9999));
+      linksH+=`<div class="series-link-row">${chain.map((ls,i)=>`${i>0?'<span class="series-link-arrow">→</span>':''}${linkCardHTML(ls,false)}`).join('')}</div>`;
     }
-    if(sideLinkedSeries.length){
-      linksH+=`<div class="series-link-side-label">◈ Yan Seriler</div><div class="series-link-row side-row">${sideLinkedSeries.map(ls=>linkCardHTML(ls,true)).join('')}</div>`;
+    if(sideLinks.length){
+      linksH+=`<div class="series-link-side-label">◈ Yan Seriler</div><div class="series-link-row side-row">${sideLinks.map(({series:ls,desc})=>`<div class="series-link-side-wrap">${linkCardHTML(ls,true)}${desc?`<div class="series-link-desc">${esc(desc)}</div>`:''}</div>`).join('')}</div>`;
     }
     linksH+=`</div>`;
   }
@@ -1055,7 +1143,7 @@ function openAddSheet(){
   editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formLinks=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
-  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput','mainOrderInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('autoIncrFreq').value='';
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
@@ -1080,6 +1168,7 @@ function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
   editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];
   formLinks=[...(s.links||[])];window._originalLinksSnapshot=JSON.stringify(formLinks);
+  const mainOrderEl=document.getElementById('mainOrderInput'); if(mainOrderEl)mainOrderEl.value=s.mainOrder||'';
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
   document.getElementById('addSheetTitle').textContent='Seriyi Düzenle';
   document.getElementById('seriesName').value=s.name||'';
@@ -1159,6 +1248,7 @@ async function saveSeries(){
   const data={
     id:editingId||Date.now().toString(),name,
     altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],links:[...formLinks],
+    mainOrder:parseInt(document.getElementById('mainOrderInput')?.value)||0,
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
     category:document.getElementById('seriesCategory').value,
@@ -1205,6 +1295,7 @@ async function saveSeries(){
   }
   closeSheet('addOverlay');renderTabs();
   if(currentPage==='detail'&&currentDetailId===data.id)openDetail(data.id,true);else renderContent();
+  if(typeof updateNotificationBadge==='function')updateNotificationBadge();
   showToast('check',editingId?'Seri güncellendi.':'Seri eklendi.');
   if(!editingId&&series.length===1){setTimeout(()=>{spawnConfetti();showToast('star','İlk serini ekledin! Hoş geldin! 🎉');},400);}
   easterEggCheck();
@@ -1421,8 +1512,14 @@ function renderLinkChips(){
     const s=series.find(x=>x.id===l.id);
     if(!s) return '';
     const isMain=l.type==='main';
-    return `<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':''}">${esc(s.name)} <b style="font-size:8.5px;opacity:.75;font-weight:700;">${isMain?'ANA SERİ':'YAN SERİ'}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
+    const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':''}">${esc(s.name)} <b style="font-size:8.5px;opacity:.75;font-weight:700;">${isMain?'ANA SERİ':'YAN SERİ'}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
+    const descBox=!isMain?`<textarea class="form-textarea" placeholder="Bu yan seri hakkında kısa bir not… (ör. Yuno'ya odaklanan yan seri)" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:40px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`:'';
+    return `<div style="margin-bottom:7px;">${chip}${descBox}</div>`;
   }).join('');
+}
+function updateLinkDesc(targetId,val){
+  const l=formLinks.find(x=>x.id===targetId);
+  if(l) l.desc=val;
 }
 // Bir seriye bağlantı eklenip/kaldırıldığında karşı taraftaki seriyi de günceller —
 // elle iki kere eklemek zorunda kalmıyorsun.
@@ -1433,8 +1530,8 @@ function syncSeriesLinks(seriesId,newLinks,oldLinksJSON){
     const target=series.find(x=>x.id===l.id); if(!target) return;
     target.links=target.links||[];
     const existing=target.links.find(tl=>tl.id===seriesId);
-    if(existing) existing.type=l.type;
-    else target.links.push({id:seriesId,type:l.type});
+    if(existing){ existing.type=l.type; existing.desc=l.desc||''; }
+    else target.links.push({id:seriesId,type:l.type,desc:l.desc||''});
   });
   oldLinks.forEach(l=>{
     if(!newIds.has(l.id)){
