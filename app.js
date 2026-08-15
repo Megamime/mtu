@@ -712,6 +712,37 @@ function getReturnedFromHiatus(){
 function getUnfinishedReading(){
   return series.filter(s=>s.category==='reading'&&s.chapterTR);
 }
+// ===== Haftalık Takvim — önümüzdeki 7 gün içinde hangi serilere yeni bölüm gelecek ve
+// hangileri sezon arasından dönecek. Günlük/haftalık otomatik artırma birden fazla kez
+// düşebileceği için, calcNextIncr ile pencere sonuna kadar ileri doğru projekte ediyoruz. =====
+function _forecastDateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function getWeeklyForecast(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const windowEnd=new Date(today); windowEnd.setDate(today.getDate()+7);
+  const byDay={};
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(today.getDate()+i);
+    byDay[_forecastDateKey(d)]={date:d,newCh:[],returning:[]};
+  }
+  series.forEach(s=>{
+    if(s.category==='season'&&s.returnDate){
+      const rd=new Date(s.returnDate+'T00:00:00');
+      const key=_forecastDateKey(rd);
+      if(byDay[key]) byDay[key].returning.push(s);
+    }
+    if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext&&s.category!=='season'){
+      let cursor=s.autoIncrNext, guard=0;
+      while(cursor&&cursor<windowEnd.getTime()&&guard<60){
+        guard++;
+        const cd=new Date(cursor); cd.setHours(0,0,0,0);
+        const key=_forecastDateKey(cd);
+        if(byDay[key]) byDay[key].newCh.push(s);
+        cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor);
+      }
+    }
+  });
+  return Object.values(byDay);
+}
 function dismissDailyDigest(){
   localStorage.setItem('megami_digest_dismissed',new Date().toDateString());
   const el=document.getElementById('dailyDigestCard');
@@ -738,9 +769,33 @@ function openNotificationsSheet(){
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span style="flex:1;font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span style="font-size:10.5px;font-weight:700;color:var(--purple3);background:var(--purpleG);border-radius:6px;padding:2px 7px;flex-shrink:0;">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
   };
   const section=(title,icon,items,showCh)=>items.length?`<div style="margin-bottom:16px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px;display:flex;align-items:center;gap:5px;">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
+  const forecastBtn=`<button class="btn-ghost" style="margin-bottom:14px;" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</button>`;
   const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+section('Kaldığın Yerden Devam Et','bookmark',reading,true);
-  body.innerHTML=html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`;
+  body.innerHTML=forecastBtn+(html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`);
   openSheet('notifOverlay');
+}
+function openWeeklyForecast(){
+  const body=document.getElementById('forecastSheetBody');
+  if(!body)return;
+  const days=getWeeklyForecast();
+  const forecastRow=(s,isReturn)=>{
+    const cov=s.cover?`<img src="${esc(s.cover)}" style="width:30px;height:42px;border-radius:6px;object-fit:cover;flex-shrink:0;">`:`<div style="width:30px;height:42px;border-radius:6px;background:var(--black5);display:flex;align-items:center;justify-content:center;color:var(--text3);flex-shrink:0;">${ic('img',12)}</div>`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span style="flex:1;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</span>${isReturn?`<span style="font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:5px;padding:2px 6px;flex-shrink:0;">DÖNÜŞ</span>`:`<span style="font-size:9px;font-weight:700;color:var(--purple3);background:var(--purpleG);border-radius:5px;padding:2px 6px;flex-shrink:0;">+${s.autoIncrAmt||1}</span>`}</div>`;
+  };
+  body.innerHTML=days.map((day,i)=>{
+    const isToday=i===0;
+    const label=day.date.toLocaleDateString('tr-TR',{weekday:'long'});
+    const dateLabel=day.date.toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+    const hasAny=day.newCh.length||day.returning.length;
+    return `<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);">
+      <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:${hasAny?'8px':'0'};">
+        <span style="font-size:13px;font-weight:700;color:${isToday?'var(--purple3)':'var(--text)'};font-family:'Playfair Display',serif;">${isToday?'Bugün':label}</span>
+        <span style="font-size:10.5px;color:var(--text3);">${dateLabel}</span>
+      </div>
+      ${hasAny?`<div style="display:flex;flex-direction:column;gap:2px;">${day.newCh.map(s=>forecastRow(s,false)).join('')}${day.returning.map(s=>forecastRow(s,true)).join('')}</div>`:`<div style="font-size:10.5px;color:var(--text3);">Planlı bir şey yok.</div>`}
+    </div>`;
+  }).join('');
+  openSheet('forecastOverlay');
 }
 function buildDailyDigestHTML(){
   if(localStorage.getItem('megami_digest_dismissed')===new Date().toDateString()) return '';
@@ -930,27 +985,30 @@ const ALT_LIMIT=3, FANSUB_LIMIT=3, LOG_LIMIT=3;
 function getCardCountdownBadge(s){
   if(s.category==='season'&&s.returnDate){
     const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
-    if(diff<=3) return diff<=0?{text:'Döndü!',cls:'ret'}:{text:diff+'g kaldı',cls:'ret'};
+    if(diff<=0) return {text:'Döndü!',cls:'ret'};
+    if(diff===1) return {text:'Yarın',cls:'ret'};
     return null;
   }
   if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
     const diff=Math.ceil((s.autoIncrNext-Date.now())/(1000*60*60*24));
-    if(diff<=2) return diff<=0?{text:'Bugün!',cls:'new'}:{text:diff+'g kaldı',cls:'new'};
+    if(diff<=0) return {text:'Bugün!',cls:'new'};
+    if(diff===1) return {text:'Yarın',cls:'new'};
   }
   return null;
 }
 function buildCountdown(s){
   if(s.category==='season'&&s.returnDate){
     const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
-    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('checkcirc',28)+'</div></div>';
-    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+    const rdLabel=new Date(s.returnDate+'T00:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('checkcirc',28)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
   }
   // Sezon arasında değilse ve otomatik bölüm artırma açıksa, sıradaki bölümün ne zaman
   // ekleneceğini de göster — eskiden bu bilgi hiçbir yerde görünmüyordu.
   if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
     const diffMs=s.autoIncrNext-Date.now();
     const diffDays=Math.ceil(diffMs/(1000*60*60*24));
-    const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+    const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
     if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon">'+ic('bolt',28)+'</div></div>';
     return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
   }
@@ -1378,7 +1436,7 @@ function updateIncrSummary(){
   else if(freq==='weekly') when='her hafta '+dayNames[parseInt(document.getElementById('autoIncrDay').value)||1];
   else if(freq==='monthly') when='her ayın '+(parseInt(document.getElementById('autoIncrDate').value)||1)+'. günü';
   const next=calcNextIncr(freq,document.getElementById('autoIncrDay').value,document.getElementById('autoIncrDate').value);
-  const nextLabel=next?new Date(next).toLocaleDateString('tr-TR',{day:'numeric',month:'long'}):'';
+  const nextLabel=next?new Date(next).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}):'';
   el.style.display='';
   el.innerHTML=`${ic('bolt',10)} <b>${when}</b> toplam bölüme <b>+${amt}</b> eklenecek${nextLabel?` — sıradaki: <b>${nextLabel}</b>`:''}.`;
 }
@@ -2057,7 +2115,41 @@ async function exportBackup(){
   const date=new Date().toISOString().slice(0,10);
   a.href=url; a.download=`mangavault-yedek-${date}.json`;
   a.click(); URL.revokeObjectURL(url);
+  localStorage.setItem('megami_last_backup',JSON.stringify({ts:Date.now(),count:series.length,size:blob.size}));
+  updateBackupInfo();
   showToast('check','Yedek dosyası indiriliyor…');
+}
+// ===== Yedekleme bilgi paneli — son ne zaman yedek aldığını, kaç seri olduğunu ve tahmini
+// boyutunu gösterir. 14 günden uzun süredir yedek alınmadıysa uyarı rengine döner. =====
+function estimateBackupSize(){
+  try{ return new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),series})]).size; }
+  catch(e){ return 0; }
+}
+function formatBytes(bytes){
+  if(bytes<1024) return bytes+' B';
+  if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(2)+' MB';
+}
+function updateBackupInfo(){
+  const el=document.getElementById('backupInfoPanel');
+  if(!el) return;
+  let last=null;
+  try{ last=JSON.parse(localStorage.getItem('megami_last_backup')||'null'); }catch(e){}
+  const currentSize=estimateBackupSize();
+  const daysSince=last?Math.floor((Date.now()-last.ts)/86400000):null;
+  const isStale=daysSince===null||daysSince>=14;
+  const lastLabel=last
+    ?(daysSince===0?'Bugün':daysSince===1?'Dün':`${daysSince} gün önce`)+` · ${new Date(last.ts).toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}`
+    :'Hiç yedek alınmadı';
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;background:${isStale?'rgba(239,68,68,.08)':'var(--purpleG)'};border:1px solid ${isStale?'rgba(239,68,68,.25)':'rgba(124,58,237,.25)'};border-radius:11px;padding:12px 14px;margin-bottom:12px;">
+      <div style="color:${isStale?'#f87171':'var(--purple3)'};flex-shrink:0;">${ic(isStale?'warn':'checkcirc',22)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:${isStale?'#f87171':'var(--purple3)'};">Son Yedek: ${lastLabel}</div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">Şu an kütüphanende <b style="color:var(--text2);">${series.length} seri</b> · tahmini boyut <b style="color:var(--text2);">~${formatBytes(currentSize)}</b></div>
+        ${isStale?`<div style="font-size:10px;color:#f87171;margin-top:3px;">Uzun süredir yedek almadın, bir tane almanı öneririz.</div>`:''}
+      </div>
+    </div>`;
 }
 function validateSeriesShape(arr){
   // Her elemanın gerçek bir "seri" objesi olduğunu doğrular.
