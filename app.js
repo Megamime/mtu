@@ -257,15 +257,31 @@ let selectionMode=false,selectedIds=new Set();
 let altNames=[],oldCovers=[],fansubList=[],genres=[],formLinks=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
 const SECTIONS=[
+  {key:'hero',    label:'Yeni Bölüm & Favorilerim',          icon:'sparkle',  heroOnly:true},
   {key:'pinned',  label:'Sabitlenmiş',                      icon:'pin',      cats:null, pinnedOnly:true},
   {key:'active',  label:'Okumaya Devam Ettiklerim',         icon:'book',     cats:['reading','current','current_en','current_both']},
-  {key:'stock',   label:'Bölüm Biriktirenler',              icon:'box',      cats:['stockpile']},
-  {key:'cont',    label:'Okumaya Devam Edilecek & Plan',    icon:'bookmark', cats:['paused','planned']},
+  {key:'stale',   label:'Uzun Süredir Bakmadıklarım',        icon:'clock',    staleOnly:true},
+  {key:'stock',   label:'Bölüm Biriktirdiklerim',            icon:'box',      cats:['stockpile']},
+  {key:'planned', label:'Okumadıklarım',                     icon:'bookmark', cats:['planned']},
+  {key:'paused',  label:'Ara Verdiklerim',                   icon:'pause',    cats:['paused']},
   {key:'season',  label:'Sezon Arası',                      icon:'moon',     cats:['season']},
   {key:'done',    label:'Bitti',                            icon:'checkcirc',cats:['completed']},
   {key:'dropped', label:'Bırakılanlar',                     icon:'xcirc',    cats:['dropped']},
-  {key:'favs',    label:'Favoriler',                        icon:'starFill', cats:null, favsOnly:true},
 ];
+// "Uzun süredir bakmadıklarım" eşiği, serinin yayın sıklığına göre değişir — haftalık bir
+// seriye 1 ay bakmamak uzun sayılır, ama düzensiz/aylık bir seride bu daha normaldir.
+function getStaleThresholdMs(s){
+  const day=86400000;
+  if(s.autoIncrFreq==='daily') return 14*day;
+  if(s.autoIncrFreq==='weekly') return 30*day;
+  if(s.autoIncrFreq==='monthly') return 60*day;
+  return 90*day; // düzensiz veya elle takip edilen seriler
+}
+function isStaleSeries(s){
+  if(!['reading','current','current_en','current_both','stockpile'].includes(s.category)) return false;
+  const last=s.updatedAt||0;
+  return (Date.now()-last)>getStaleThresholdMs(s);
+}
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
 const GENRES_PRESET=['Aksiyon','Macera','Komedi','Dram','Fantastik','Isekai','Romantizm','Bilim Kurgu','Korku','Gizem','Doğaüstü','Dilim Hayat','Psikolojik','Tarihi','Askeri','Spor','Ecchi','Harem','Gerilim','Trajedi'];
 let currentGenre=null;
@@ -851,8 +867,9 @@ function renderHome(){
   SECTIONS.forEach(sec=>{
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);
-    else if(sec.favsOnly) items=filtered.filter(s=>s.favorited&&!s.pinned);
-    else items=filtered.filter(s=>!s.pinned&&!s.favorited&&sec.cats.includes(s.category));
+    else if(sec.heroOnly) items=filtered.filter(s=>!s.pinned&&(s.newChapter||s.favorited)).sort((a,b)=>(b.newChapter?1:0)-(a.newChapter?1:0));
+    else if(sec.staleOnly) items=filtered.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s));
+    else items=filtered.filter(s=>!s.pinned&&!s.favorited&&!isStaleSeries(s)&&sec.cats.includes(s.category));
     if(!items.length) return;
     const canReorder=sec.pinnedOnly&&currentSort==='default'&&!searchQ&&currentCat==='all';
     items=sortSeries(items);
