@@ -827,6 +827,7 @@ function carouselCard(s,i,canReorder){
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
   const genreBadge=(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:'';
+  const cdBadge=getCardCountdownBadge(s);
   const isSel=selectedIds.has(s.id);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
@@ -835,7 +836,7 @@ function carouselCard(s,i,canReorder){
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      ${s.newChapter?'<div class="new-chapter-badge">Yeni Bölüm</div>':''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
+      ${cdBadge?`<div class="countdown-badge ${cdBadge.cls}">${ic(cdBadge.cls==='ret'?'checkcirc':'bolt',9)} ${cdBadge.text}</div>`:s.newChapter?'<div class="new-chapter-badge">Yeni Bölüm</div>':''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
@@ -853,12 +854,14 @@ function flatCard(s,i){
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
   const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
   const isSel=selectedIds.has(s.id);
+  const cdBadge=getCardCountdownBadge(s);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
       ${selCheck}
-      <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
+      <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
+      ${cdBadge?`<div class="countdown-badge ${cdBadge.cls}">${ic(cdBadge.cls==='ret'?'checkcirc':'bolt',9)} ${cdBadge.text}</div>`:''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
@@ -921,11 +924,37 @@ async function saveQuick(){
   if(quickCat!=='completed'||prevCat==='completed') showToast('check','Güncellendi.');
 }
 const ALT_LIMIT=3, FANSUB_LIMIT=3, LOG_LIMIT=3;
+// Ana sayfa kartlarında (detay sayfasına girmeden) gösterilecek kompakt bir "yaklaşıyor"
+// rozeti — sadece gerçekten yakınsa (3 gün içinde) gösteriyoruz, uzak tarihler kartları
+// gereksiz doldurmasın diye.
+function getCardCountdownBadge(s){
+  if(s.category==='season'&&s.returnDate){
+    const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
+    if(diff<=3) return diff<=0?{text:'Döndü!',cls:'ret'}:{text:diff+'g kaldı',cls:'ret'};
+    return null;
+  }
+  if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
+    const diff=Math.ceil((s.autoIncrNext-Date.now())/(1000*60*60*24));
+    if(diff<=2) return diff<=0?{text:'Bugün!',cls:'new'}:{text:diff+'g kaldı',cls:'new'};
+  }
+  return null;
+}
 function buildCountdown(s){
-  if(s.category!=='season'||!s.returnDate) return '';
-  const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
-  if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('checkcirc',28)+'</div></div>';
-  return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+  if(s.category==='season'&&s.returnDate){
+    const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
+    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('checkcirc',28)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(s.returnDate)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+  }
+  // Sezon arasında değilse ve otomatik bölüm artırma açıksa, sıradaki bölümün ne zaman
+  // ekleneceğini de göster — eskiden bu bilgi hiçbir yerde görünmüyordu.
+  if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
+    const diffMs=s.autoIncrNext-Date.now();
+    const diffDays=Math.ceil(diffMs/(1000*60*60*24));
+    const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+    if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon">'+ic('bolt',28)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+  }
+  return '';
 }
 
 function getSeriesDetailSections(s){
@@ -1155,6 +1184,7 @@ function openAddSheet(){
   document.getElementById('returnDateWrap').style.display='none';
   document.getElementById('incrAmtWrap').style.opacity='0.35';
   document.getElementById('incrAmtWrap').style.pointerEvents='none';
+  updateIncrSummary();
   document.getElementById('altTagsWrap').innerHTML='';document.getElementById('fansubTagsWrap').innerHTML='';hideFansubSuggestions();
   document.getElementById('oldCoversPreviews').innerHTML='';
   document.getElementById('seriesCategory').value='reading';
@@ -1203,6 +1233,7 @@ function openEditSheet(id){
   const noIncr=!s.autoIncrFreq||s.autoIncrFreq==='irregular'||s.autoIncrFreq==='completed';
   document.getElementById('incrAmtWrap').style.opacity=noIncr?'0.35':'1';
   document.getElementById('incrAmtWrap').style.pointerEvents=noIncr?'none':'';
+  updateIncrSummary();
   renderAltTags();renderFansubTags();renderOldCoverPreviews();renderGenreUI();renderLinkChips();
   const linkSearchEl2=document.getElementById('linkSearchInput'); if(linkSearchEl2)linkSearchEl2.value='';
   if(s.cover)showCoverPreview(s.cover);else resetCoverPreview();
@@ -1332,9 +1363,27 @@ function updateIncrExtra(){
   document.getElementById('incrIrregularWrap').style.display=freq==='irregular'?'':'none';
   document.getElementById('incrAmtWrap').style.opacity=(freq==='irregular'||freq==='completed'||freq==='')?'0.35':'1';
   document.getElementById('incrAmtWrap').style.pointerEvents=(freq==='irregular'||freq==='completed'||freq==='')?'none':'';
+  updateIncrSummary();
 }
-function calcNextIncr(freq, day, date){
-  const now=new Date();
+// Ayarladığın otomatik artırma kuralını insan diliyle özetleyen, canlı güncellenen bir
+// satır — "bu ayarı doğru mu yaptım?" diye tahmin etmek zorunda kalmayasın diye.
+function updateIncrSummary(){
+  const el=document.getElementById('incrSummary'); if(!el)return;
+  const freq=document.getElementById('autoIncrFreq').value;
+  const amt=parseInt(document.getElementById('autoIncrAmt').value)||0;
+  if(!freq||freq==='irregular'||freq==='completed'||amt<=0){ el.textContent=''; el.style.display='none'; return; }
+  const dayNames=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  let when='';
+  if(freq==='daily') when='her gün';
+  else if(freq==='weekly') when='her hafta '+dayNames[parseInt(document.getElementById('autoIncrDay').value)||1];
+  else if(freq==='monthly') when='her ayın '+(parseInt(document.getElementById('autoIncrDate').value)||1)+'. günü';
+  const next=calcNextIncr(freq,document.getElementById('autoIncrDay').value,document.getElementById('autoIncrDate').value);
+  const nextLabel=next?new Date(next).toLocaleDateString('tr-TR',{day:'numeric',month:'long'}):'';
+  el.style.display='';
+  el.innerHTML=`${ic('bolt',10)} <b>${when}</b> toplam bölüme <b>+${amt}</b> eklenecek${nextLabel?` — sıradaki: <b>${nextLabel}</b>`:''}.`;
+}
+function calcNextIncr(freq, day, date, fromTs){
+  const now=fromTs?new Date(fromTs):new Date();
   if(freq==='daily'){
     const d=new Date(now); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.getTime();
   }
@@ -1376,20 +1425,38 @@ async function runAutoIncrement(){
     if(!s.autoIncrFreq||!s.autoIncrAmt||s.autoIncrAmt<=0) return;
     if(s.category==='season') return;
     if(!s.autoIncrNext||now<s.autoIncrNext) return;
-    const pk=periodKey(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate);
-    if((s.autoIncrSkips||[]).includes(pk)){
-      s.autoIncrNext=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate);
-      changed=true; return;
+
+    // Kaç periyot kaçırılmış (uygulama uzun süre açılmadıysa) hesapla — eskiden burada
+    // sadece TEK bir adım ilerletiliyordu, yani 3 hafta uzakta kalırsan 3 hafta yerine
+    // sadece +1 periyot ekleniyordu. Artık geçen tüm periyotlar telafi ediliyor.
+    let missed=0;
+    let cursor=s.autoIncrNext;
+    const guardMax=1000; // bozuk/aşırı eski veri için güvenlik sınırı
+    while(cursor&&now>=cursor&&missed<guardMax){
+      missed++;
+      cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor);
     }
-    const prev=parseInt(s.chapterTotal)||0;
-    s.chapterTotal=String(prev+s.autoIncrAmt);
-    s.autoIncrNext=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate);
-    s.autoIncrSkips=(s.autoIncrSkips||[]).slice(-10);
-    addLog(s.id,`Otomatik: Toplam bölüm ${prev}→${s.chapterTotal}`);
-    s.newChapter=true;
+    if(missed===0) return;
+
+    // En güncel (şu anki) periyot kullanıcı tarafından "atla" olarak işaretlenmişse onu düş —
+    // geçmiş kaçırılan periyotlar için atlama bilgisi zaten tutulmuyor, sadece "şu an" için geçerli.
+    const pk=periodKey(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate);
+    const wasCurrentSkipped=(s.autoIncrSkips||[]).includes(pk);
+    const effectiveMissed=wasCurrentSkipped?missed-1:missed;
+
+    if(effectiveMissed>0){
+      const prev=parseInt(s.chapterTotal)||0;
+      const added=s.autoIncrAmt*effectiveMissed;
+      s.chapterTotal=String(prev+added);
+      addLog(s.id, effectiveMissed>1
+        ? `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal} (${effectiveMissed} periyot birikmiş)`
+        : `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal}`);
+      s.newChapter=true;
+    }
+    s.autoIncrNext=cursor;
     changed=true;
   });
-  if(changed){ await save(); renderContent(); }
+  if(changed){ await save(); renderContent(); if(typeof updateNotificationBadge==='function')updateNotificationBadge(); }
 }
 let quickSkipping=false;
 function toggleSkip(){
