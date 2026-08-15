@@ -263,11 +263,12 @@ const SECTIONS=[
   {key:'stale',   label:'Uzun Süredir Bakmadıklarım',        icon:'clock',    staleOnly:true},
   {key:'stock',   label:'Bölüm Biriktirdiklerim',            icon:'box',      cats:['stockpile']},
   {key:'planned', label:'Okumadıklarım',                     icon:'bookmark', cats:['planned']},
-  {key:'paused',  label:'Ara Verdiklerim',                   icon:'pause',    cats:['paused']},
   {key:'season',  label:'Sezon Arası',                      icon:'moon',     cats:['season']},
-  {key:'done',    label:'Bitti',                            icon:'checkcirc',cats:['completed']},
-  {key:'dropped', label:'Bırakılanlar',                     icon:'xcirc',    cats:['dropped']},
 ];
+// Ara Verdiklerim (paused) artık kendi satırı değil — isStaleSeries() eşik süresini geçince
+// otomatik olarak "Uzun Süredir Bakmadıklarım"a düşer. Bitti/Bıraktım Ana Sayfa'da hiç
+// gösterilmiyor (favorilenmiş "Bitti" olanlar zaten Spotlight'ta çıkıyor); ikisine de
+// üstteki kategori çipinden ulaşılabiliyor.
 // "Uzun süredir bakmadıklarım" eşiği, serinin yayın sıklığına göre değişir — haftalık bir
 // seriye 1 ay bakmamak uzun sayılır, ama düzensiz/aylık bir seride bu daha normaldir.
 function getStaleThresholdMs(s){
@@ -278,7 +279,7 @@ function getStaleThresholdMs(s){
   return 90*day; // düzensiz veya elle takip edilen seriler
 }
 function isStaleSeries(s){
-  if(!['reading','current','current_en','current_both','stockpile'].includes(s.category)) return false;
+  if(!['reading','current','current_en','current_both','stockpile','paused'].includes(s.category)) return false;
   const last=s.updatedAt||0;
   return (Date.now()-last)>getStaleThresholdMs(s);
 }
@@ -871,6 +872,7 @@ function renderHome(){
     else if(sec.staleOnly) items=filtered.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s));
     else items=filtered.filter(s=>!s.pinned&&!s.favorited&&!isStaleSeries(s)&&sec.cats.includes(s.category));
     if(!items.length) return;
+    if(sec.heroOnly){ html+=heroSpotlight(items.slice(0,6)); return; }
     const canReorder=sec.pinnedOnly&&currentSort==='default'&&!searchQ&&currentCat==='all';
     items=sortSeries(items);
     const MAX_SHOW = 9;
@@ -887,12 +889,50 @@ function renderHome(){
   const homeBulkBar=selectionMode?renderBulkBar():'';
   el.innerHTML=(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar;
   initPinnedDragSort();
+  initHeroRail();
+}
+function heroSpotlight(items){
+  const slides=items.map(s=>{
+    const bg=s.cover
+      ?`<img class="hero-bg" src="${esc(s.cover)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="hero-bg-ph" style="display:none"></div>`
+      :`<div class="hero-bg-ph"></div>`;
+    const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
+    const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
+    const isNew=!!s.newChapter;
+    return `<div class="hero-slide" onclick="openDetail('${s.id}',event)">
+      ${bg}
+      <div class="hero-scrim"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow ${isNew?'new':''}">${isNew?ic('bolt',11):ic('starFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
+        <div class="hero-title">${esc(s.name)}</div>
+        ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}</div>`:''}
+        ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  const dots=items.length>1?`<div class="hero-dots">${items.map((_,i)=>`<div class="hero-dot${i===0?' active':''}"></div>`).join('')}</div>`:'';
+  return `<div class="hero-rail" id="heroRail">${slides}</div>${dots}`;
+}
+function initHeroRail(){
+  const rail=document.getElementById('heroRail');
+  if(!rail) return;
+  const dots=rail.parentElement.querySelectorAll('.hero-dots .hero-dot');
+  if(dots.length<2) return;
+  let ticking=false;
+  rail.addEventListener('scroll',()=>{
+    if(ticking) return; ticking=true;
+    requestAnimationFrame(()=>{
+      const idx=Math.round(rail.scrollLeft/rail.clientWidth);
+      dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+      ticking=false;
+    });
+  },{passive:true});
 }
 function carouselCard(s,i,canReorder){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
-    :`<div class="card-cover-ph">${ic('img',18)}</div>`;
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',22)}</div>`
+    :`<div class="card-cover-ph">${ic('img',22)}</div>`;
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
@@ -919,8 +959,8 @@ function carouselCard(s,i,canReorder){
 function flatCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',18)}</div>`
-    :`<div class="card-cover-ph">${ic('img',18)}</div>`;
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',22)}</div>`
+    :`<div class="card-cover-ph">${ic('img',22)}</div>`;
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
