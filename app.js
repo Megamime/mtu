@@ -2552,6 +2552,65 @@ function computePersonalizedStats(){
 
   return {genreDist,fansubLeaderboard,ratingDist,maxRatingCount,oldestSeries,oldestTs};
 }
+// ===== Yeni tasarım için ek hesaplamalar: ısı haritası, aylık tempo, okuma serisi rekoru,
+// rekorlar. Hepsi activityLog'daki gerçek zaman damgalarından türetiliyor. =====
+function computeActivityCalendar(weeks){
+  weeks=weeks||26;
+  const counts={};
+  activityLog.forEach(l=>{
+    const d=new Date(l.ts);d.setHours(0,0,0,0);
+    const key=d.getTime();
+    counts[key]=(counts[key]||0)+1;
+  });
+  const days=[];
+  const today=new Date();today.setHours(0,0,0,0);
+  const totalDays=weeks*7;
+  for(let i=totalDays-1;i>=0;i--){
+    const d=new Date(today.getTime()-i*86400000);
+    days.push({ts:d.getTime(),count:counts[d.getTime()]||0});
+  }
+  return days;
+}
+function computeMonthlyTempo(){
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const next=new Date(d.getFullYear(),d.getMonth()+1,1);
+    months.push({label:d.toLocaleDateString('tr-TR',{month:'short'}),start:d.getTime(),end:next.getTime()});
+  }
+  const counts=months.map(m=>activityLog.filter(l=>l.ts>=m.start&&l.ts<m.end&&l.text&&(l.text.indexOf('bölüm')>-1)).length);
+  return {labels:months.map(m=>m.label),counts};
+}
+function computeReadingStreak(){
+  const daySet=new Set(activityLog.map(l=>{const d=new Date(l.ts);d.setHours(0,0,0,0);return d.getTime();}));
+  const days=[...daySet].sort((a,b)=>a-b);
+  let best=0,cur=0,prev=null;
+  days.forEach(d=>{
+    if(prev!==null&&d-prev===86400000)cur++;else cur=1;
+    if(cur>best)best=cur;
+    prev=d;
+  });
+  const today=new Date();today.setHours(0,0,0,0);
+  let current=0,check=today.getTime();
+  while(daySet.has(check)){current++;check-=86400000;}
+  return {best:Math.max(best,current),current};
+}
+function computeRecords(){
+  const withTotal=series.filter(s=>parseInt(s.chapterTotal)>0);
+  const thickest=[...withTotal].sort((a,b)=>(parseInt(b.chapterTotal)||0)-(parseInt(a.chapterTotal)||0))[0];
+  const completed=series.filter(s=>s.category==='completed'&&s.updatedAt);
+  let fastest=null,fastestDays=Infinity;
+  completed.forEach(s=>{
+    const addedTs=parseInt(s.id);
+    if(isNaN(addedTs))return;
+    const d=(s.updatedAt-addedTs)/86400000;
+    if(d>0&&d<fastestDays){fastestDays=d;fastest=s;}
+  });
+  const stockpile=series.filter(s=>s.category==='stockpile');
+  const mostStockpiled=[...stockpile].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
+  return {thickest,fastest,fastestDays:Math.round(fastestDays),mostStockpiled};
+}
 function formatNote(s){
   if(!s)return '';
   let out=esc(s);

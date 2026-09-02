@@ -1077,7 +1077,7 @@ function renderListPage(){
     const genreStr=(s.genres&&s.genres.length)?`<span class="list-row-genre">${esc(s.genres.slice(0,2).join(' · '))}</span>`:'';
     const coverEl=s.cover?`<img class="list-row-cover" src="${esc(s.cover)}" loading="lazy" onerror="this.style.visibility='hidden'">`:`<div class="list-row-cover list-row-cover-ph">${ic('img',14)}</div>`;
     const pinIco=s.pinned?ic('pinFill',11):'';
-    const favIco=s.favorited?ic('starFill',11):'';
+    const favIco=s.favorited?ic('heartFill',11):'';
     return `<div class="list-row" onclick="openDetail('${s.id}',event)">
       ${coverEl}
       <div class="list-row-info">
@@ -1115,9 +1115,59 @@ function renderStats(){
       </div>
       <div class="stats-hero-num"><div class="stats-hero-num-val">${tot}</div><div class="stats-hero-num-lbl">Seri</div></div>
     </div>
+    ${(()=>{
+      const favSeries=series.filter(s=>s.favorited);
+      if(!favSeries.length) return '';
+      return `<div style="margin:14px 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('heartFill',10)} Favori Serilerin</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div class="carousel-wrap"><div class="carousel">${favSeries.map((s,i)=>carouselCard(s,i,false)).join('')}</div></div>`;
+    })()}
+    ${(()=>{
+      const recent=[...series].filter(s=>s.updatedAt).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,10);
+      if(!recent.length) return '';
+      return `<div style="margin:6px 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('edit',10)} Son Düzenlenenler</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div class="carousel-wrap"><div class="carousel">${recent.map((s,i)=>carouselCard(s,i,false)).join('')}</div></div>`;
+    })()}
     <div style="margin:8px 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('layers',10)} Genel</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div class="stats-grid" style="margin-bottom:12px;"><div class="stat-card hi" style="animation-delay:0s"><div class="stat-icon">${ic('book',17)}</div><span class="stat-value">${tot}</span><span class="stat-label">Toplam Seri</span></div><div class="stat-card" style="animation-delay:.06s"><div class="stat-icon">${ic('tr',17)}</div><span class="stat-value">${totTR}</span><span class="stat-label">TR Bölüm</span></div><div class="stat-card" style="animation-delay:.12s"><div class="stat-icon">${ic('starFill',17)}</div><span class="stat-value">${favs}</span><span class="stat-label">Favoriler</span></div><div class="stat-card" style="animation-delay:.18s"><div class="stat-icon">${ic('fire',17)}</div><span class="stat-value">${streak}</span><span class="stat-label">Gün Serisi</span></div></div>
     ${cats.length?`
-    <div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('grid4',10)} Kategori</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;"><div class="cat-stat-list">${cats.map(c=>'<div class="cat-stat-row"><span class="cat-stat-name">'+ic(c.icon)+' '+c.label+'</span><div class="cat-stat-bar-wrap"><div class="cat-stat-bar" style="width:'+(c.count/mx*100)+'%"></div></div><span class="cat-stat-count">'+c.count+'</span></div>').join('')}</div></div>`:''}
+    ${(()=>{
+      const xs=computeExtraStats();
+      const tempo=computeMonthlyTempo();
+      const thisMonth=tempo.counts[5]||0,lastMonth=tempo.counts[4]||0;
+      let insight='';
+      if(lastMonth>0){
+        const diff=Math.round((thisMonth-lastMonth)/lastMonth*100);
+        if(diff>0)insight=`Geçen aya göre <b>%${diff} daha fazla</b> bölüm okudun 🎉`;
+        else if(diff<0)insight=`Geçen aya göre <b>%${Math.abs(diff)} daha az</b> bölüm okudun`;
+        else insight=`Geçen ayla aynı tempodasın`;
+      }else if(thisMonth>0)insight=`Bu ay <b>${thisMonth} bölüm</b> okudun`;
+      return `<div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('grid4',10)} Genel Bakış</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;">
+        <div class="stat-card" style="animation:none;"><div class="stat-icon">${ic('starFill',16)}</div><span class="stat-value">${xs.ratedCount>0?xs.avgRating.toFixed(1):'—'}</span><span class="stat-label">Ortalama Puan</span></div>
+        <div class="stat-card" style="animation:none;"><div class="stat-icon">${ic('checkcirc',16)}</div><span class="stat-value">${xs.ratedCount}</span><span class="stat-label">Puanladığın Seri</span></div>
+        <div class="stat-card" style="animation:none;"><div class="stat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span class="stat-value">${xs.addedThisMonth>0?'+'+xs.addedThisMonth:'0'}</span><span class="stat-label">Bu Ay Eklenen</span></div>
+        <div class="stat-card" style="animation:none;"><div class="stat-icon">${ic('pinFill',16)}</div><span class="stat-value">${xs.pinnedCount}</span><span class="stat-label">Sabitlenen Seri</span></div>
+      </div>
+      ${insight?`<div style="display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,rgba(124,58,237,.14),rgba(167,139,250,.03));border:1px solid rgba(124,58,237,.22);border-radius:14px;padding:11px 13px;margin-bottom:14px;"><span style="color:var(--purple3);flex-shrink:0;">${ic('bolt',17)}</span><span style="font-size:11.5px;color:var(--text2);line-height:1.4;">${insight}</span></div>`:''}
+      `;
+    })()}
+    <div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('grid4',10)} Kütüphanenin Nabzı</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;">${(()=>{
+      const RING_COLORS={reading:'#a78bfa',current:'#34d399',current_en:'#38bdf8',current_both:'#a78bfa',stockpile:'#f59e0b',paused:'#94a3b8',planned:'#f472b6',season:'#c4b5fd'};
+      const active=cats.filter(c=>c.key!=='completed'&&c.key!=='dropped');
+      const activeTotal=active.reduce((a,c)=>a+c.count,0);
+      if(!activeTotal)return '';
+      let acc=0;
+      const stops=active.map(c=>{
+        const from=acc/activeTotal*360;acc+=c.count;const to=acc/activeTotal*360;
+        return `${RING_COLORS[c.key]||'#a78bfa'} ${from}deg ${to}deg`;
+      }).join(',');
+      return `<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+        <div style="width:88px;height:88px;border-radius:50%;background:conic-gradient(${stops});display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--black4);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <span style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);">${activeTotal}</span>
+            <span style="font-size:7.5px;color:var(--text3);font-weight:700;text-transform:uppercase;">Aktif</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">${active.slice(0,4).map(c=>`<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2);"><span style="width:7px;height:7px;border-radius:50%;background:${RING_COLORS[c.key]||'#a78bfa'};flex-shrink:0;"></span>${c.label}<b style="margin-left:auto;color:var(--text);">${c.count}</b></div>`).join('')}</div>
+      </div>`;
+    })()}<div class="cat-stat-list">${cats.map(c=>'<div class="cat-stat-row"><span class="cat-stat-name">'+ic(c.icon)+' '+c.label+'</span><div class="cat-stat-bar-wrap"><div class="cat-stat-bar" style="width:'+(c.count/mx*100)+'%"></div></div><span class="cat-stat-count">'+c.count+'</span></div>').join('')}</div></div>`:''}
     <div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('checkcirc',10)} Durum</span><div style="flex:1;height:1px;background:var(--line);"></div></div><div class="summary-grid" style="margin-bottom:14px;"><div class="summary-card"><div class="summary-val" style="color:var(--purple3);">${series.filter(s=>s.category==='reading'||s.category==='current'||s.category==='current_en'||s.category==='current_both').length}</div><div class="summary-lbl">Aktif</div></div><div class="summary-card"><div class="summary-val" style="color:var(--green);">${series.filter(s=>s.category==='completed').length}</div><div class="summary-lbl">Tamamlandı</div></div><div class="summary-card"><div class="summary-val" style="color:var(--gold);">${series.filter(s=>s.category==='paused'||s.category==='season').length}</div><div class="summary-lbl">Beklemede</div></div><div class="summary-card"><div class="summary-val" style="color:#f87171;">${series.filter(s=>s.category==='dropped').length}</div><div class="summary-lbl">Bırakıldı</div></div></div>
     ${(()=>{
       const ps=computePersonalizedStats();
@@ -1167,6 +1217,25 @@ function renderStats(){
       </div>`;
     })()}
     ${(()=>{
+      const rec=computeRecords();
+      const ps=computePersonalizedStats();
+      const fiveStar=ps.ratingDist[5]||0;
+      const cards=[];
+      if(rec.thickest)cards.push({icon:'layers',title:'En Kalın Serin',val:esc(rec.thickest.name),sub:rec.thickest.chapterTotal+' bölüm',color:'#38bdf8'});
+      if(rec.fastest)cards.push({icon:'bolt',title:'En Hızlı Bitirdiğin',val:esc(rec.fastest.name),sub:rec.fastestDays+' günde',color:'#34d399'});
+      if(rec.mostStockpiled&&parseInt(rec.mostStockpiled.chapterTR)>0)cards.push({icon:'box',title:'En Çok Biriktirdiğin',val:esc(rec.mostStockpiled.name),sub:rec.mostStockpiled.chapterTR+' bölüm bekliyor',color:'#f59e0b'});
+      if(fiveStar>0)cards.push({icon:'starFill',title:'5 Yıldız Verdiklerin',val:fiveStar+' seri',sub:ps.ratingDist.slice(1).reduce((a,b)=>a+b,0)+' puanladığının bir kısmı',color:'#c9a227'});
+      if(!cards.length)return '';
+      return `<div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('zap',10)} Rekorların</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;">${cards.map(c=>`
+        <div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:12px;">
+          <div style="color:${c.color};margin-bottom:6px;">${ic(c.icon,17)}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-weight:700;">${c.title}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.val}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px;">${c.sub}</div>
+        </div>`).join('')}</div>`;
+    })()}
+    ${(()=>{
       const xs=computeExtraStats();
       const rows=[];
       rows.push(['Toplam Okunan Bölüm (TR+EN)',xs.totAll]);
@@ -1199,6 +1268,30 @@ function renderStats(){
       const hm=renderHeatmapHTML();
       return `<div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('fire',10)} Etkinlik (Son ~4 Ay)</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
       <div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;">${hm}</div>`;
+    })()}
+    ${(()=>{
+      const t=computeMonthlyTempo();
+      const maxV=Math.max(...t.counts,1);
+      const pts=t.counts.map((v,i)=>{
+        const x=15+i*(270/5);
+        const y=78-(v/maxV)*60;
+        return x.toFixed(1)+','+y.toFixed(1);
+      });
+      const areaPts='15,78 '+pts.join(' ')+' 285,78';
+      const lastV=t.counts[5],prevV=t.counts[4];
+      const trend=prevV>0?Math.round((lastV-prevV)/prevV*100):null;
+      const trendStr=trend===null?'':(trend>=0?`▲ %${trend}`:`▼ %${Math.abs(trend)}`);
+      return `<div style="margin:0 0 10px;display:flex;align-items:center;gap:7px;"><span style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">${ic('bolt',10)} Aylık Tempon</span><div style="flex:1;height:1px;background:var(--line);"></div></div>
+      <div style="background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;"><span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:800;color:var(--green);">${lastV} bölüm</span><span style="font-size:10px;color:var(--text3);">${trendStr?trendStr+' geçen aya göre':'bu ay'}</span></div>
+        <svg viewBox="0 0 300 90" width="100%" height="90" preserveAspectRatio="none">
+          <defs><linearGradient id="tempoFillG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a78bfa" stop-opacity=".38"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></linearGradient></defs>
+          <polygon points="${areaPts}" fill="url(#tempoFillG)"/>
+          <polyline points="${pts.join(' ')}" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="${pts[5].split(',')[0]}" cy="${pts[5].split(',')[1]}" r="4.5" fill="var(--black4)" stroke="#a78bfa" stroke-width="2.5"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--text3);font-weight:600;">${t.labels.map(l=>`<span>${l}</span>`).join('')}</div>
+      </div>`;
     })()}
     ${(()=>{
       const tl=renderTimelineHTML();
