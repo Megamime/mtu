@@ -140,7 +140,7 @@ function updateThemeToggleIcon(){
   btn.innerHTML=(isLight?ic('sun',15):ic('moon',15))+(isSidebarItem?`<span class="sidebar-label">${isLight?' Aydınlık Tema':' Karanlık Tema'}</span>`:'');
 }
 applyTheme(getTheme());
-const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#e85d75" stroke="#e85d75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#e85d75" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,share:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>`,};
+const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#8b5cf6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#8b5cf6" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,heart:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,heartFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#f472b6" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,share:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>`,};
 const _icCache={};
 function ic(n,s=13){
   const k=n+'_'+s;
@@ -618,7 +618,7 @@ function renderBulkBar(){
     <span style="font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;flex-shrink:0;">${n} seçili</span>
     <select class="form-select" style="flex:1;font-size:12px;padding:7px 9px;min-width:0;" onchange="if(this.value){bulkSetCategory(this.value);this.value='';}"><option value="">Kategori…</option>${Object.entries(CATS).filter(([k])=>k!=='all').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
     <button class="hdr-btn" title="Sabitle" onclick="bulkPin()">${ic('pin',15)}</button>
-    <button class="hdr-btn" title="Favorile" onclick="bulkFavorite()">${ic('star',15)}</button>
+    <button class="hdr-btn" title="Favorile" onclick="bulkFavorite()">${ic('heart',15)}</button>
     <button class="hdr-btn" title="Sil" style="color:#f87171;" onclick="bulkDelete()">${ic('trash',15)}</button>
   </div>`;
 }
@@ -903,7 +903,7 @@ function heroSpotlight(items){
       ${bg}
       <div class="hero-scrim"></div>
       <div class="hero-content">
-        <div class="hero-eyebrow ${isNew?'new':''}">${isNew?ic('bolt',11):ic('starFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
+        <div class="hero-eyebrow ${isNew?'new':''}">${isNew?ic('bolt',11):ic('heartFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
         <div class="hero-title">${esc(s.name)}</div>
         ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
@@ -936,7 +936,7 @@ function carouselCard(s,i,canReorder){
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
-  const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
+  const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
   const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
   const genreBadge=(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:'';
   const cdBadge=getCardCountdownBadge(s);
@@ -964,7 +964,7 @@ function flatCard(s,i){
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
-  const favB=s.favorited?`<div class="fav-badge">${ic('star',8)}</div>`:'';
+  const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
   const isSel=selectedIds.has(s.id);
   const cdBadge=getCardCountdownBadge(s);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
@@ -1057,8 +1057,8 @@ function buildCountdown(s){
   if(s.category==='season'&&s.returnDate){
     const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
     const rdLabel=new Date(s.returnDate+'T00:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('checkcirc',28)+'</div></div>';
-    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('checkcirc',30)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',30)+'</div></div>';
   }
   // Sezon arasında değilse ve otomatik bölüm artırma açıksa, sıradaki bölümün ne zaman
   // ekleneceğini de göster — eskiden bu bilgi hiçbir yerde görünmüyordu.
@@ -1066,8 +1066,8 @@ function buildCountdown(s){
     const diffMs=s.autoIncrNext-Date.now();
     const diffDays=Math.ceil(diffMs/(1000*60*60*24));
     const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-    if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon">'+ic('bolt',28)+'</div></div>';
-    return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',28)+'</div></div>';
+    if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon">'+ic('bolt',30)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',30)+'</div></div>';
   }
   return '';
 }
@@ -1103,22 +1103,40 @@ function getSeriesDetailSections(s){
   // ise ayrı bir sırada, varsa kısa bir açıklamayla birlikte gösteriliyor.
   const rawLinks=s.links||[];
   const mainLinkedSeries=rawLinks.filter(l=>l.type==='main').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
-  const sideLinks=rawLinks.filter(l=>l.type==='side').map(l=>({series:series.find(x=>x.id===l.id),desc:l.desc||''})).filter(x=>x.series);
-  function linkCardHTML(ls,isSide){
-    const cov=ls.cover?`<img src="${esc(ls.cover)}" class="series-link-cover">`:`<div class="series-link-cover series-link-cover-ph">${ic('img',13)}</div>`;
-    return `<div class="series-link-card${isSide?' side':''}" onclick="openDetail('${ls.id}')">${cov}<span class="series-link-name">${esc(ls.name)}</span></div>`;
-  }
+  const hasOwnSideLinks=rawLinks.some(l=>l.type==='side');
   let linksH='';
-  if(mainLinkedSeries.length||sideLinks.length){
-    linksH=`<div><div class="detail-sec-title">${ic('layers',10)} Bağlantılı Seriler</div>`;
-    if(mainLinkedSeries.length){
-      const chain=[s,...mainLinkedSeries].sort((a,b)=>(a.mainOrder||9999)-(b.mainOrder||9999));
-      linksH+=`<div class="series-link-row">${chain.map((ls,i)=>`${i>0?'<span class="series-link-arrow">→</span>':''}${linkCardHTML(ls,false)}`).join('')}</div>`;
-    }
-    if(sideLinks.length){
-      linksH+=`<div class="series-link-side-label">◈ Yan Seriler</div><div class="series-link-row side-row">${sideLinks.map(({series:ls,desc})=>`<div class="series-link-side-wrap">${linkCardHTML(ls,true)}${desc?`<div class="series-link-desc">${esc(desc)}</div>`:''}</div>`).join('')}</div>`;
-    }
-    linksH+=`</div>`;
+  if(mainLinkedSeries.length||hasOwnSideLinks){
+    // Yatay ağaç: Ana Seri zinciri düz bir hat üzerinde soldan sağa sıralanıyor (mainOrder'a göre),
+    // her düğümün KENDİ "Yan Seri" bağlantıları o düğümün üstünde kesikli bir çizgiyle dallanıyor —
+    // hangi seri sayfasından bakarsan bak aynı ağaç çıkar, çünkü konum linke değil serinin
+    // kendi mainOrder'ına ve kendi links[] listesine ait.
+    const chain=[s,...mainLinkedSeries].sort((a,b)=>(a.mainOrder||9999)-(b.mainOrder||9999));
+    const COL=40,GAP=13,STEP=COL+GAP,BR_H=71,TRUNK_Y_IN_ROW=17;
+    const nodeBranches=chain.map(node=>(node.links||[]).filter(l=>l.type==='side').map(l=>({series:series.find(x=>x.id===l.id),desc:l.desc||''})).filter(x=>x.series));
+    const maxBranches=Math.max(0,...nodeBranches.map(b=>b.length));
+    const padTop=42+Math.max(0,maxBranches-1)*BR_H;
+    const trunkY=padTop+TRUNK_Y_IN_ROW;
+    const cov=ls=>ls.cover?`<img src="${esc(ls.cover)}" class="detail-htree-cover-img">`:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+    const branchesH=chain.map((node,i)=>nodeBranches[i].map((b,bi)=>{
+      const cx=i*STEP+20;
+      const top=trunkY-BR_H*(bi+1);
+      return `<div class="detail-htree-branch" style="left:${cx}px;top:${top}px;" onclick="openDetail('${b.series.id}')" title="${esc(b.desc)}">
+        <div class="detail-htree-label">${esc(b.series.name)}<div class="detail-htree-tag" style="color:#34d399;">Yan Seri</div></div>
+        <div class="detail-htree-cover">${cov(b.series)}</div>
+        <div class="detail-htree-branch-connector"></div>
+      </div>`;
+    }).join('')).join('');
+    const rowH=chain.map((node,i)=>`
+      <div class="detail-htree-col" onclick="${node.id===id?'':`openDetail('${node.id}')`}">
+        <div class="detail-htree-cover${node.id===id?' current':''}">${cov(node)}</div>
+        <div class="detail-htree-label">${esc(node.name)}<div class="detail-htree-tag" style="${node.id===id?'color:var(--purple3);':''}">${node.id===id?'Sen Buradasın':(node.mainOrder?'Ana Seri · '+node.mainOrder:'Ana Seri')}</div></div>
+      </div>`).join('');
+    linksH=`<div><div class="detail-sec-title">${ic('layers',10)} Bağlantılı Seriler</div>
+      <div class="detail-htree" style="padding-top:${padTop}px;">
+        ${branchesH}
+        <div class="detail-htree-row">${rowH}</div>
+      </div>
+    </div>`;
   }
   const oldC=s.oldCovers||[];
   const oldCH=oldC.length?`<div><div class="detail-sec-title">${ic('img',10)} Eski Kapaklar</div><div class="old-covers-row" id="oldCRow-${id}">
@@ -1161,7 +1179,7 @@ function openDetail(id,skipHistory){
       <div class="detail-cover-gradient"></div>
       <div class="detail-badges-row">
         ${s.pinned?`<span class="detail-pill" style="background:var(--pinG);color:var(--pin);">${ic('pin',9)} Sabitli</span>`:''}
-        ${s.favorited?`<span class="detail-pill" style="background:var(--gold2);color:var(--gold);">${ic('star',9)} Favori</span>`:''}
+        ${s.favorited?`<span class="detail-pill" style="background:var(--favG);color:var(--fav);">${ic('heartFill',9)} Favori</span>`:''}
       </div>
       <div class="detail-cover-info">
         <div class="detail-cover-title">${esc(s.name)}</div>
@@ -1183,7 +1201,7 @@ function openDetail(id,skipHistory){
       ${countdownH}${altH}${fanH}${linksH}${oldCH}${opinionH}${noteH}${logH}
       <div class="detail-action-row">
         <div class="action-chip ${s.pinned?'chip-pin':''}" onclick="togglePin('${s.id}')">${s.pinned?ic('pinFill',13):ic('pin',13)} ${s.pinned?'Sabiti Kaldır':'Sabitle'}</div>
-        <div class="action-chip ${s.favorited?'chip-fav':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('starFill',13):ic('star',13)} ${s.favorited?'Favoriden Çıkar':'Favorile'}</div>
+        <div class="action-chip ${s.favorited?'chip-fav':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('heartFill',13):ic('heart',13)} ${s.favorited?'Favoriden Çıkar':'Favorile'}</div>
       </div>
       <button class="btn-primary" onclick="openEditSheet('${s.id}')">${ic('edit',13)} Düzenle</button>
       <button class="btn-ghost" onclick="openQuick('${s.id}')">${ic('bolt',13)} Hızlı Düzenle</button>
@@ -1941,7 +1959,7 @@ function openSheet(id){ document.getElementById(id).classList.remove('hidden'); 
 
 // ===== Sahte(!) ama kütüphane verinden beslenen profil sistemi. Backend/hesap yok — tamamen
 // bu cihaza, localStorage'a özel. Avatar emoji ya da kendi yüklediğin bir fotoğraf olabilir. =====
-const PROFILE_AVATARS=['🍥','🐉','⚔️','🌸','🎭','📖','🔥','✨','💜','🎌','👹','🦋'];
+const PROFILE_AVATARS=['✨','👾','🫥','🫆','🐦‍🔥','🌙','🌟','💎'];
 const PROFILE_RANKS=[
   {min:0,  label:'Çaylak Okuyucu'},
   {min:10, label:'Sayfa Avcısı'},
@@ -1950,11 +1968,11 @@ const PROFILE_RANKS=[
   {min:100,label:'Fansub Bilgesi'},
   {min:200,label:'Efsanevi Okuyucu'},
 ];
-let _profileAvatarPending='🍥';
+let _profileAvatarPending='✨';
 function getProfile(){
   let p={};
   try{ p=JSON.parse(localStorage.getItem('megami_profile')||'{}'); }catch(e){}
-  return {avatar:p.avatar||'🍥',name:p.name||'',bio:p.bio||''};
+  return {avatar:p.avatar||'✨',name:p.name||'',bio:p.bio||''};
 }
 function isImageAvatar(a){ return typeof a==='string'&&(a.startsWith('data:')||a.startsWith('http')); }
 function avatarHTML(a,size){
@@ -1981,18 +1999,16 @@ function openProfileSheet(){
   const p=getProfile();
   _profileAvatarPending=p.avatar;
   document.getElementById('profileAvatarBig').innerHTML=avatarHTML(p.avatar);
-  document.getElementById('profileRankLabel').textContent=getProfileRank();
   document.getElementById('profileNameInput').value=p.name;
   document.getElementById('profileBioInput').value=p.bio;
   document.getElementById('profileAvatarGrid').innerHTML=PROFILE_AVATARS.map(a=>
     `<div class="profile-avatar-opt ${a===p.avatar?'active':''}" onclick="pickProfileAvatar('${a}')">${a}</div>`
   ).join('');
-  // Not: rütbe ve üyelik tarihi burada özellikle var çünkü bunlar İstatistik sayfasında
-  // yok — "Toplam Seri"/"Bitirilen" gibi zaten orada olan sayıları burada TEKRARLAMIYORUZ,
-  // bu gerçekten gereksiz olurdu.
+  // Not: rütbe kavramı tasarımdan tamamen kaldırıldı (İstatistik sayfasında da yok).
+  // Üyelik tarihi burada duruyor çünkü İstatistik sayfasında zaten olan sayıları
+  // ("Toplam Seri"/"Bitirilen" gibi) burada TEKRARLAMIYORUZ, bu gereksiz olurdu.
   document.getElementById('profileStatsGrid').innerHTML=`
-    <div class="profile-stat-card"><div class="profile-stat-num" style="font-size:13px;">${esc(getProfileRank())}</div><div class="profile-stat-label">Rütbe</div></div>
-    <div class="profile-stat-card"><div class="profile-stat-num" style="font-size:13px;">${esc(getMemberSinceLabel())}</div><div class="profile-stat-label">Üyelik</div></div>
+    <div class="profile-stat-card" style="grid-column:1/-1;"><div class="profile-stat-num" style="font-size:13px;">${esc(getMemberSinceLabel())}</div><div class="profile-stat-label">Üyelik</div></div>
   `;
   openSheet('profileOverlay');
 }
