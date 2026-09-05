@@ -822,7 +822,7 @@ function buildDailyDigestHTML(){
   if(!newCh.length&&!returned.length&&!reading.length) return '';
   const digestItem=(s,showCh)=>{
     const cov=s.cover?`<img src="${esc(s.cover)}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
-    return `<div class="digest-item" onclick="openDetail('${s.id}')">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
+    return `<div class="digest-item" onclick="openPreview('${s.id}',event)">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
   };
   let sections='';
   if(newCh.length){
@@ -899,7 +899,7 @@ function heroSpotlight(items){
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
     const isNew=!!s.newChapter;
-    return `<div class="hero-slide" onclick="openDetail('${s.id}',event)">
+    return `<div class="hero-slide" onclick="openPreview('${s.id}',event)">
       ${bg}
       <div class="hero-scrim"></div>
       <div class="hero-content">
@@ -1174,14 +1174,14 @@ function getSeriesDetailSections(s){
     const branchesH=chain.map((node,i)=>nodeBranches[i].map((b,bi)=>{
       const cx=i*STEP+20;
       const top=trunkY-BR_H*(bi+1);
-      return `<div class="detail-htree-branch" style="left:${cx}px;top:${top}px;" onclick="openDetail('${b.series.id}')" title="${esc(b.desc)}">
+      return `<div class="detail-htree-branch" style="left:${cx}px;top:${top}px;" onclick="openPreview('${b.series.id}',event)" title="${esc(b.desc)}">
         <div class="detail-htree-label">${esc(b.series.name)}<div class="detail-htree-tag" style="color:#34d399;">Yan Seri</div></div>
         <div class="detail-htree-cover">${cov(b.series)}</div>
         <div class="detail-htree-branch-connector"></div>
       </div>`;
     }).join('')).join('');
     const rowH=chain.map((node,i)=>`
-      <div class="detail-htree-col" onclick="${node.id===id?'':`openDetail('${node.id}')`}">
+      <div class="detail-htree-col" onclick="${node.id===id?'':`openPreview('${node.id}',event)`}">
         <div class="detail-htree-cover${node.id===id?' current':''}">${cov(node)}</div>
         <div class="detail-htree-label">${esc(node.name)}<div class="detail-htree-tag" style="${node.id===id?'color:var(--purple3);':''}">${node.id===id?'Sen Buradasın':(node.mainOrder?'Ana Seri · '+node.mainOrder:'Ana Seri')}</div></div>
       </div>`).join('');
