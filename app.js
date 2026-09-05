@@ -941,7 +941,7 @@ function carouselCard(s,i,canReorder){
   const genreBadge=(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:'';
   const cdBadge=getCardCountdownBadge(s);
   const isSel=selectedIds.has(s.id);
-  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
+  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   const dragAttrs=canReorder&&!selectionMode?`draggable="true" data-series-id="${s.id}" ondragstart="pinDragStart(event)" ondragend="pinDragEnd(event)"`:'';
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" ${dragAttrs} style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}${canReorder&&!selectionMode?'cursor:grab;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
@@ -967,7 +967,7 @@ function flatCard(s,i){
   const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
   const isSel=selectedIds.has(s.id);
   const cdBadge=getCardCountdownBadge(s);
-  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openDetail('${s.id}',event)`;
+  const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
@@ -979,6 +979,60 @@ function flatCard(s,i){
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
       ${(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:''}
     </div></div>`;
+}
+// ===== Seri Önizleme pop-up'ı: karta dokununca doğrudan tam detay sayfasına gitmek yerine
+// açılan hafif bir ön izleme. Favori/Oku/Sabitle + hızlı bölüm ilerletme burada; "Durum
+// Değiştir" zaten var olan Hızlı Menü'yü (TR/EN ayrı sayaç + tüm durumlar) açar, "Detaylı
+// Sayfayı Aç" tam sayfaya götürür. =====
+function openPreview(id,ev){
+  if(ev)ev.stopPropagation();
+  const s=series.find(x=>x.id===id);if(!s)return;
+  window._previewId=id;
+  const cat=CATS[s.category]||{};
+  const pct=s.chapterTotal>0?Math.min(100,Math.round((s.chapterTR/s.chapterTotal)*100)):0;
+  const cov=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
+  document.getElementById('previewBody').innerHTML=`
+    <div class="preview-cover-row">
+      <div class="preview-cover">${cov}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div class="preview-title">${esc(s.name)}</div>
+          ${s.originalName?`<div class="preview-original">${esc(s.originalName)}</div>`:''}
+        </div>
+        <div class="preview-meta-row">
+          <span class="card-cat-badge ${cat.badge||''}">${ic(cat.icon||'bookmark',10)} ${esc(cat.label||'')}</span>
+        </div>
+      </div>
+    </div>
+    ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct}</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
+    <div class="preview-row1">
+      <div class="preview-icon-btn ${s.favorited?'active':''}" onclick="toggleFav('${id}');openPreview('${id}');event.stopPropagation();">${s.favorited?ic('heartFill',17):ic('heart',17)}</div>
+      <div class="preview-read-btn" onclick="${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${id}')`};event.stopPropagation();">${ic('bolt',14)} Oku</div>
+      <div class="preview-icon-btn ${s.pinned?'pinned':''}" onclick="togglePin('${id}');openPreview('${id}');event.stopPropagation();">${s.pinned?ic('pinFill',17):ic('pin',17)}</div>
+    </div>
+    <div class="preview-stepper-row">
+      <div class="preview-step-btn" onclick="previewStep(-1);event.stopPropagation();">−1</div>
+      <div class="preview-zstep"><button onclick="previewStepZ(-1);event.stopPropagation();">−</button><input type="number" id="previewZ" value="5" onclick="event.stopPropagation();"/><button onclick="previewStepZ(1);event.stopPropagation();">+</button></div>
+      <div class="preview-step-btn" onclick="previewStep(1);event.stopPropagation();">+1</div>
+    </div>
+    <div class="preview-bottom-row">
+      <div class="preview-share-btn" title="Durumu Değiştir" onclick="closeSheet('previewOverlay');openQuick('${id}');event.stopPropagation();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></div>
+      <div class="preview-detail-link" onclick="closeSheet('previewOverlay');openDetail('${id}');event.stopPropagation();">Detaylı Sayfayı Aç ${ic('chevron',11)}</div>
+      <div class="preview-share-btn" title="Paylaş" onclick="shareSeriesCard('${id}');event.stopPropagation();">${ic('share',15)}</div>
+    </div>`;
+  document.getElementById('previewOverlay').classList.remove('hidden');
+}
+function previewStep(delta){
+  const s=series.find(x=>x.id===window._previewId);if(!s)return;
+  const prevTR=s.chapterTR;
+  s.chapterTR=Math.max(0,(parseInt(s.chapterTR)||0)+delta);
+  if(s.chapterTR!==prevTR) addLog(s.id,`TR bölüm ${prevTR||0}→${s.chapterTR}`);
+  s.updatedAt=Date.now();
+  save().then(()=>{renderTabs();renderContent();openPreview(s.id);});
+}
+function previewStepZ(sign){
+  const z=parseInt(document.getElementById('previewZ').value)||0;
+  previewStep(sign*z);
 }
 function openQuick(id){
   const s=series.find(x=>x.id===id);if(!s)return;
@@ -1299,6 +1353,8 @@ function checkFavoriteMilestone(){
 }
 function showAddOverlay(){
   document.getElementById('addOverlay').classList.remove('hidden');
+  const firstTab=document.querySelector('.form-tab[data-tab="temel"]');
+  if(firstTab)showFormTab('temel',firstTab);
   if(typeof onAddOverlayShown==='function') onAddOverlayShown();
 }
 function openAddSheet(){
@@ -1375,6 +1431,21 @@ function openEditSheet(id){
   showAddOverlay();
 }
 function toggleFormFav(){formFav=!formFav;updateFormToggles();}
+// Seriyi Düzenle formundaki kategori sekmeleri arasında geçiş. Takip sekmesinin içeriği
+// formda iki ayrı (bitişik olmayan) bloğa yayıldığı için data-tab ile TÜM eşleşen panelleri
+// birden gösterip gizliyoruz, tek bir id'ye değil.
+function showFormTab(tab,el){
+  document.querySelectorAll('.form-tab-panel').forEach(function(p){
+    p.style.display=(p.getAttribute('data-tab')===tab)?'':'none';
+  });
+  document.querySelectorAll('.form-tab').forEach(function(t){
+    const active=t.getAttribute('data-tab')===tab;
+    t.classList.toggle('active',active);
+    t.style.background=active?'rgba(124,58,237,.16)':'var(--black4)';
+    t.style.borderColor=active?'rgba(124,58,237,.35)':'var(--line)';
+    t.style.color=active?'var(--purple3)':'var(--text2)';
+  });
+}
 function toggleFormPin(){formPin=!formPin;updateFormToggles();}
 function updateFormToggles(){
   document.getElementById('favToggle').className='btn-secondary'+(formFav?' fav-active':'');
@@ -1648,6 +1719,39 @@ function renderFansubMetaLogoPreview(src){
     ?`<img src="${esc(src)}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--line2);" onerror="this.style.display='none'">`
     :`<div style="width:56px;height:56px;border-radius:12px;background:var(--black4);border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;color:var(--text3);">${ic('img',20)}</div>`;
 }
+// Genel "Çeviri Ekipleri" ekranından, herhangi bir seriyi düzenleme formu açık olmadan
+// doğrudan bir ekibin logo/link bilgisini düzenlemek için — openFansubMetaEditor(i) gibi
+// forma bağlı bir index yerine doğrudan ismi kullanır.
+function openFansubMetaEditorByName(name){
+  const meta=getFansubMeta(name);
+  document.getElementById('fansubMetaName').textContent=name;
+  document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
+  document.getElementById('fansubMetaUrlInput').value=meta.url||'';
+  window._fansubMetaEditingName=name;
+  renderFansubMetaLogoPreview(meta.logo||'');
+  document.getElementById('fansubMetaOverlay').classList.remove('hidden');
+}
+function openFansubList(){
+  const names=getAllKnownFansubs();
+  const wrap=document.getElementById('fansubListBody');
+  if(!wrap)return;
+  if(!names.length){
+    wrap.innerHTML=`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye çeviri ekibi eklenmemiş.</p>`;
+  }else{
+    const rows=names.map(name=>{
+      const count=series.filter(s=>(s.fansubList||[]).includes(name)).length;
+      const meta=getFansubMeta(name);
+      const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:40px;height:40px;border-radius:12px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:`<div style="width:40px;height:40px;border-radius:12px;background:var(--purpleG);display:flex;align-items:center;justify-content:center;color:var(--purple3);flex-shrink:0;position:relative;">${ic('bolt',16)}</div>`;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;" onclick="openFansubMetaEditorByName('${esc(name).replace(/'/g,"\\'")}')">
+        <div style="position:relative;flex-shrink:0;">${logo}<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--purple);border:2px solid var(--black3);display:flex;align-items:center;justify-content:center;color:#fff;">${ic('edit',8)}</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div><div style="font-size:10.5px;color:var(--text3);margin-top:1px;">${count} seri${meta.url?' · link kayıtlı':''}</div></div>
+        ${ic('chevron',13)}
+      </div>`;
+    }).join('');
+    wrap.innerHTML=`<div>${rows}</div>`;
+  }
+  document.getElementById('fansubListOverlay').classList.remove('hidden');
+}
 function previewFansubMetaLogo(){
   renderFansubMetaLogoPreview(document.getElementById('fansubMetaLogoInput').value.trim());
 }
@@ -1768,7 +1872,9 @@ document.addEventListener('click',e=>{
 });
 function removeFansub(i){fansubList.splice(i,1);renderFansubTags();}
 function renderFansubTags(){
-  document.getElementById('fansubTagsWrap').innerHTML=fansubList.map((f,i)=>{
+  const wrap=document.getElementById('fansubTagsWrap');
+  if(!wrap)return;
+  wrap.innerHTML=fansubList.map((f,i)=>{
     const meta=getFansubMeta(f);
     const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:14px;height:14px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
     const linkDot=meta.url?`<span style="width:5px;height:5px;border-radius:50%;background:var(--purple3);display:inline-block;" title="Link kayıtlı"></span>`:'';
