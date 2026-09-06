@@ -907,6 +907,10 @@ function heroSpotlight(items){
         <div class="hero-title">${esc(s.name)}</div>
         ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
+        <div class="hero-actions">
+          <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
+          <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.1"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9.3,11.5 L12,11.5 L12,17.5" stroke-width="1.6"/></svg></div>
+        </div>
       </div>
     </div>`;
   }).join('');

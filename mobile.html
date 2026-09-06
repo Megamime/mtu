@@ -12,6 +12,9 @@
 .hero-title{font-family:'Playfair Display',serif;font-weight:700;font-size:19px;color:#fff;line-height:1.15;text-shadow:0 2px 14px rgba(0,0,0,.6);margin-bottom:6px;}
 .hero-meta{font-size:11px;color:rgba(255,255,255,.72);margin-bottom:8px;}
 .hero-progress{height:3px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;}
+.hero-actions{display:flex;align-items:center;gap:10px;margin-top:11px;}
+.hero-cta{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:38px;border-radius:19px;background:rgba(255,255,255,.95);color:#0d0a16;font-size:12.5px;font-weight:700;}
+.hero-info-btn{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;}
 .hero-progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple3));}
 .hero-dots{display:flex;gap:4px;justify-content:center;padding:8px 0 4px;}
 .hero-dot{width:5px;height:5px;border-radius:50%;background:var(--line2);transition:all .2s;}
@@ -310,6 +313,36 @@ body{background:#0a0612;}
 .preview-bottom-row{display:flex;gap:8px;margin-top:9px;}
 .preview-share-btn{width:44px;height:44px;flex-shrink:0;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--text2);}
 .preview-detail-link{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:11.5px;font-weight:700;color:var(--purple3);}
+.lrow{display:flex;gap:11px;align-items:center;background:var(--black4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px;box-shadow:inset 0 1px 1px rgba(255,255,255,.1);margin-bottom:9px;}
+.lrow-cover{width:64px;height:90px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--black5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.28);}
+.lrow-cover img{width:100%;height:100%;object-fit:cover;}
+.lrow-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:0;padding:1px 0;}
+.lrow-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.lrow-title-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-width:0;}
+.lrow-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lrow-original{font-size:10px;color:var(--text3);font-weight:500;opacity:.75;}
+.lrow-pinfav{flex-shrink:0;margin-top:1px;display:flex;gap:4px;}
+.lrow-cat-pill{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:3px 8px 3px 7px;border-radius:20px;width:fit-content;margin-top:6px;}
+.lrow-ch-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.lrow-ch{font-size:10px;color:var(--text3);font-weight:600;flex-shrink:0;}
+.lrow-progress-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;max-width:88px;}
+.lrow-progress-fill{height:100%;border-radius:3px;}
+.lrow-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;}
+.lrow-genres{display:flex;gap:4px;flex-wrap:wrap;}
+.lrow-genre-pill{font-size:8px;font-weight:600;color:var(--text3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);padding:2px 7px;border-radius:20px;}
+.lrow-rating{font-size:9.5px;color:#f0b95e;letter-spacing:-1px;flex-shrink:0;}
+.lrow-check{width:0;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;transition:width .18s ease;}
+.list-rows.select-mode .lrow-check{width:22px;}
+.lrow-check svg{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);padding:3px;box-sizing:border-box;}
+.lrow.checked .lrow-check svg{background:var(--purple2);border-color:var(--purple2);}
+.lrow-swipe-wrap{position:relative;overflow:hidden;margin-bottom:9px;}
+.lrow-swipe-wrap .lrow{margin-bottom:0;transition:transform .22s cubic-bezier(.22,.9,.4,1);position:relative;z-index:1;touch-action:pan-y;}
+.lrow-swipe-actions{position:absolute;right:0;top:0;bottom:0;width:104px;display:flex;}
+.lrow-action{flex:1;display:flex;align-items:center;justify-content:center;color:#fff;border:none;}
+.lrow-action svg{width:22px;height:22px;}
+.lrow-action.fav{background:#ec4899;border-radius:14px 0 0 14px;}
+.lrow-action.edit{background:#8b5cf6;border-radius:0 14px 14px 0;}
+.swipe-hint{font-size:10px;color:var(--text3);text-align:center;padding:6px 0 2px;font-style:italic;opacity:.8;}
 </style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div>
 Megami
 </div><div class="hdr-right"><div class="hdr-btn hdr-avatar-btn" id="profileAvatarBtn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" id="notifBtn" onclick="openNotificationsSheet()" title="Bildirimler" style="position:relative;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge hidden" id="notifBadge">0</span></div><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="updateBackupInfo();openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="cat-tab-filter-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
@@ -1100,23 +1133,33 @@ function renderListPage(){
   const rowsHTML=filtered.length?filtered.map(s=>{
     const cat=CATS[s.category]||CATS.reading;
     const total=parseInt(s.chapterTotal)||0;
-    const chTR=s.chapterTR?`${ic('tr',9)} ${s.chapterTR}${total>0?'/'+total:''}`:'';
-    const chEN=s.chapterEN?`${ic('globe',9)} ${s.chapterEN}`:'';
-    const ratingStr=s.rating?`<span class="list-row-rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:'';
-    const genreStr=(s.genres&&s.genres.length)?`<span class="list-row-genre">${esc(s.genres.slice(0,2).join(' · '))}</span>`:'';
-    const coverEl=s.cover?`<img class="list-row-cover" src="${esc(s.cover)}" loading="lazy" onerror="this.style.visibility='hidden'">`:`<div class="list-row-cover list-row-cover-ph">${ic('img',14)}</div>`;
-    const pinIco=s.pinned?ic('pinFill',11):'';
-    const favIco=s.favorited?ic('heartFill',11):'';
-    return `<div class="list-row" onclick="openPreview('${s.id}',event)">
-      ${coverEl}
-      <div class="list-row-info">
-        <div class="list-row-title">${esc(s.name)} ${pinIco}${favIco}</div>
-        <div class="list-row-sub">
-          <span class="list-row-cat ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</span>
-          ${chTR?`<span class="list-row-ch">${chTR}</span>`:''}
-          ${chEN?`<span class="list-row-ch">${chEN}</span>`:''}
+    const chTR=parseInt(s.chapterTR)||0;
+    const pct=total>0?Math.min(100,Math.round(chTR/total*100)):0;
+    const chStr=s.chapterTR?`Böl. ${esc(s.chapterTR)}${total>0?'/'+total:''}`:'—';
+    const ratingStr=s.rating?`<span class="lrow-rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:'';
+    const genresH=(s.genres&&s.genres.length)?`<div class="lrow-genres">${s.genres.slice(0,2).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}</div>`:'<div></div>';
+    const coverEl=s.cover?`<img src="${esc(s.cover)}" loading="lazy" onerror="this.style.visibility='hidden'">`:ic('img',18);
+    const pinIco=s.pinned?`<span style="color:var(--purple3);">${ic('pinFill',12)}</span>`:'';
+    const favIco=s.favorited?`<span style="color:#f472b6;">${ic('heartFill',12)}</span>`:'';
+    return `<div class="lrow-swipe-wrap">
+      <div class="lrow-swipe-actions">
+        <button class="lrow-action fav" onclick="toggleFav('${s.id}');event.stopPropagation();">${ic(s.favorited?'heartFill':'heart',20)}</button>
+        <button class="lrow-action edit" onclick="openEditSheet('${s.id}');event.stopPropagation();">${ic('edit',18)}</button>
+      </div>
+      <div class="lrow" onclick="${selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`}" ontouchstart="lrowSwipeStart(event,this)" ontouchmove="lrowSwipeMove(event,this)" ontouchend="lrowSwipeEnd(event,this)">
+        <div class="lrow-check">${ic('check',12)}</div>
+        <div class="lrow-cover">${coverEl}</div>
+        <div class="lrow-body">
+          <div>
+            <div class="lrow-top">
+              <div class="lrow-title-row"><span class="lrow-title">${esc(s.name)}</span>${s.originalName?`<span class="lrow-original">${esc(s.originalName)}</span>`:''}</div>
+              <div class="lrow-pinfav">${pinIco}${favIco}</div>
+            </div>
+            <div class="lrow-cat-pill ${cat.badge}">${ic(cat.icon,9)} ${cat.label}</div>
+            <div class="lrow-ch-row"><span class="lrow-ch">${chStr}</span>${total>0?`<div class="lrow-progress-track"><div class="lrow-progress-fill" style="width:${pct}%;background:${pct>=100?'#34d399':'var(--purple2)'};"></div></div>`:''}</div>
+          </div>
+          <div class="lrow-bottom">${genresH}${ratingStr}</div>
         </div>
-        ${genreStr||ratingStr?`<div class="list-row-sub">${genreStr}${ratingStr}</div>`:''}
       </div>
     </div>`;
   }).join(''):`<div class="empty" style="padding:50px 24px;"><div class="empty-icon">${ic('layers',34)}</div><h3>Bu durumda seri yok</h3><p>Farklı bir sekme dene.</p></div>`;
@@ -1124,9 +1167,33 @@ function renderListPage(){
   el.innerHTML=`<div style="padding:10px 14px 0;">
     <div class="list-tabs-row">${tabsHTML}</div>
   </div>
-  <div style="padding:2px 14px 20px;">${rowsHTML}</div>`;
-  document.getElementById('searchWrap').style.display='none';
+  <div class="list-rows${selectionMode?' select-mode':''}" style="padding:2px 14px 4px;">${rowsHTML}</div>
+  ${filtered.length?'<div class="swipe-hint">← Bir satırı sola kaydırınca hızlı aksiyonlar (favori / düzenle) açılır</div>':''}
+  <div style="height:16px;"></div>`;
+  document.getElementById('searchWrap').style.display='';
   document.getElementById('catTabs').style.display='none';
+}
+function lrowSwipeStart(e,el){
+  el._sx=e.touches[0].clientX;
+  el._startTx=el.classList.contains('open')?-104:0;
+  el.style.transition='none';
+}
+function lrowSwipeMove(e,el){
+  if(el._sx==null)return;
+  const dx=e.touches[0].clientX-el._sx;
+  let tx=el._startTx+dx;
+  tx=Math.max(-104,Math.min(0,tx));
+  el.style.transform=`translateX(${tx}px)`;
+}
+function lrowSwipeEnd(e,el){
+  if(el._sx==null)return;
+  el.style.transition='';
+  const m=/translateX\((-?\d+)/.exec(el.style.transform);
+  const cur=m?parseInt(m[1]):0;
+  const open=cur<-52;
+  el.style.transform=open?'translateX(-104px)':'translateX(0)';
+  el.classList.toggle('open',open);
+  el._sx=null;
 }
 function renderStats(){
   const el=document.getElementById('mainContent');
