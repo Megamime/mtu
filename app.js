@@ -783,7 +783,7 @@ function openNotificationsSheet(){
   const reading=getUnfinishedReading();
   const notifItem=(s,showCh)=>{
     const cov=s.cover?`<img src="${esc(s.cover)}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
-    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
   const forecastBtn=`<div class="notif-forecast-btn" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</div>`;
@@ -796,20 +796,20 @@ function openWeeklyForecast(){
   if(!body)return;
   const days=getWeeklyForecast();
   const forecastRow=(s,isReturn)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" class="notif-cov" style="width:30px;height:42px;border-radius:6px;">`:`<div class="notif-cov" style="width:30px;height:42px;border-radius:6px;">${ic('img',12)}</div>`;
-    return `<div class="notif-item" style="padding:5px 6px;background:transparent;margin-bottom:0;" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span class="notif-name" style="font-size:11.5px;">${esc(s.name)}</span>${isReturn?`<span class="notif-badge" style="color:#34d399;background:rgba(52,211,153,.12);">DÖNÜŞ</span>`:`<span class="notif-badge">+${s.autoIncrAmt||1}</span>`}</div>`;
+    const cov=s.cover?`<img src="${esc(s.cover)}" class="forecast-cov">`:`<div class="forecast-cov">${ic('img',12)}</div>`;
+    return `<div class="forecast-row" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span class="forecast-name">${esc(s.name)}</span>${isReturn?`<span class="forecast-badge green">Dönüş</span>`:`<span class="forecast-badge">+${s.autoIncrAmt||1}</span>`}</div>`;
   };
   body.innerHTML=days.map((day,i)=>{
     const isToday=i===0;
     const label=day.date.toLocaleDateString('tr-TR',{weekday:'long'});
     const dateLabel=day.date.toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
     const hasAny=day.newCh.length||day.returning.length;
-    return `<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);">
-      <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:${hasAny?'8px':'0'};">
-        <span style="font-size:13px;font-weight:700;color:${isToday?'var(--purple3)':'var(--text)'};font-family:'Playfair Display',serif;">${isToday?'Bugün':label}</span>
-        <span style="font-size:10.5px;color:var(--text3);">${dateLabel}</span>
+    return `<div class="forecast-day">
+      <div class="forecast-day-head">
+        <span class="forecast-day-label ${isToday?'today':''}">${isToday?'Bugün':label}</span>
+        <span class="forecast-day-date">${dateLabel}</span>
       </div>
-      ${hasAny?`<div style="display:flex;flex-direction:column;gap:2px;">${day.newCh.map(s=>forecastRow(s,false)).join('')}${day.returning.map(s=>forecastRow(s,true)).join('')}</div>`:`<div style="font-size:10.5px;color:var(--text3);">Planlı bir şey yok.</div>`}
+      ${hasAny?`${day.newCh.map(s=>forecastRow(s,false)).join('')}${day.returning.map(s=>forecastRow(s,true)).join('')}`:`<div style="font-size:10.5px;color:var(--text3);">Planlı bir şey yok.</div>`}
     </div>`;
   }).join('');
   openSheet('forecastOverlay');
@@ -838,6 +838,10 @@ function buildDailyDigestHTML(){
     <div class="digest-header"><span class="digest-title">${ic('sparkle',12)} Bugün Neler Oldu?</span><button class="digest-close" onclick="dismissDailyDigest()">&#x2715;</button></div>
     ${sections}
   </div>`;
+}
+function renderContent(){
+  if(currentPage==='stats'&&typeof renderStats==='function'){ renderStats(); return; }
+  renderHome();
 }
 function renderHome(){
   const el=document.getElementById('mainContent');
@@ -903,7 +907,7 @@ function heroSpotlight(items){
       ${bg}
       <div class="hero-scrim"></div>
       <div class="hero-content">
-        <div class="hero-eyebrow ${isNew?'new':''}">${isNew?ic('bolt',11):ic('heartFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
+        <div class="hero-eyebrow ${isNew?'':'fav'}">${isNew?ic('bolt',11):ic('heartFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
         <div class="hero-title">${esc(s.name)}</div>
         ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
@@ -1002,6 +1006,7 @@ function openPreview(id,ev){
   const pct=s.chapterTotal>0?Math.min(100,Math.round((s.chapterTR/s.chapterTotal)*100)):0;
   const cov=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
   document.getElementById('previewBody').innerHTML=`
+    <div class="preview-close" onclick="closeSheet('previewOverlay')">${ic('close',13)}</div>
     <div class="preview-cover-row">
       <div class="preview-cover">${cov}</div>
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;">
@@ -1012,7 +1017,7 @@ function openPreview(id,ev){
         <div class="preview-meta-row">
           <span class="card-cat-badge ${cat.badge||''}">${ic(cat.icon||'bookmark',10)} ${esc(cat.label||'')}</span>
         </div>
-        ${(s.genres&&s.genres.length)||s.rating?`<div class="preview-genre-row">${(s.genres||[]).slice(0,3).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}${s.rating?`<span style="font-size:11px;color:var(--gold);font-weight:700;margin-left:2px;">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:''}</div>`:''}
+        ${(s.genres&&s.genres.length)||s.rating?`<div class="preview-genre-row">${(s.genres||[]).slice(0,3).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}${s.rating?`<span style="font-size:11px;color:#fbbf24;font-weight:700;margin-left:2px;">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:''}</div>`:''}
       </div>
     </div>
     ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct}</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
