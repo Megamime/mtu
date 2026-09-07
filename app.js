@@ -474,9 +474,41 @@ function switchPage(p){
   currentPage=p;
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabs').style.display=p==='home'?'':'none';
+  if(typeof updateHeaderMode==='function')updateHeaderMode(p);
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
   if(typeof closeRadial==='function') closeRadial();
+}
+function updateHeaderMode(p){
+  const subWrap=document.getElementById('logoSubWrap');
+  const homeIcons=document.getElementById('hdrRightHome');
+  const subIcons=document.getElementById('hdrRightSub');
+  if(!subWrap||!homeIcons||!subIcons)return;
+  const labels={list:'Seri Listesi',stats:'İstatistik'};
+  if(!labels[p]){
+    subWrap.innerHTML='';
+    homeIcons.style.display='';
+    subIcons.style.display='none';
+    return;
+  }
+  subWrap.innerHTML=`<span class="logo-divider">|</span><span class="logo-sub">${labels[p]}</span>`;
+  homeIcons.style.display='none';
+  subIcons.style.display='flex';
+  const backBtn=`<div class="hdr-btn" onclick="switchPage('home')" title="Geri"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>`;
+  if(p==='stats'){
+    subIcons.innerHTML=`<div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div>${backBtn}`;
+  }else if(p==='list'){
+    const sortItems=[['name_az','A-Z Sırala'],['rating','Puana Göre'],['updated','Son Güncellenene Göre'],['chapters','Bölüm Sayısına Göre']]
+      .map(([k,label])=>`<div class="more-item" onclick="setSort('${k}');document.getElementById('sortMenu').classList.remove('open')">${label}</div>`).join('');
+    subIcons.innerHTML=`<div class="hdr-btn" id="listSelectBtn" onclick="toggleSelectionMode()" title="Seç" style="width:auto;padding:0 11px;border-radius:16px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;gap:5px;">${ic('check',12)}<span id="selBtnLabel2">${selectionMode?'Vazgeç':'Seç'}</span></div>
+      <div class="more-wrap">
+        <div class="hdr-btn" onclick="document.getElementById('sortMenu').classList.toggle('open')" title="Sırala"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg></div>
+        <div class="more-menu" id="sortMenu">${sortItems}</div>
+      </div>
+      <div class="hdr-btn" onclick="openGenreFilter()" title="Türe Göre Filtrele"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></div>
+      <div class="hdr-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      ${backBtn}`;
+  }
 }
 const TAB_USAGE_KEY='megami_tab_usage';
 let TAB_PRIORITY_COUNT_OVERRIDE=null; // Her layout kendi script'inde bu değeri ayarlayabilir
@@ -603,12 +635,13 @@ function updateGenreFilterBtn(){
 function toggleSelectionMode(){
   selectionMode=!selectionMode;
   if(!selectionMode)selectedIds.clear();
-  renderHome();
+  renderContent();
+  if(typeof updateHeaderMode==='function')updateHeaderMode(currentPage);
 }
 function toggleSelect(id){
   if(selectedIds.has(id))selectedIds.delete(id);
   else selectedIds.add(id);
-  renderHome();
+  renderContent();
 }
 function renderBulkBar(){
   const n=selectedIds.size;
@@ -681,11 +714,12 @@ const SORT_OPTIONS={
   name_za:{label:'İsim (Z-A)',fn:(a,b)=>b.name.localeCompare(a.name,'tr')},
   rating:{label:'Puan (Yüksek-Düşük)',fn:(a,b)=>(b.rating||0)-(a.rating||0)},
   newest:{label:'Yeni Eklenen',fn:(a,b)=>b.id.localeCompare(a.id)},
+  chapters:{label:'Bölüm Sayısına Göre',fn:(a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0)},
 };
 function setSort(val){
   currentSort=val;
   localStorage.setItem('megami_sort',val);
-  renderHome();
+  renderContent();
 }
 function sortSeries(arr){
   const opt=SORT_OPTIONS[currentSort];

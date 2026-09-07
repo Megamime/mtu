@@ -224,12 +224,12 @@ body{background:#0a0612;}
 .timeline-series{font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .timeline-text{font-size:10.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .timeline-time{font-size:9.5px;color:var(--text3);flex-shrink:0;}
-.list-tabs-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;}
+.list-tabs-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
 .list-tabs-row::-webkit-scrollbar{display:none;}
-.list-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9px;background:var(--black4);border:1px solid var(--line);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .18s;}
-.list-tab.active{background:var(--purpleG);border-color:var(--purple2);color:var(--purple3);}
-.list-tab-count{font-size:9.5px;color:var(--text3);background:var(--black5);border-radius:8px;padding:1px 6px;margin-left:1px;}
-.list-tab.active .list-tab-count{color:var(--purple3);background:rgba(124,58,237,.18);}
+.list-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);color:var(--text3);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .18s;}
+.list-tab.active{background:var(--purple2);border-color:var(--purple2);color:#fff;}
+.list-tab-count{font-size:9px;opacity:.7;background:rgba(255,255,255,.12);border-radius:8px;padding:1px 5px;margin-left:1px;}
+.list-tab.active .list-tab-count{background:rgba(255,255,255,.25);}
 .list-row{display:flex;gap:11px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
 .list-row:last-child{border-bottom:none;}
 .list-row-cover{width:42px;height:58px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--black5);}
@@ -279,16 +279,16 @@ body{background:#0a0612;}
 .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
 .profile-stat-card{background:var(--black4);border:1px solid var(--line);border-radius:11px;padding:11px;text-align:center;}
 .profile-stat-num{font-size:18px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;}
-.profile-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}.stats-hero{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(167,139,250,.06));border:1px solid rgba(124,58,237,.3);border-radius:16px;padding:14px 16px;margin:10px 0 14px;}
-.stats-hero-avatar{width:48px;height:48px;border-radius:50%;background:var(--purpleG);border:2px solid var(--purple2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden;}
+.profile-stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}.stats-hero{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(124,58,237,.22),rgba(167,139,250,.06));border:1px solid rgba(124,58,237,.3);border-radius:18px;padding:16px 18px;margin:10px 0 18px;box-shadow:inset 0 1px 1px rgba(255,255,255,.2);}
+.stats-hero-avatar{width:52px;height:52px;border-radius:50%;background:var(--black4);border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;box-shadow:inset 0 1px 1px rgba(255,255,255,.4);}
 .stats-hero-info{flex:1;min-width:0;}
-.stats-hero-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stats-hero-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .stats-hero-rank{font-size:10px;font-weight:700;color:var(--purple3);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:4px;margin-top:2px;}
 .stats-hero-num{text-align:center;flex-shrink:0;}
 .stats-hero-num-val{font-size:22px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1;}
 .stats-hero-num-lbl{font-size:8.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
-.genre-cloud{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:baseline;}
-.genre-cloud-item{color:var(--purple3);font-weight:600;white-space:nowrap;}
+.genre-cloud{display:flex;flex-wrap:wrap;gap:9px 11px;align-items:baseline;}
+.genre-cloud-item{color:var(--purple3);font-weight:700;white-space:nowrap;}
 .genre-cloud-item b{color:var(--text3);font-weight:600;font-size:9px;}
 .stats-highlight-card{display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(167,139,250,.04));border:1px solid rgba(124,58,237,.25);border-radius:12px;padding:12px;margin-bottom:14px;}
 .detail-htree{position:relative;overflow-x:auto;padding-bottom:2px;}
@@ -326,9 +326,9 @@ body{background:#0a0612;}
 .preview-share-btn{width:44px;height:44px;flex-shrink:0;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);}
 .preview-detail-link{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:11.5px;font-weight:700;color:#c4b5fd;}
 .lrow{display:flex;gap:11px;align-items:center;background:var(--black4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px;box-shadow:inset 0 1px 1px rgba(255,255,255,.1);margin-bottom:9px;}
-.lrow-cover{width:64px;height:90px;flex-shrink:0;border-radius:10px;overflow:hidden;background:var(--black5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.28);}
+.lrow-cover{width:80px;height:112px;flex-shrink:0;border-radius:11px;overflow:hidden;background:var(--black5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.28);}
 .lrow-cover img{width:100%;height:100%;object-fit:cover;}
-.lrow-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:0;padding:1px 0;}
+.lrow-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:0;padding:2px 0;}
 .lrow-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
 .lrow-title-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-width:0;}
 .lrow-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -339,7 +339,7 @@ body{background:#0a0612;}
 .lrow-ch{font-size:10px;color:var(--text3);font-weight:600;flex-shrink:0;}
 .lrow-progress-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;max-width:88px;}
 .lrow-progress-fill{height:100%;border-radius:3px;}
-.lrow-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;}
+.lrow-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;}
 .lrow-genres{display:flex;gap:4px;flex-wrap:wrap;}
 .lrow-genre-pill{font-size:8px;font-weight:600;color:var(--text3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);padding:2px 7px;border-radius:20px;}
 .lrow-rating{font-size:9.5px;color:#f0b95e;letter-spacing:-1px;flex-shrink:0;}
@@ -350,14 +350,25 @@ body{background:#0a0612;}
 .lrow-swipe-wrap{position:relative;overflow:hidden;margin-bottom:9px;}
 .lrow-swipe-wrap .lrow{margin-bottom:0;transition:transform .22s cubic-bezier(.22,.9,.4,1);position:relative;z-index:1;touch-action:pan-y;}
 .lrow-swipe-actions{position:absolute;right:0;top:0;bottom:0;width:104px;display:flex;}
-.lrow-action{flex:1;display:flex;align-items:center;justify-content:center;color:#fff;border:none;}
+.lrow-action{flex:1;display:flex;align-items:center;justify-content:center;color:#fff;border:none;background:none;cursor:pointer;}
 .lrow-action svg{width:22px;height:22px;}
 .lrow-action.fav{background:#ec4899;border-radius:14px 0 0 14px;}
 .lrow-action.edit{background:#8b5cf6;border-radius:0 14px 14px 0;}
-.swipe-hint{font-size:10px;color:var(--text3);text-align:center;padding:6px 0 2px;font-style:italic;opacity:.8;}
-</style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div>
-Megami
-</div><div class="hdr-right"><div class="hdr-btn hdr-avatar-btn" id="profileAvatarBtn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" id="notifBtn" onclick="openNotificationsSheet()" title="Bildirimler" style="position:relative;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge hidden" id="notifBadge">0</span></div><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="updateBackupInfo();openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="cat-tab-filter-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
+.lrow-content{display:flex;gap:11px;align-items:center;background:var(--black4);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:9px;box-shadow:inset 0 1px 1px rgba(255,255,255,.25);transform:translateX(-104px);width:100%;}
+.logo-divider{color:var(--text3);opacity:.4;font-weight:400;font-size:14px;}
+.logo-sub{font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:500;color:var(--text3);margin-left:1px;}
+.list-tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 16px 4px;scrollbar-width:none;}
+.list-tabs::-webkit-scrollbar{display:none;}
+.list-tab-n{font-size:9px;opacity:.7;background:rgba(255,255,255,.12);border-radius:8px;padding:1px 5px;}
+.list-rows{padding:14px 16px 6px;display:flex;flex-direction:column;gap:10px;}
+.more-wrap{position:relative;}
+.more-menu{position:absolute;top:calc(100% + 8px);right:0;width:200px;background:var(--black4);border:1px solid var(--line2);border-radius:14px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:30;display:none;}
+.more-menu.open{display:block;}
+.more-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:9px;color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;}
+.more-item:active{background:var(--black5);}
+.swipe-hint{font-size:10px;color:var(--text3);text-align:center;padding-top:8px;font-style:italic;opacity:.8;}
+</style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div><span id="logoWord">Megami</span><span id="logoSubWrap"></span>
+</div><div class="hdr-right" id="hdrRightHome"><div class="hdr-btn hdr-avatar-btn" id="profileAvatarBtn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" id="notifBtn" onclick="openNotificationsSheet()" title="Bildirimler" style="position:relative;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge hidden" id="notifBadge">0</span></div><div class="hdr-btn" id="themeToggleBtn" onclick="toggleTheme()"></div><div class="hdr-btn" onclick="openInstallPrompt()" title="Uygulamayı Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="hdr-btn" onclick="updateBackupInfo();openSheet('backupOverlay')" title="Yedekle / Geri Yükle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div><div class="hdr-right" id="hdrRightSub" style="display:none;"><div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" onclick="switchPage('home')" title="Geri"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div></div></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="cat-tab-filter-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
 <div id="radialMenu"></div>
 <div class="radial-trigger" id="radialTrigger">
   <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -1139,8 +1150,7 @@ function renderListPage(){
     return `<div class="list-tab ${listCat===k?'active':''}" onclick="setListCat('${k}')">${ic(icon,11)} ${label} <span class="list-tab-count">${count}</span></div>`;
   }).join('');
 
-  const filtered=series.filter(s=>listCat==='all'||s.category===listCat)
-    .sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const filtered=sortSeries(series.filter(s=>listCat==='all'||s.category===listCat));
 
   const rowsHTML=filtered.length?filtered.map(s=>{
     const cat=CATS[s.category]||CATS.reading;
@@ -1176,13 +1186,13 @@ function renderListPage(){
     </div>`;
   }).join(''):`<div class="empty" style="padding:50px 24px;"><div class="empty-icon">${ic('layers',34)}</div><h3>Bu durumda seri yok</h3><p>Farklı bir sekme dene.</p></div>`;
 
-  el.innerHTML=`<div style="padding:10px 14px 0;">
+  el.innerHTML=`<div style="padding:14px 16px 0;">
     <div class="list-tabs-row">${tabsHTML}</div>
   </div>
   <div class="list-rows${selectionMode?' select-mode':''}" style="padding:2px 14px 4px;">${rowsHTML}</div>
   ${filtered.length?'<div class="swipe-hint">← Bir satırı sola kaydırınca hızlı aksiyonlar (favori / düzenle) açılır</div>':''}
   <div style="height:16px;"></div>`;
-  document.getElementById('searchWrap').style.display='';
+  document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabs').style.display='none';
 }
 function lrowSwipeStart(e,el){
