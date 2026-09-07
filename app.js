@@ -782,11 +782,11 @@ function openNotificationsSheet(){
   const returned=getReturnedFromHiatus();
   const reading=getUnfinishedReading();
   const notifItem=(s,showCh)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" style="width:38px;height:53px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:38px;height:53px;border-radius:7px;background:var(--black5);display:flex;align-items:center;justify-content:center;color:var(--text3);flex-shrink:0;">${ic('img',15)}</div>`;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span style="flex:1;font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span style="font-size:10.5px;font-weight:700;color:var(--purple3);background:var(--purpleG);border-radius:6px;padding:2px 7px;flex-shrink:0;">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
+    const cov=s.cover?`<img src="${esc(s.cover)}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
+    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
-  const section=(title,icon,items,showCh)=>items.length?`<div style="margin-bottom:16px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px;display:flex;align-items:center;gap:5px;">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
-  const forecastBtn=`<button class="btn-ghost" style="margin-bottom:14px;" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</button>`;
+  const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
+  const forecastBtn=`<div class="notif-forecast-btn" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</div>`;
   const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+section('Kaldığın Yerden Devam Et','bookmark',reading,true);
   body.innerHTML=forecastBtn+(html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`);
   openSheet('notifOverlay');
@@ -796,8 +796,8 @@ function openWeeklyForecast(){
   if(!body)return;
   const days=getWeeklyForecast();
   const forecastRow=(s,isReturn)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" style="width:30px;height:42px;border-radius:6px;object-fit:cover;flex-shrink:0;">`:`<div style="width:30px;height:42px;border-radius:6px;background:var(--black5);display:flex;align-items:center;justify-content:center;color:var(--text3);flex-shrink:0;">${ic('img',12)}</div>`;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span style="flex:1;font-size:11.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name)}</span>${isReturn?`<span style="font-size:9px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:5px;padding:2px 6px;flex-shrink:0;">DÖNÜŞ</span>`:`<span style="font-size:9px;font-weight:700;color:var(--purple3);background:var(--purpleG);border-radius:5px;padding:2px 6px;flex-shrink:0;">+${s.autoIncrAmt||1}</span>`}</div>`;
+    const cov=s.cover?`<img src="${esc(s.cover)}" class="notif-cov" style="width:30px;height:42px;border-radius:6px;">`:`<div class="notif-cov" style="width:30px;height:42px;border-radius:6px;">${ic('img',12)}</div>`;
+    return `<div class="notif-item" style="padding:5px 6px;background:transparent;margin-bottom:0;" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span class="notif-name" style="font-size:11.5px;">${esc(s.name)}</span>${isReturn?`<span class="notif-badge" style="color:#34d399;background:rgba(52,211,153,.12);">DÖNÜŞ</span>`:`<span class="notif-badge">+${s.autoIncrAmt||1}</span>`}</div>`;
   };
   body.innerHTML=days.map((day,i)=>{
     const isToday=i===0;
@@ -932,11 +932,17 @@ function initHeroRail(){
     });
   },{passive:true});
 }
+const CAT_LETTER_COLORS={reading:'#a78bfa',current:'#34d399',current_en:'#38bdf8',current_both:'#a78bfa',stockpile:'#f59e0b',paused:'#94a3b8',dropped:'#f87171',completed:'#60a5fa',planned:'#f472b6',season:'#c4b5fd'};
+function coverLetterPh(s,hidden){
+  const letter=(s.name||'?').trim().charAt(0).toLocaleUpperCase('tr-TR');
+  const color=CAT_LETTER_COLORS[s.category]||'#7c3aed';
+  return `<div class="card-cover-ph"${hidden?' style="display:none;':' style="'}background:linear-gradient(160deg,${color}45,var(--black3) 78%)"><div class="cover-letter">${esc(letter)}</div></div>`;
+}
 function carouselCard(s,i,canReorder){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',22)}</div>`
-    :`<div class="card-cover-ph">${ic('img',22)}</div>`;
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    :coverLetterPh(s,false);
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
@@ -963,8 +969,8 @@ function carouselCard(s,i,canReorder){
 function flatCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-cover-ph" style="display:none">${ic('img',22)}</div>`
-    :`<div class="card-cover-ph">${ic('img',22)}</div>`;
+    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    :coverLetterPh(s,false);
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
@@ -1006,6 +1012,7 @@ function openPreview(id,ev){
         <div class="preview-meta-row">
           <span class="card-cat-badge ${cat.badge||''}">${ic(cat.icon||'bookmark',10)} ${esc(cat.label||'')}</span>
         </div>
+        ${(s.genres&&s.genres.length)||s.rating?`<div class="preview-genre-row">${(s.genres||[]).slice(0,3).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}${s.rating?`<span style="font-size:11px;color:var(--gold);font-weight:700;margin-left:2px;">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:''}</div>`:''}
       </div>
     </div>
     ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct}</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
