@@ -472,6 +472,8 @@ function switchPage(p){
     history.pushState({},'',location.pathname);
   }
   currentPage=p;
+  const headerEl=document.getElementById('header');
+  if(headerEl)headerEl.style.display='';
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabs').style.display=p==='home'?'':'none';
   if(typeof updateHeaderMode==='function')updateHeaderMode(p);
@@ -1781,26 +1783,47 @@ function openFansubMetaEditorByName(name){
   renderFansubMetaLogoPreview(meta.logo||'');
   document.getElementById('fansubMetaOverlay').classList.remove('hidden');
 }
+
+let _fansubsReturnPage='home';
 function openFansubList(){
+  if(currentPage!=='fansubs')_fansubsReturnPage=currentPage;
+  currentPage='fansubs';
+  document.getElementById('header').style.display='none';
+  document.getElementById('searchWrap').style.display='none';
+  document.getElementById('catTabs').style.display='none';
+  renderFansubListPage();
+}
+function closeFansubList(){
+  document.getElementById('header').style.display='';
+  switchPage(_fansubsReturnPage||'home');
+}
+function renderFansubListPage(){
+  const el=document.getElementById('mainContent');
   const names=getAllKnownFansubs();
-  const wrap=document.getElementById('fansubListBody');
-  if(!wrap)return;
-  if(!names.length){
-    wrap.innerHTML=`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye çeviri ekibi eklenmemiş.</p>`;
-  }else{
-    const rows=names.map(name=>{
-      const count=series.filter(s=>(s.fansubList||[]).includes(name)).length;
-      const meta=getFansubMeta(name);
-      const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:40px;height:40px;border-radius:12px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:`<div style="width:40px;height:40px;border-radius:12px;background:var(--purpleG);display:flex;align-items:center;justify-content:center;color:var(--purple3);flex-shrink:0;position:relative;">${ic('bolt',16)}</div>`;
-      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;" onclick="openFansubMetaEditorByName('${esc(name).replace(/'/g,"\\'")}')">
-        <div style="position:relative;flex-shrink:0;">${logo}<div style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--purple);border:2px solid var(--black3);display:flex;align-items:center;justify-content:center;color:#fff;">${ic('edit',8)}</div></div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(name)}</div><div style="font-size:10.5px;color:var(--text3);margin-top:1px;">${count} seri${meta.url?' · link kayıtlı':''}</div></div>
-        ${ic('chevron',13)}
-      </div>`;
-    }).join('');
-    wrap.innerHTML=`<div>${rows}</div>`;
-  }
-  document.getElementById('fansubListOverlay').classList.remove('hidden');
+  const rowsHTML=names.length?names.map(name=>{
+    const count=series.filter(s=>(s.fansubList||[]).includes(name)).length;
+    const meta=getFansubMeta(name);
+    const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
+    const logo=meta.logo?`<img src="${esc(meta.logo)}" onerror="this.style.display='none'">`:esc(initials);
+    return `<div class="fteam-row" onclick="openFansubMetaEditorByName('${esc(name).replace(/'/g,"\\'")}')">
+      <div class="fteam-logo-wrap">
+        <div class="fteam-logo">${logo}</div>
+        <div class="fteam-upload-badge">${ic('edit',9)}</div>
+      </div>
+      <div class="fteam-name">${esc(name)}<div class="fteam-n">${count} seri${meta.url?' · '+esc(meta.url.replace(/^https?:\/\//,'')):' · logo eklenmemiş'}</div></div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  }).join(''):`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye çeviri ekibi eklenmemiş.</p>`;
+  el.innerHTML=`<div class="subpage-topbar">
+      <div class="hdr-btn" onclick="closeFansubList()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="subpage-topbar-title">Çeviri Ekipleri</div>
+      <div style="width:31px;"></div>
+    </div>
+    <div class="fteam-body">
+      <div class="stat-card-wrap">${rowsHTML}</div>
+      <div class="fteam-add-btn" onclick="showToast('info','Bir ekibi eklemek için önce bir seriye o çeviri ekibini ata.')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Yeni Çeviri Ekibi Ekle</div>
+      <div style="height:20px;"></div>
+    </div>`;
 }
 function previewFansubMetaLogo(){
   renderFansubMetaLogoPreview(document.getElementById('fansubMetaLogoInput').value.trim());
@@ -1824,6 +1847,7 @@ function saveFansubMetaFromForm(){
   setFansubMeta(name,logo,url);
   closeFansubMetaEditor();
   renderFansubTags();
+  if(currentPage==='fansubs'&&typeof renderFansubListPage==='function')renderFansubListPage();
   showToast('check',`"${name}" için logo/link kaydedildi.`);
 }
 // ===== Bağlantılı Seriler — "Ana Seri" (ardışık devam, ör. Mirai Nikki → Redial) ve
