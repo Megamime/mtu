@@ -135,9 +135,8 @@ function updateThemeToggleIcon(){
   const btn=document.getElementById('themeToggleBtn');
   if(!btn)return;
   const isLight=getTheme()==='light';
-  const isSidebarItem=btn.classList.contains('sidebar-item');
   btn.title=isLight?'Aydınlık Tema (değiştir)':'Karanlık Tema (değiştir)';
-  btn.innerHTML=(isLight?ic('sun',15):ic('moon',15))+(isSidebarItem?`<span class="sidebar-label">${isLight?' Aydınlık Tema':' Karanlık Tema'}</span>`:'');
+  btn.innerHTML=(isLight?ic('sun',15):ic('moon',15))+'Tema Değiştir';
 }
 applyTheme(getTheme());
 const IC={book:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,zap:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,box:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,pause:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,xcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,checkcirc:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,bookmark:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,moon:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,grid4:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,tr:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>`,globe:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`,edit:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,pin:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,pinFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#8b5cf6" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="#8b5cf6" stroke-width="2"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>`,heart:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,heartFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#f472b6" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,star:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,starFill:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227" stroke="#c9a227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,check:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,warn:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,layers:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,users:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,bolt:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,img:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,chevron:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`,chevronLeft:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,more:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>`,clock:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,fire:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,close:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,trash:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,sun:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></svg>`,sparkle:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="#c9a227"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg>`,share:`<svg width="SZ" height="SZ" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>`,};
@@ -475,7 +474,7 @@ function switchPage(p){
   const headerEl=document.getElementById('header');
   if(headerEl)headerEl.style.display='';
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
-  document.getElementById('catTabs').style.display=p==='home'?'':'none';
+  document.getElementById('catTabsRow').style.display=p==='home'?'':'none';
   if(typeof updateHeaderMode==='function')updateHeaderMode(p);
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
@@ -941,36 +940,62 @@ function heroSpotlight(items){
     const isNew=!!s.newChapter;
     return `<div class="hero-slide" onclick="openPreview('${s.id}',event)">
       ${bg}
+      <div class="hero-glow"></div>
       <div class="hero-scrim"></div>
       <div class="hero-content">
         <div class="hero-eyebrow ${isNew?'':'fav'}">${isNew?ic('bolt',11):ic('heartFill',11)} ${isNew?'Yeni Bölüm':'Favorin'}</div>
         <div class="hero-title">${esc(s.name)}</div>
-        ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}</div>`:''}
+        ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}${pct>0?` · %${pct}`:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
         <div class="hero-actions">
           <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
-          <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.1"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9.3,11.5 L12,11.5 L12,17.5" stroke-width="1.6"/></svg></div>
+          <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
       </div>
     </div>`;
   }).join('');
-  const dots=items.length>1?`<div class="hero-dots">${items.map((_,i)=>`<div class="hero-dot${i===0?' active':''}"></div>`).join('')}</div>`:'';
+  const dots=items.length>1?`<div class="hero-dots">${items.map((_,i)=>`<div class="hero-dot${i===0?' active':''}"><div class="hero-dot-fill"></div></div>`).join('')}</div>`:'';
   return `<div class="hero-rail" id="heroRail">${slides}</div>${dots}`;
 }
+let _heroAutoTimer=null;
 function initHeroRail(){
+  if(_heroAutoTimer){ clearInterval(_heroAutoTimer); _heroAutoTimer=null; }
   const rail=document.getElementById('heroRail');
   if(!rail) return;
   const dots=rail.parentElement.querySelectorAll('.hero-dots .hero-dot');
-  if(dots.length<2) return;
-  let ticking=false;
+  const slideCount=rail.querySelectorAll('.hero-slide').length;
+  if(dots.length<2){ return; }
+  let ticking=false,activeIdx=0,pausedUntil=0;
+  const AUTO_MS=6000;
+  function setActive(idx){
+    activeIdx=idx;
+    dots.forEach((d,i)=>{
+      d.classList.toggle('active',i===idx);
+      const fill=d.querySelector('.hero-dot-fill');
+      if(fill){ fill.style.transition='none'; fill.style.width=i<idx?'100%':'0%'; }
+    });
+    if(dots[idx]){
+      const fill=dots[idx].querySelector('.hero-dot-fill');
+      if(fill) requestAnimationFrame(()=>{ fill.style.transition=`width ${AUTO_MS}ms linear`; fill.style.width='100%'; });
+    }
+  }
+  function advance(){
+    if(!document.body.contains(rail)){ clearInterval(_heroAutoTimer); _heroAutoTimer=null; return; }
+    if(Date.now()<pausedUntil) return;
+    const next=(activeIdx+1)%slideCount;
+    rail.scrollTo({left:next*rail.clientWidth,behavior:'smooth'});
+  }
   rail.addEventListener('scroll',()=>{
     if(ticking) return; ticking=true;
     requestAnimationFrame(()=>{
       const idx=Math.round(rail.scrollLeft/rail.clientWidth);
-      dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+      if(idx!==activeIdx)setActive(idx);
       ticking=false;
     });
   },{passive:true});
+  rail.addEventListener('touchstart',()=>{pausedUntil=Date.now()+12000;},{passive:true});
+  setActive(0);
+  _heroAutoTimer=setInterval(advance,AUTO_MS);
 }
 const CAT_LETTER_COLORS={reading:'#a78bfa',current:'#34d399',current_en:'#38bdf8',current_both:'#a78bfa',stockpile:'#f59e0b',paused:'#94a3b8',dropped:'#f87171',completed:'#60a5fa',planned:'#f472b6',season:'#c4b5fd'};
 function coverLetterPh(s,hidden){
@@ -987,9 +1012,6 @@ function carouselCard(s,i,canReorder){
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
   const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
-  const ratingDots=s.rating?'<div style="display:flex;gap:2px;margin-top:2px;">'+[1,2,3,4,5].map(n=>'<div style="width:5px;height:5px;border-radius:50%;background:'+(n<=s.rating?'var(--gold)':'var(--line2)')+';"></div>').join('')+'</div>':'';
-  const genreBadge=(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:'';
-  const cdBadge=getCardCountdownBadge(s);
   const isSel=selectedIds.has(s.id);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
@@ -998,12 +1020,10 @@ function carouselCard(s,i,canReorder){
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      ${cdBadge?`<div class="countdown-badge ${cdBadge.cls}">${ic(cdBadge.cls==='ret'?'checkcirc':'bolt',9)} ${cdBadge.text}</div>`:s.newChapter?'<div class="new-chapter-badge">Yeni Bölüm</div>':''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
+    </div>
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
-      ${genreBadge}
-      ${ratingDots}
     </div></div>`;
 }
 function flatCard(s,i){
@@ -1023,11 +1043,10 @@ function flatCard(s,i){
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      ${cdBadge?`<div class="countdown-badge ${cdBadge.cls}">${ic(cdBadge.cls==='ret'?'checkcirc':'bolt',9)} ${cdBadge.text}</div>`:''}${selectionMode?'':`<div class="card-quick-btn" onclick="event.stopPropagation();openQuick('${s.id}')">${ic('more',14)}</div>`}</div>
+    </div>
     ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
-      ${(s.genres&&s.genres.length)?`<div class="card-genre-badge">${esc(s.genres[0])}${s.genres.length>1?' +'+(s.genres.length-1):''}</div>`:''}
     </div></div>`;
 }
 // ===== Seri Önizleme pop-up'ı: karta dokununca doğrudan tam detay sayfasına gitmek yerine
@@ -1163,8 +1182,8 @@ function buildCountdown(s){
   if(s.category==='season'&&s.returnDate){
     const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
     const rdLabel=new Date(s.returnDate+'T00:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('checkcirc',30)+'</div></div>';
-    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',30)+'</div></div>';
+    if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon" style="color:var(--green);border-color:rgba(52,211,153,.4);">'+ic('checkcirc',26)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',26)+'</div></div>';
   }
   // Sezon arasında değilse ve otomatik bölüm artırma açıksa, sıradaki bölümün ne zaman
   // ekleneceğini de göster — eskiden bu bilgi hiçbir yerde görünmüyordu.
@@ -1172,8 +1191,8 @@ function buildCountdown(s){
     const diffMs=s.autoIncrNext-Date.now();
     const diffDays=Math.ceil(diffMs/(1000*60*60*24));
     const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-    if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon">'+ic('bolt',30)+'</div></div>';
-    return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',30)+'</div></div>';
+    if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon" style="color:var(--green);border-color:rgba(52,211,153,.4);">'+ic('bolt',26)+'</div></div>';
+    return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',26)+'</div></div>';
   }
   return '';
 }
@@ -1314,7 +1333,7 @@ function openDetail(id,skipHistory){
     </div>`;
   el.scrollTop=0;
   document.getElementById('searchWrap').style.display='none';
-  document.getElementById('catTabs').style.display='none';
+  document.getElementById('catTabsRow').style.display='none';
   if(!skipHistory){
     history.pushState({megamiDetail:id},'',location.pathname+'?seri='+encodeURIComponent(id));
   }
@@ -1330,7 +1349,7 @@ function closeDetail(){
   if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
   if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
-  document.getElementById('catTabs').style.display=returnPage==='home'?'':'none';
+  document.getElementById('catTabsRow').style.display=returnPage==='home'?'':'none';
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
 }
@@ -1792,7 +1811,7 @@ function openFansubList(){
   currentPage='fansubs';
   document.getElementById('header').style.display='none';
   document.getElementById('searchWrap').style.display='none';
-  document.getElementById('catTabs').style.display='none';
+  document.getElementById('catTabsRow').style.display='none';
   renderFansubListPage();
 }
 function closeFansubList(){
