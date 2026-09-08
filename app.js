@@ -1767,9 +1767,11 @@ function openFansubMetaEditor(i){
 function renderFansubMetaLogoPreview(src){
   const wrap=document.getElementById('fansubMetaLogoPreviewWrap');
   if(!wrap)return;
+  const name=window._fansubMetaEditingName||'';
+  const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
   wrap.innerHTML=src
-    ?`<img src="${esc(src)}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--line2);" onerror="this.style.display='none'">`
-    :`<div style="width:56px;height:56px;border-radius:12px;background:var(--black4);border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;color:var(--text3);">${ic('img',20)}</div>`;
+    ?`<img src="${esc(src)}" onerror="this.style.display='none'">`
+    :esc(initials||'?');
 }
 // Genel "Çeviri Ekipleri" ekranından, herhangi bir seriyi düzenleme formu açık olmadan
 // doğrudan bir ekibin logo/link bilgisini düzenlemek için — openFansubMetaEditor(i) gibi
@@ -2395,11 +2397,11 @@ function updateBackupInfo(){
     ?(daysSince===0?'Bugün':daysSince===1?'Dün':`${daysSince} gün önce`)+` · ${new Date(last.ts).toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}`
     :'Hiç yedek alınmadı';
   el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;background:${isStale?'rgba(239,68,68,.08)':'var(--purpleG)'};border:1px solid ${isStale?'rgba(239,68,68,.25)':'rgba(124,58,237,.25)'};border-radius:11px;padding:12px 14px;margin-bottom:12px;">
+    <div class="backup-banner${isStale?' stale':''}">
       <div style="color:${isStale?'#f87171':'var(--purple3)'};flex-shrink:0;">${ic(isStale?'warn':'checkcirc',22)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:700;color:${isStale?'#f87171':'var(--purple3)'};">Son Yedek: ${lastLabel}</div>
-        <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">Şu an kütüphanende <b style="color:var(--text2);">${series.length} seri</b> · tahmini boyut <b style="color:var(--text2);">~${formatBytes(currentSize)}</b></div>
+        <div class="backup-banner-title">Son Yedek: ${lastLabel}</div>
+        <div class="backup-banner-sub">Şu an kütüphanende <b style="color:var(--text2);">${series.length} seri</b> · tahmini boyut <b style="color:var(--text2);">~${formatBytes(currentSize)}</b></div>
         ${isStale?`<div style="font-size:10px;color:#f87171;margin-top:3px;">Uzun süredir yedek almadın, bir tane almanı öneririz.</div>`:''}
       </div>
     </div>`;
