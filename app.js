@@ -475,6 +475,7 @@ function switchPage(p){
   if(headerEl)headerEl.style.display='';
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
   document.getElementById('catTabsRow').style.display=p==='home'?'':'none';
+  const heroSecEl0=document.getElementById('heroSection'); if(heroSecEl0&&p!=='home')heroSecEl0.style.display='none';
   if(typeof updateHeaderMode==='function')updateHeaderMode(p);
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
@@ -880,6 +881,7 @@ function renderContent(){
 }
 function renderHome(){
   const el=document.getElementById('mainContent');
+  const heroEl=document.getElementById('heroSection');
   const hasFixedActions=!!document.getElementById('catTabsActions');
   if(hasFixedActions)syncCatTabsActions();
   let filtered=series.filter(s=>{
@@ -890,10 +892,12 @@ function renderHome(){
   });
   const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?buildDailyDigestHTML():'';
   if(!filtered.length){
+    if(heroEl){heroEl.innerHTML='';heroEl.style.display='none';}
     el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>${series.length===0?'Kütüphane Boş':'Sonuç Bulunamadı'}</h3><p>${series.length===0?'+ butonuna basarak ilk serini ekleyebilirsin.':'Farklı bir arama veya kategori dene.'}</p></div>`;
     return;
   }
   if(searchQ||currentCat!=='all'){
+    if(heroEl){heroEl.innerHTML='';heroEl.style.display='none';}
     const sorted=sortSeries(filtered);
     const sortBar=hasFixedActions?'':`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
     const bulkBar=selectionMode?renderBulkBar():'';
@@ -904,6 +908,7 @@ function renderHome(){
   if(!hasFixedActions){
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
   }
+  let heroFound=false;
   SECTIONS.forEach(sec=>{
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);
@@ -911,7 +916,11 @@ function renderHome(){
     else if(sec.staleOnly) items=filtered.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s));
     else items=filtered.filter(s=>!s.pinned&&!s.favorited&&!isStaleSeries(s)&&sec.cats.includes(s.category));
     if(!items.length) return;
-    if(sec.heroOnly){ html+=heroSpotlight(items.slice(0,6)); return; }
+    if(sec.heroOnly){
+      heroFound=true;
+      if(heroEl){heroEl.innerHTML=heroSpotlight(items.slice(0,6));heroEl.style.display='';initHeroRail();}
+      return;
+    }
     const canReorder=sec.pinnedOnly&&currentSort==='default'&&!searchQ&&currentCat==='all';
     items=sortSeries(items);
     const MAX_SHOW = 9;
@@ -925,10 +934,10 @@ function renderHome(){
         ${items.length > MAX_SHOW ? `<div class="sec-see-all" onclick="setCat('${seeAllCat}')">Tümü ${ic('chevron',11)}</div>` : ''}
       </div><div class="carousel-wrap"><button class="carousel-arrow left" onclick="scrollCarousel(this,-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="carousel" id="car-${sec.key}">${shown.map((s,i)=>carouselCard(s,i,canReorder)).join('')}${moreCard}</div><button class="carousel-arrow right" onclick="scrollCarousel(this,1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>`;
   });
+  if(heroEl&&!heroFound){heroEl.innerHTML='';heroEl.style.display='none';}
   const homeBulkBar=selectionMode?renderBulkBar():'';
   el.innerHTML=(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar;
   initPinnedDragSort();
-  initHeroRail();
 }
 function heroSpotlight(items){
   const slides=items.map(s=>{
@@ -949,7 +958,7 @@ function heroSpotlight(items){
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
         <div class="hero-actions">
           <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
-          <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.1"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9.3,11.5 L12,11.5 L12,17.5" stroke-width="1.6"/></svg></div>
         </div>
       </div>
     </div>`;
@@ -1011,7 +1020,7 @@ function carouselCard(s,i,canReorder){
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
-  const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
+  const favB=s.favorited?`<div class="fav-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>`:'';
   const isSel=selectedIds.has(s.id);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
@@ -1034,7 +1043,7 @@ function flatCard(s,i){
   const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
   const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
   const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
-  const favB=s.favorited?`<div class="fav-badge">${ic('heartFill',8)}</div>`:'';
+  const favB=s.favorited?`<div class="fav-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>`:'';
   const isSel=selectedIds.has(s.id);
   const cdBadge=getCardCountdownBadge(s);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
@@ -1334,6 +1343,7 @@ function openDetail(id,skipHistory){
   el.scrollTop=0;
   document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabsRow').style.display='none';
+  { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl)heroSecEl.style.display='none'; }
   if(!skipHistory){
     history.pushState({megamiDetail:id},'',location.pathname+'?seri='+encodeURIComponent(id));
   }
@@ -1350,6 +1360,7 @@ function closeDetail(){
   if(navStatsEl)navStatsEl.classList.toggle('active',returnPage==='stats');
   document.getElementById('searchWrap').style.display=returnPage==='home'?'':'none';
   document.getElementById('catTabsRow').style.display=returnPage==='home'?'':'none';
+  { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl&&returnPage!=='home')heroSecEl.style.display='none'; }
   renderContent();
   if(typeof updateRadialActive==='function') updateRadialActive();
 }
@@ -1812,6 +1823,7 @@ function openFansubList(){
   document.getElementById('header').style.display='none';
   document.getElementById('searchWrap').style.display='none';
   document.getElementById('catTabsRow').style.display='none';
+  { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl)heroSecEl.style.display='none'; }
   renderFansubListPage();
 }
 function closeFansubList(){
