@@ -1029,8 +1029,8 @@ function carouselCard(s,i,canReorder){
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
+      <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
-    ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
     </div></div>`;
@@ -1052,8 +1052,8 @@ function flatCard(s,i){
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
+      <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
-    ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
     </div></div>`;
