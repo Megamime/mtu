@@ -282,6 +282,16 @@ function isStaleSeries(s){
   const last=s.updatedAt||0;
   return (Date.now()-last)>getStaleThresholdMs(s);
 }
+// "Uzun Süredir Bakmadıklarım" kartlarında gösterilen küçük rozet: ara verilmiş serilerde
+// "Ara verildi" yazar, diğerlerinde son güncellemeden bu yana geçen gün sayısını gösterir.
+function getStaleBadge(s){
+  if(s.pinned||s.favorited||!isStaleSeries(s)) return '';
+  if(s.category==='paused'){
+    return `<div class="stale-badge">${ic('pause',9)}Ara verildi</div>`;
+  }
+  const days=Math.floor((Date.now()-(s.updatedAt||0))/86400000);
+  return `<div class="stale-badge">${ic('clock',9)}${days} gün</div>`;
+}
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
 const GENRES_PRESET=['Aksiyon','Macera','Komedi','Dram','Fantastik','Isekai','Romantizm','Bilim Kurgu','Korku','Gizem','Doğaüstü','Dilim Hayat','Psikolojik','Tarihi','Askeri','Spor','Ecchi','Harem','Gerilim','Trajedi'];
 let currentGenre=null;
@@ -1028,9 +1038,10 @@ function carouselCard(s,i,canReorder){
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" ${dragAttrs} style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}${canReorder&&!selectionMode?'cursor:grab;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
       ${selCheck}
+      ${getStaleBadge(s)}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
+    ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
     </div></div>`;
@@ -1051,9 +1062,10 @@ function flatCard(s,i){
   return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
       ${selCheck}
+      ${getStaleBadge(s)}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
-      <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
+    ${pct>0?`<div class="card-progress"><div class="card-progress-fill" style="width:${pct}%"></div></div>`:'<div class="card-progress"></div>'}
     <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
       ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
     </div></div>`;
@@ -3035,3 +3047,23 @@ function initRadialMenu(){
 
 document.addEventListener('DOMContentLoaded',initRadialMenu);
 if(document.readyState!=='loading') initRadialMenu();
+
+// Header, taslaktaki gibi sayfa en üstteyken şeffaf durup arkasındaki "top-glow" ışığını
+// gösteriyor; kullanıcı biraz kaydırınca (üstteki içerik header'ın altına girmeden önce)
+// yumuşak bir geçişle opak/bulanık hale geliyor.
+function initHeaderScroll(){
+  const app=document.getElementById('app'), header=document.getElementById('header');
+  if(!app||!header) return;
+  const SCROLL_THRESHOLD=8;
+  let ticking=false;
+  function update(){
+    header.classList.toggle('scrolled', app.scrollTop>SCROLL_THRESHOLD);
+    ticking=false;
+  }
+  app.addEventListener('scroll',()=>{
+    if(!ticking){ requestAnimationFrame(update); ticking=true; }
+  },{passive:true});
+  update();
+}
+document.addEventListener('DOMContentLoaded',initHeaderScroll);
+if(document.readyState!=='loading') initHeaderScroll();
