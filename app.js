@@ -1013,14 +1013,43 @@ function coverLetterPh(s,hidden){
   const color=CAT_LETTER_COLORS[s.category]||'#7c3aed';
   return `<div class="card-cover-ph"${hidden?' style="display:none;':' style="'}background:linear-gradient(160deg,${color}45,var(--black3) 78%)"><div class="cover-letter">${esc(letter)}</div></div>`;
 }
+const _TR_MONTH_SUFFIX={Ocak:'ta',Şubat:'ta',Mart:'ta',Nisan:'da',Mayıs:'ta',Haziran:'da',Temmuz:'da',Ağustos:'ta',Eylül:'de',Ekim:'de',Kasım:'da',Aralık:'da'};
+function cardDateSuffix(d){
+  const parts=d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}).split(' ');
+  const month=parts[1];
+  return d.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})+" "+parts[2]+(_TR_MONTH_SUFFIX[month]||'da');
+}
+function cardMeta(s){
+  const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
+  const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
+  let chText='';
+  let staleBadge='';
+  if(s.category==='season'&&s.returnDate){
+    const d=new Date(s.returnDate+'T00:00:00');
+    const diff=Math.ceil((d-new Date())/(1000*60*60*24));
+    chText=`${cardDateSuffix(d)} dönüyor`;
+    staleBadge=`<div class="stale-badge">${ic('moon',9)} ${diff>0?diff+' gün':'Bugün'}</div>`;
+  }else if(s.category==='stockpile'){
+    chText=chTR>0?`+${chTR} bölüm birikti`:'';
+  }else if(s.category==='planned'){
+    chText=total>0?`${total} bölüm bekliyor`:(chTR>0?`${chTR} bölüm var`:'');
+  }else if(!s.pinned&&isStaleSeries(s)){
+    const last=s.updatedAt?new Date(s.updatedAt):null;
+    chText=last?`Son bakış: ${last.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}`:'';
+    const days=s.updatedAt?Math.floor((Date.now()-s.updatedAt)/(1000*60*60*24)):0;
+    staleBadge=`<div class="stale-badge">${ic('clock',9)} ${days} gün</div>`;
+  }else{
+    chText=chTR>0?`Böl. ${chTR}${total>0?' / '+total:''}`:'';
+  }
+  return {chTR,total,pct,chText,staleBadge};
+}
 function carouselCard(s,i,canReorder){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
     ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
-  const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
-  const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
-  const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
+  const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
+  const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
   const favB=s.favorited?`<div class="fav-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>`:'';
   const isSel=selectedIds.has(s.id);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
@@ -1032,8 +1061,8 @@ function carouselCard(s,i,canReorder){
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
       <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
-    <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
-      ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
+    <div class="card-body">${s.pinned?'':`<div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div>`}<div class="card-title">${esc(s.name)}</div>
+      ${(!s.pinned&&chText)?`<div class="card-ch">${ic('tr',9)} ${chText}</div>`:''}
     </div></div>`;
 }
 function flatCard(s,i){
@@ -1041,9 +1070,8 @@ function flatCard(s,i){
   const cover=s.cover
     ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
-  const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
-  const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
-  const pinB=s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>';
+  const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
+  const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
   const favB=s.favorited?`<div class="fav-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>`:'';
   const isSel=selectedIds.has(s.id);
   const cdBadge=getCardCountdownBadge(s);
@@ -1055,8 +1083,8 @@ function flatCard(s,i){
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
       <div class="card-progress">${pct>0?`<div class="card-progress-fill" style="width:${pct}%"></div>`:''}</div>
     </div>
-    <div class="card-body"><div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div><div class="card-title">${esc(s.name)}</div>
-      ${s.chapterTR?`<div class="card-ch">${ic('tr',9)} Böl.${s.chapterTR}${total>0?' /'+total:''}</div>`:''}
+    <div class="card-body">${s.pinned?'':`<div class="card-cat-badge ${cat.badge}">${ic(cat.icon,8)} ${cat.label}</div>`}<div class="card-title">${esc(s.name)}</div>
+      ${(!s.pinned&&chText)?`<div class="card-ch">${ic('tr',9)} ${chText}</div>`:''}
     </div></div>`;
 }
 // ===== Seri Önizleme pop-up'ı: karta dokununca doğrudan tam detay sayfasına gitmek yerine
