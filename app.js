@@ -258,7 +258,7 @@ let altNames=[],oldCovers=[],fansubList=[],genres=[],formLinks=[],formFav=false,
 let quickId=null,quickCat=null;
 const SECTIONS=[
   {key:'hero',    label:'Yeni Bölüm & Favorilerim',          icon:'sparkle',  heroOnly:true},
-  {key:'pinned',  label:'Sabitlenmiş',                      icon:'pin',      cats:null, pinnedOnly:true},
+  {key:'pinned',  label:'Sabitlenenler',                      icon:'pin',      cats:null, pinnedOnly:true},
   {key:'active',  label:'Okumaya Devam Ettiklerim',         icon:'book',     cats:['reading','current','current_en','current_both']},
   {key:'stale',   label:'Uzun Süredir Bakmadıklarım',        icon:'clock',    staleOnly:true},
   {key:'stock',   label:'Bölüm Biriktirdiklerim',            icon:'box',      cats:['stockpile']},
@@ -517,8 +517,9 @@ const TAB_USAGE_KEY='megami_tab_usage';
 let TAB_PRIORITY_COUNT_OVERRIDE=null; // Her layout kendi script'inde bu değeri ayarlayabilir
 function getTabPriorityCount(){
   if(TAB_PRIORITY_COUNT_OVERRIDE!==null)return TAB_PRIORITY_COUNT_OVERRIDE;
-  // Varsayılan: catTabsActions elementi varsa (masaüstü düzeni) 2, yoksa 0.
-  return document.getElementById('catTabsActions')?2:0;
+  // Taslakta kategori sekmeleri tek satırda yatay kaydırmalı olarak hepsi birden gösteriliyor,
+  // "Diğer" gibi bir gizleme/toplama yok — o yüzden hepsini doğrudan göster.
+  return 999;
 }
 function getTabUsage(){
   try{return JSON.parse(localStorage.getItem(TAB_USAGE_KEY)||'{}');}catch(e){return {};}
@@ -541,9 +542,7 @@ function renderTabs(){
 
   function tabBtn(k){
     const v=CATS[k];
-    const n=k==='all'?series.length:series.filter(s=>s.category===k).length;
-    const cnt=n>0?` <span style="opacity:.5;font-size:9px;">(${n})</span>`:'';
-    return `<button class="cat-tab ${currentCat===k?'active':''}" onclick="setCat('${k}')">${ic(v.icon)} ${v.label}${cnt}</button>`;
+    return `<button class="cat-tab ${currentCat===k?'active':''}" onclick="setCat('${k}')">${ic(v.icon)} ${v.label}</button>`;
   }
 
   let tabsHtml=tabBtn('all')+priority.map(tabBtn).join('');
