@@ -356,7 +356,7 @@ Yedek Dosyası Seç
   <p style="font-size:10px;color:var(--text3);text-align:center;line-height:1.5;">Bu profil sadece bu cihazda, senin için — hiçbir yere gönderilmiyor.</p>
 </div></div></div><script src="app.js"></script>
 <script>
-TAB_PRIORITY_COUNT_OVERRIDE=0; // Mobile: sadece "Tümü" sabit, geri kalan hepsi "Diğer" içinde
+TAB_PRIORITY_COUNT_OVERRIDE=999; // Mobile: taslakta olduğu gibi "Diğer" yok, tüm kategoriler tek satırda kaydırmalı gösteriliyor
 async function init(){
   await load();
   await loadActivityLog();
