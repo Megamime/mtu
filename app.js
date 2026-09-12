@@ -1114,7 +1114,7 @@ function openPreview(id,ev){
         ${(s.genres&&s.genres.length)||s.rating?`<div class="preview-genre-row">${(s.genres||[]).slice(0,3).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}${s.rating?`<span style="font-size:11px;color:#fbbf24;font-weight:700;margin-left:2px;">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:''}</div>`:''}
       </div>
     </div>
-    ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct}</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
+    ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct} güncel</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
     <div class="preview-row1">
       <div class="preview-icon-btn ${s.favorited?'active':''}" onclick="toggleFav('${id}');openPreview('${id}');event.stopPropagation();">${s.favorited?ic('heartFill',17):ic('heart',17)}</div>
       <div class="preview-read-btn" onclick="${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${id}')`};event.stopPropagation();">${ic('bolt',14)} Oku</div>
@@ -1246,17 +1246,19 @@ function getSeriesDetailSections(s){
       ${alts.length>ALT_LIMIT?`<span class="alt-tag more-toggle" onclick="expandTags('altWrap-${id}','${id}','alts')" style="cursor:pointer;border-color:var(--purple);color:var(--purple3);">+${alts.length-ALT_LIMIT} daha</span>`:''}
     </div></div>`:'';
   const fans=s.fansubList||[];
-  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub / Çeviri Ekibi</div><div class="fansub-card-row" id="fanWrap-${id}">
+  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub</div>
       ${fans.slice(0,FANSUB_LIMIT).map(f=>{
         const meta=getFansubMeta(f);
-        const logo=meta.logo?`<img src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
-        const inner=`${logo}<span class="fansub-card-name">${esc(f)}</span>`;
+        const initials=f.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
+        const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+        const inner=`<div class="detail-fansub-logo">${logo}${esc(initials)}</div>
+          <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">Bu seride takip ettiğin grup</div></div>`;
         return meta.url
-          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`
-          :`<div class="fansub-card">${inner}</div>`;
+          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="detail-fansub-row" style="margin-bottom:8px;text-decoration:none;">${inner}</a>`
+          :`<div class="detail-fansub-row" style="margin-bottom:8px;">${inner}</div>`;
       }).join('')}
-      ${fans.length>FANSUB_LIMIT?`<div class="fansub-card more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
-    </div></div>`:'';
+      ${fans.length>FANSUB_LIMIT?`<div class="more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;font-size:11px;color:var(--purple3);">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
+    </div>`:'';
   const gens=s.genres||[];
   const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
       ${gens.map(g=>`<span class="genre-chip-static">${esc(g)}</span>`).join('')}
@@ -1307,13 +1309,11 @@ function getSeriesDetailSections(s){
       ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('')}
       ${oldC.length>4?`<div class="old-cover-more" onclick="expandOldCovers('${id}')" style="flex-shrink:0;width:60px;height:84px;border-radius:7px;border:1px dashed var(--line2);background:var(--black3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;">+${oldC.length-4}</div>`:''}
     </div></div>`:'';
-  const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Kişisel Düşüncem</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
-  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Not</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
-  const ratingH=s.rating?`<div style="display:flex;align-items:center;gap:6px;">
-    ${[1,2,3,4,5].map(n=>`<span style="font-size:18px;line-height:1;">${n<=s.rating?'★':'☆'}</span>`).join('')}
-    <span style="font-size:11px;color:var(--text3);">${s.rating}/5</span></div>`:'';
+  const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Yorumun</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
+  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Notun</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
+  const ratingH=s.rating?`<div><div class="detail-sec-title">${ic('starFill',10)} Puanın</div><div class="detail-rating-row"><span class="detail-rating-stars">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span><span class="detail-rating-num">${s.rating.toFixed(1)}</span></div></div>`:'';
   const log=getSeriesLog(id);
-  const logH=log.length?`<div><div class="detail-sec-title">${ic('clock',10)} Son Güncellemeler</div><div style="background:var(--black4);border:1px solid var(--line);border-radius:10px;padding:10px 12px;" id="logWrap-${id}">
+  const logH=log.length?`<div><div class="detail-sec-title">${ic('clock',10)} Değişiklik Geçmişi</div><div style="background:var(--black4);border:1px solid var(--line);border-radius:10px;padding:10px 12px;" id="logWrap-${id}">
       ${log.slice(0,LOG_LIMIT).map(l=>`<div class="log-entry"><div class="log-dot"></div><div class="log-text">${esc(l.text)}</div><div class="log-time">${timeAgo(l.ts)}</div></div>`).join('')}
       ${log.length>LOG_LIMIT?`<div onclick="expandLog('${id}')" style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--purple3);cursor:pointer;">+${log.length-LOG_LIMIT} daha göster</div>`:''}
     </div></div>`:'';
