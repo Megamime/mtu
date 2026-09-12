@@ -475,6 +475,8 @@ function switchPage(p){
   const headerEl=document.getElementById('header');
   if(headerEl)headerEl.style.display='';
   document.getElementById('searchWrap').style.display=p==='home'?'':'none';
+  const searchInputEl=document.getElementById('searchInput');
+  if(searchInputEl)searchInputEl.placeholder=p==='list'?'Kütüphanende ara…':'Seri, alternatif ad, fansub ara…';
   document.getElementById('catTabsRow').style.display=p==='home'?'':'none';
   const heroSecEl0=document.getElementById('heroSection'); if(heroSecEl0&&p!=='home')heroSecEl0.style.display='none';
   if(typeof updateHeaderMode==='function')updateHeaderMode(p);
@@ -706,7 +708,7 @@ function handleSearch(){
   _searchDebounceTimer=setTimeout(()=>{
     searchQ=document.getElementById('searchInput').value.toLowerCase();
     if(searchQ.length>2) checkSearchEgg(searchQ);
-    renderHome();
+    renderContent();
   },180);
 }
 const SORT_OPTIONS={
