@@ -2130,8 +2130,9 @@ function handleOldCoverFile(){
   });
 }
 function renderOldCoverPreviews(){
+  const addBtn=`<div class="form-oldcover-add" onclick="document.getElementById('oldCoverFileInput').click()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
   document.getElementById('oldCoversPreviews').innerHTML=oldCovers.map((c,i)=>`
-    <div style="position:relative;flex-shrink:0;"><img src="${esc(c)}" style="width:52px;height:73px;border-radius:7px;object-fit:cover;border:1px solid var(--line);"><button onclick="removeOldCover(${i})" style="position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;background:#8b3a3a;border:none;color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button></div>`).join('');
+    <div class="form-oldcover-thumb"><img src="${esc(c)}"><button onclick="removeOldCover(${i})" class="form-oldcover-thumb-remove">&#x2715;</button></div>`).join('')+addBtn;
 }
 function removeOldCover(i){oldCovers.splice(i,1);renderOldCoverPreviews();}
 function closeSheet(id){
