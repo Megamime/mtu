@@ -881,6 +881,27 @@ function renderContent(){
   if(currentPage==='stats'&&typeof renderStats==='function'){ renderStats(); return; }
   renderHome();
 }
+function isNewChapterFresh(s){
+  if(!s.newChapter)return false;
+  if(!s.newChapterAt)return true; // eski veri: zaman damgası yoksa geriye dönük olarak "yeni" say
+  return (Date.now()-s.newChapterAt) < 48*60*60*1000; // 48 saatten eskiyse artık "yeni" sayılmaz
+}
+function hideHeroSection(){
+  const heroEl=document.getElementById('heroSection');
+  if(!heroEl||heroEl.classList.contains('hero-collapsed'))return;
+  heroEl.classList.add('hero-collapsed');
+  clearTimeout(heroEl._clearTimer);
+  heroEl._clearTimer=setTimeout(()=>{ if(heroEl.classList.contains('hero-collapsed'))heroEl.innerHTML=''; },300);
+}
+function showHeroSection(html){
+  const heroEl=document.getElementById('heroSection');
+  if(!heroEl)return;
+  clearTimeout(heroEl._clearTimer);
+  heroEl.style.display='';
+  heroEl.innerHTML=html;
+  heroEl.classList.remove('hero-collapsed');
+  initHeroRail();
+}
 function renderHome(){
   const el=document.getElementById('mainContent');
   const heroEl=document.getElementById('heroSection');
@@ -894,12 +915,12 @@ function renderHome(){
   });
   const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?buildDailyDigestHTML():'';
   if(!filtered.length){
-    if(heroEl){heroEl.innerHTML='';heroEl.style.display='none';}
+    hideHeroSection();
     el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>${series.length===0?'Kütüphane Boş':'Sonuç Bulunamadı'}</h3><p>${series.length===0?'+ butonuna basarak ilk serini ekleyebilirsin.':'Farklı bir arama veya kategori dene.'}</p></div>`;
     return;
   }
   if(searchQ||currentCat!=='all'){
-    if(heroEl){heroEl.innerHTML='';heroEl.style.display='none';}
+    hideHeroSection();
     const sorted=sortSeries(filtered);
     const sortBar=hasFixedActions?'':`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
     const bulkBar=selectionMode?renderBulkBar():'';
@@ -914,13 +935,13 @@ function renderHome(){
   SECTIONS.forEach(sec=>{
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);
-    else if(sec.heroOnly) items=filtered.filter(s=>!s.pinned&&(s.newChapter||s.favorited)).sort((a,b)=>(b.newChapter?1:0)-(a.newChapter?1:0));
+    else if(sec.heroOnly) items=filtered.filter(s=>isNewChapterFresh(s)||s.favorited).sort((a,b)=>(isNewChapterFresh(b)?1:0)-(isNewChapterFresh(a)?1:0));
     else if(sec.staleOnly) items=filtered.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s));
     else items=filtered.filter(s=>!s.pinned&&!s.favorited&&!isStaleSeries(s)&&sec.cats.includes(s.category));
     if(!items.length) return;
     if(sec.heroOnly){
       heroFound=true;
-      if(heroEl){heroEl.innerHTML=heroSpotlight(items.slice(0,6));heroEl.style.display='';initHeroRail();}
+      showHeroSection(heroSpotlight(items.slice(0,6)));
       return;
     }
     const canReorder=sec.pinnedOnly&&currentSort==='default'&&!searchQ&&currentCat==='all';
@@ -936,7 +957,7 @@ function renderHome(){
         ${items.length > MAX_SHOW ? `<div class="sec-see-all" onclick="setCat('${seeAllCat}')">Tümü ${ic('chevron',11)}</div>` : ''}
       </div><div class="carousel-wrap"><button class="carousel-arrow left" onclick="scrollCarousel(this,-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="carousel" id="car-${sec.key}">${shown.map((s,i)=>carouselCard(s,i,canReorder)).join('')}${moreCard}</div><button class="carousel-arrow right" onclick="scrollCarousel(this,1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>`;
   });
-  if(heroEl&&!heroFound){heroEl.innerHTML='';heroEl.style.display='none';}
+  if(!heroFound)hideHeroSection();
   const homeBulkBar=selectionMode?renderBulkBar():'';
   el.innerHTML=(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar;
   initPinnedDragSort();
@@ -948,7 +969,7 @@ function heroSpotlight(items){
       :`<div class="hero-bg-ph"></div>`;
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
-    const isNew=!!s.newChapter;
+    const isNew=isNewChapterFresh(s);
     return `<div class="hero-slide" onclick="openPreview('${s.id}',event)">
       ${bg}
       <div class="hero-glow"></div>
@@ -1056,7 +1077,7 @@ function carouselCard(s,i,canReorder){
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
   const dragAttrs=canReorder&&!selectionMode?`draggable="true" data-series-id="${s.id}" ondragstart="pinDragStart(event)" ondragend="pinDragEnd(event)"`:'';
-  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" ${dragAttrs} style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}${canReorder&&!selectionMode?'cursor:grab;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
+  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited?'favorited':''} ${isSel?'selected-card':''}" ${dragAttrs} style="animation-delay:${i*.03}s;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}${canReorder&&!selectionMode?'cursor:grab;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
@@ -1078,7 +1099,7 @@ function flatCard(s,i){
   const cdBadge=getCardCountdownBadge(s);
   const clickAction=selectionMode?`toggleSelect('${s.id}')`:`openPreview('${s.id}',event)`;
   const selCheck=selectionMode?`<div style="position:absolute;top:5px;right:5px;z-index:6;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${isSel?'var(--purple2)':'rgba(255,255,255,.5)'};background:${isSel?'var(--purple2)':'rgba(0,0,0,.35)'};">${isSel?ic('check',11):''}</div>`:'';
-  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited&&!s.pinned?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
+  return `<div class="series-card ${s.pinned?'pinned':''} ${s.favorited?'favorited':''} ${isSel?'selected-card':''}" style="animation-delay:${i*.025}s;width:100%;${isSel?'outline:2px solid var(--purple2);outline-offset:-1px;':''}" onclick="${clickAction}"><div class="card-cover-wrap">
       ${cover}
       ${selCheck}
       <div class="card-overlay-badges">${pinB}<div style="flex:1"></div>${favB}</div>
@@ -1250,8 +1271,8 @@ function getSeriesDetailSections(s){
       ${fans.slice(0,FANSUB_LIMIT).map(f=>{
         const meta=getFansubMeta(f);
         const initials=f.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
-        const logo=meta.logo?`<img src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
-        const inner=`<div class="detail-fansub-logo">${logo}${esc(initials)}</div>
+        const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+        const inner=`<div class="detail-fansub-logo" style="position:relative;">${logoImg}<span style="display:${meta.logo?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;">${esc(initials)}</span></div>
           <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">Bu seride takip ettiğin grup</div></div>`;
         return meta.url
           ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="detail-fansub-row" style="margin-bottom:8px;text-decoration:none;">${inner}</a>`
@@ -1768,6 +1789,8 @@ async function runAutoIncrement(){
         ? `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal} (${effectiveMissed} periyot birikmiş)`
         : `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal}`);
       s.newChapter=true;
+      s.newChapterAt=Date.now();
+      s.updatedAt=Date.now();
     }
     s.autoIncrNext=cursor;
     changed=true;
