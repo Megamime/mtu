@@ -526,7 +526,7 @@ function updateHeaderMode(p){
   subWrap.innerHTML=`<span class="logo-divider">|</span><span class="logo-sub">${labels[p]}</span>`;
   homeIcons.style.display='none';
   subIcons.style.display='flex';
-  const backBtn=`<div class="hdr-btn" onclick="switchPage('home')" title="Geri"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>`;
+  const backBtn=`<div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('subMoreMenu').classList.toggle('open')" title="Diğer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div><div class="more-menu" id="subMoreMenu"><div class="more-item" onclick="switchPage('home');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Ana Sayfa</div><div class="more-item" onclick="toggleTheme();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div>`;
   if(p==='stats'){
     subIcons.innerHTML=`<div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div>${backBtn}`;
   }else if(p==='list'){
@@ -997,8 +997,10 @@ function heroSpotlight(items){
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
     const isNew=isNewChapterFresh(s);
+    const poster=s.cover?`<div class="hero-poster-frame"><img src="${esc(s.cover)}" loading="lazy" onerror="this.parentElement.style.display='none';"></div>`:'';
     return `<div class="hero-slide" onclick="openPreview('${s.id}',event)">
       ${bg}
+      ${poster}
       <div class="hero-glow"></div>
       <div class="hero-scrim"></div>
       <div class="hero-content">
