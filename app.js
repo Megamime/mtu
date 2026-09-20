@@ -285,33 +285,6 @@ function isStaleSeries(s){
 }
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
 const GENRES_PRESET=['Aksiyon','Macera','Komedi','Dram','Fantastik','Isekai','Romantizm','Bilim Kurgu','Korku','Gizem','Doğaüstü','Dilim Hayat','Psikolojik','Tarihi','Askeri','Spor','Ecchi','Harem','Gerilim','Trajedi'];
-// Bağlantılı Seriler'de "Yan Seri" için ilişki alt-türü — sadece "yan seri" demek yerine
-// artık spin-off/özet/alternatif versiyon/aynı evren ayrımı yapılabiliyor.
-const RELATION_TYPES={
-  spinoff:  {label:'Yan Hikaye',           color:'#34d399'},
-  recap:    {label:'Özet / Derleme',       color:'#f59e0b'},
-  alternate:{label:'Alternatif Versiyon',  color:'#a78bfa'},
-  universe: {label:'Aynı Evren',           color:'#60a5fa'},
-  other:    {label:'İlişkili',             color:'#94a3b8'},
-};
-// "Ana Seri" zincirini TAM (transitive) olarak hesaplar — yani A→B ve B→C şeklinde ayrı ayrı
-// bağlanmışsa bile A'nın sayfasında da C görünür. Eskiden her seri sadece KENDİ doğrudan
-// linklerine bakıyordu, bu yüzden zincir hangi sayfadan bakıldığına göre eksik/farklı
-// görünebiliyordu (ör. A sayfasında [A,B], B sayfasında [A,B,C] gibi tutarsız).
-function getMainChain(startId){
-  const visited=new Set([startId]);
-  const queue=[startId];
-  while(queue.length){
-    const curId=queue.shift();
-    const cur=series.find(x=>x.id===curId);
-    if(!cur) continue;
-    (cur.links||[]).forEach(l=>{
-      if(l.type==='main'&&!visited.has(l.id)){ visited.add(l.id); queue.push(l.id); }
-    });
-  }
-  return [...visited].map(id=>series.find(x=>x.id===id)).filter(Boolean)
-    .sort((a,b)=>(a.mainOrder||9999)-(b.mainOrder||9999));
-}
 let currentGenre=null;
 
 // Fansub (çeviri ekibi) logo/website bilgisi — seri başına değil, İSİM başına global bir
@@ -526,7 +499,7 @@ function updateHeaderMode(p){
   subWrap.innerHTML=`<span class="logo-divider">|</span><span class="logo-sub">${labels[p]}</span>`;
   homeIcons.style.display='none';
   subIcons.style.display='flex';
-  const backBtn=`<div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('subMoreMenu').classList.toggle('open')" title="Diğer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div><div class="more-menu" id="subMoreMenu"><div class="more-item" onclick="switchPage('home');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Ana Sayfa</div><div class="more-item" onclick="toggleTheme();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div>`;
+  const backBtn=`<div class="hdr-btn" onclick="switchPage('home')" title="Geri"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>`;
   if(p==='stats'){
     subIcons.innerHTML=`<div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div>${backBtn}`;
   }else if(p==='list'){
@@ -997,10 +970,8 @@ function heroSpotlight(items){
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
     const isNew=isNewChapterFresh(s);
-    const poster=s.cover?`<div class="hero-poster-frame"><img src="${esc(s.cover)}" loading="lazy" onerror="this.parentElement.style.display='none';"></div>`:'';
     return `<div class="hero-slide" onclick="openPreview('${s.id}',event)">
       ${bg}
-      ${poster}
       <div class="hero-glow"></div>
       <div class="hero-scrim"></div>
       <div class="hero-content">
@@ -1144,9 +1115,6 @@ function flatCard(s,i){
 // Sayfayı Aç" tam sayfaya götürür. =====
 function openPreview(id,ev){
   if(ev)ev.stopPropagation();
-  // Önizleme pop-up'ı sadece mobilde var; bu elemanlar yoksa (masaüstü arayüzü)
-  // doğrudan tam detay sayfasını aç — aksi halde tıklama sessizce hataya düşerdi.
-  if(!document.getElementById('previewOverlay')||!document.getElementById('previewBody')){ openDetail(id); return; }
   const s=series.find(x=>x.id===id);if(!s)return;
   window._previewId=id;
   const cat=CATS[s.category]||{};
@@ -1321,17 +1289,17 @@ function getSeriesDetailSections(s){
   // çıkıyor, çünkü sıra numarası linke değil serinin kendisine ait). "Yan Seri" bağlantıları
   // ise ayrı bir sırada, varsa kısa bir açıklamayla birlikte gösteriliyor.
   const rawLinks=s.links||[];
-  const fullChain=getMainChain(s.id);
+  const mainLinkedSeries=rawLinks.filter(l=>l.type==='main').map(l=>series.find(x=>x.id===l.id)).filter(Boolean);
   const hasOwnSideLinks=rawLinks.some(l=>l.type==='side');
   let linksH='';
-  if(fullChain.length>1||hasOwnSideLinks){
+  if(mainLinkedSeries.length||hasOwnSideLinks){
     // Yatay ağaç: Ana Seri zinciri düz bir hat üzerinde soldan sağa sıralanıyor (mainOrder'a göre),
-    // artık TAM (transitive) zincir kullanılıyor — A→B ve B→C ayrı ayrı bağlanmış olsa bile
-    // A'nın sayfasında da C görünür. Her düğümün KENDİ "Yan Seri" bağlantıları o düğümün
-    // üstünde kesikli bir çizgiyle, ilişki türüne göre renklendirilerek dallanıyor.
-    const chain=fullChain.length>1?fullChain:[s];
+    // her düğümün KENDİ "Yan Seri" bağlantıları o düğümün üstünde kesikli bir çizgiyle dallanıyor —
+    // hangi seri sayfasından bakarsan bak aynı ağaç çıkar, çünkü konum linke değil serinin
+    // kendi mainOrder'ına ve kendi links[] listesine ait.
+    const chain=[s,...mainLinkedSeries].sort((a,b)=>(a.mainOrder||9999)-(b.mainOrder||9999));
     const COL=40,GAP=13,STEP=COL+GAP,BR_H=71,TRUNK_Y_IN_ROW=17;
-    const nodeBranches=chain.map(node=>(node.links||[]).filter(l=>l.type==='side').map(l=>({series:series.find(x=>x.id===l.id),desc:l.desc||'',relation:l.relation||''})).filter(x=>x.series));
+    const nodeBranches=chain.map(node=>(node.links||[]).filter(l=>l.type==='side').map(l=>({series:series.find(x=>x.id===l.id),desc:l.desc||''})).filter(x=>x.series));
     const maxBranches=Math.max(0,...nodeBranches.map(b=>b.length));
     const padTop=42+Math.max(0,maxBranches-1)*BR_H;
     const trunkY=padTop+TRUNK_Y_IN_ROW;
@@ -1339,9 +1307,8 @@ function getSeriesDetailSections(s){
     const branchesH=chain.map((node,i)=>nodeBranches[i].map((b,bi)=>{
       const cx=i*STEP+20;
       const top=trunkY-BR_H*(bi+1);
-      const relInfo=RELATION_TYPES[b.relation]||{label:'Yan Seri',color:'#34d399'};
       return `<div class="detail-htree-branch" style="left:${cx}px;top:${top}px;" onclick="openPreview('${b.series.id}',event)" title="${esc(b.desc)}">
-        <div class="detail-htree-label">${esc(b.series.name)}<div class="detail-htree-tag" style="color:${relInfo.color};">${esc(relInfo.label)}</div></div>
+        <div class="detail-htree-label">${esc(b.series.name)}<div class="detail-htree-tag" style="color:#34d399;">Yan Seri</div></div>
         <div class="detail-htree-cover">${cov(b.series)}</div>
         <div class="detail-htree-branch-connector"></div>
       </div>`;
@@ -1524,10 +1491,10 @@ function showAddOverlay(){
   if(typeof onAddOverlayShown==='function') onAddOverlayShown();
 }
 function openAddSheet(){
-  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formLinks=[];formChainOrder=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
+  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formLinks=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
-  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput','mainOrderInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('autoIncrFreq').value='';
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
@@ -1553,7 +1520,7 @@ function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
   editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];
   formLinks=[...(s.links||[])];window._originalLinksSnapshot=JSON.stringify(formLinks);
-  syncFormChainOrder();
+  const mainOrderEl=document.getElementById('mainOrderInput'); if(mainOrderEl)mainOrderEl.value=s.mainOrder||'';
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
   document.getElementById('addSheetTitle').textContent='Seriyi Düzenle';
   document.getElementById('seriesName').value=s.name||'';
@@ -1649,7 +1616,7 @@ async function saveSeries(){
   const data={
     id:editingId||Date.now().toString(),name,
     altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],links:[...formLinks],
-    mainOrder:(editingId&&series.find(x=>x.id===editingId)?.mainOrder)||0,
+    mainOrder:parseInt(document.getElementById('mainOrderInput')?.value)||0,
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
     category:document.getElementById('seriesCategory').value,
@@ -1668,13 +1635,6 @@ async function saveSeries(){
     autoIncrNext:(autoFreq&&autoFreq!=='irregular'&&autoFreq!=='completed')?calcNextIncr(autoFreq,autoDay,autoDate):null,
     autoIncrSkips:[],
   };
-  // Sürükle-bırakla düzenlenen Ana Seri sırasını, bu seriyle birlikte ZİNCİRDEKİ DİĞER
-  // serilere de yaz — formChainOrder sadece görüntüleme içindir, kalıcı sıra numaraları
-  // (mainOrder) burada, kaydetme anında 1'den başlayarak veriliyor.
-  if(formChainOrder.length>=2) formChainOrder.forEach((cid,idx)=>{
-    if(cid===data.id) data.mainOrder=idx+1;
-    else{ const other=series.find(x=>x.id===cid); if(other) other.mainOrder=idx+1; }
-  });
   if(editingId){
     const old=series.find(x=>x.id===editingId);
     if(old) data.autoIncrSkips=old.autoIncrSkips||[];
@@ -1765,9 +1725,7 @@ function calcNextIncr(freq, day, date, fromTs){
     const d=new Date(now); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.getTime();
   }
   if(freq==='weekly'){
-    const parsedDay=parseInt(day);
-    const target=isNaN(parsedDay)?1:parsedDay; // 0=Pazar geçerli bir değer; eski "||1" deseni
-                                                 // Pazar'ı yanlışlıkla Pazartesi'ye çeviriyordu.
+    const target=parseInt(day)||1;
     const d=new Date(now);
     d.setHours(9,0,0,0);
     let diff=(target-d.getDay()+7)%7;
@@ -1790,6 +1748,7 @@ function periodKey(freq, day, date){
   if(freq==='daily') return `d-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   if(freq==='weekly'){
     const wd=d.getDay();
+    const diff=((parseInt(day)||1)-wd+7)%7;
     const weekStart=new Date(d); weekStart.setDate(d.getDate()-wd);
     return `w-${weekStart.getFullYear()}-${weekStart.getMonth()}-${weekStart.getDate()}-${day}`;
   }
@@ -1880,11 +1839,6 @@ function renderGenreUI(){
 }
 function openFansubMetaEditor(i){
   const name=fansubList[i]; if(!name)return;
-  if(!document.getElementById('fansubMetaOverlay')){
-    // Bu pop-up şu an sadece mobilde var; masaüstünde basit bir istemle devam et.
-    promptFansubMetaFallback(name,()=>renderFansubTags());
-    return;
-  }
   const meta=getFansubMeta(name);
   document.getElementById('fansubMetaName').textContent=name;
   document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
@@ -1892,13 +1846,6 @@ function openFansubMetaEditor(i){
   window._fansubMetaEditingName=name;
   renderFansubMetaLogoPreview(meta.logo||'');
   document.getElementById('fansubMetaOverlay').classList.remove('hidden');
-}
-function promptFansubMetaFallback(name,onDone){
-  const meta=getFansubMeta(name);
-  const url=prompt(`"${name}" için link (opsiyonel):`,meta.url||'');
-  if(url===null) return;
-  setFansubMeta(name,meta.logo||'',url.trim());
-  if(onDone)onDone();
 }
 function renderFansubMetaLogoPreview(src){
   const wrap=document.getElementById('fansubMetaLogoPreviewWrap');
@@ -1913,10 +1860,6 @@ function renderFansubMetaLogoPreview(src){
 // doğrudan bir ekibin logo/link bilgisini düzenlemek için — openFansubMetaEditor(i) gibi
 // forma bağlı bir index yerine doğrudan ismi kullanır.
 function openFansubMetaEditorByName(name){
-  if(!document.getElementById('fansubMetaOverlay')){
-    promptFansubMetaFallback(name,()=>{ if(typeof renderFansubListPage==='function') renderFansubListPage(); });
-    return;
-  }
   const meta=getFansubMeta(name);
   document.getElementById('fansubMetaName').textContent=name;
   document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
@@ -2004,196 +1947,43 @@ function searchLinkableSeries(){
   const linkedIds=new Set(formLinks.map(l=>l.id));
   const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&s.name.toLowerCase().includes(q)).slice(0,6);
   if(!matches.length){ dd.classList.add('hidden'); dd.innerHTML='<div class="autocomplete-item" style="opacity:.6;cursor:default;">Eşleşme yok</div>'; dd.classList.remove('hidden'); return; }
-  const thumb=s=>{
-    const img=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
-    return `<div style="position:relative;width:30px;height:42px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--black3);">${img}${coverLetterPh(s,!!s.cover)}</div>`;
-  };
   dd.innerHTML=matches.map(s=>`
-    <div class="autocomplete-item" style="flex-direction:column;align-items:stretch;gap:6px;cursor:default;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${thumb(s)}
-        <div style="flex:1;min-width:0;">
-          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;">${esc(s.name)}</div>
-          <div style="font-size:9.5px;color:var(--text3);">${esc(CATS[s.category]?.label||'')}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;padding-left:38px;">
-        <button type="button" onclick="event.stopPropagation();addSeriesLink('${s.id}','main')" style="font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--purpleG);border:1px solid var(--purple2);color:var(--purple3);cursor:pointer;">+ Ana Seri (Sıralı)</button>
-        <select onchange="if(this.value){addSeriesLink('${s.id}','side',this.value);this.value='';}" style="font-size:9.5px;font-weight:600;padding:4px 6px;border-radius:6px;background:var(--black5);border:1px solid var(--line2);color:var(--text2);cursor:pointer;">
-          <option value="">+ Yan Seri…</option>
-          ${Object.entries(RELATION_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
-        </select>
+    <div class="autocomplete-item" style="justify-content:space-between;gap:8px;">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.name)}</span>
+      <div style="display:flex;gap:5px;flex-shrink:0;">
+        <button type="button" onclick="event.stopPropagation();addSeriesLink('${s.id}','main')" style="font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--purpleG);border:1px solid var(--purple2);color:var(--purple3);cursor:pointer;">+ Ana Seri</button>
+        <button type="button" onclick="event.stopPropagation();addSeriesLink('${s.id}','side')" style="font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:var(--black5);border:1px solid var(--line2);color:var(--text2);cursor:pointer;">+ Yan Seri</button>
       </div>
     </div>`).join('');
   dd.classList.remove('hidden');
 }
 function hideLinkSuggestions(){ const dd=document.getElementById('linkSuggestions'); if(dd)dd.classList.add('hidden'); }
-function addSeriesLink(targetId,type,relation){
+function addSeriesLink(targetId,type){
   if(formLinks.some(l=>l.id===targetId)) return;
-  formLinks.push({id:targetId,type,relation:relation||''});
+  formLinks.push({id:targetId,type});
   const inp=document.getElementById('linkSearchInput'); if(inp)inp.value='';
   hideLinkSuggestions();
-  syncFormChainOrder();
   renderLinkChips();
 }
 function removeSeriesLink(targetId){
   formLinks=formLinks.filter(l=>l.id!==targetId);
-  syncFormChainOrder();
   renderLinkChips();
 }
 function renderLinkChips(){
   const wrap=document.getElementById('linkChipsWrap'); if(!wrap) return;
-  if(!formLinks.length){ wrap.innerHTML=''; }
-  else wrap.innerHTML=formLinks.map(l=>{
+  if(!formLinks.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=formLinks.map(l=>{
     const s=series.find(x=>x.id===l.id);
     if(!s) return '';
     const isMain=l.type==='main';
-    const rel=RELATION_TYPES[l.relation];
-    const tagLabel=isMain?'ANA SERİ':(rel?rel.label.toUpperCase():'YAN SERİ');
-    const tagColor=isMain?'var(--purple3)':(rel?rel.color:'#34d399');
-    const thumbImg=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
-    const thumb=`<div style="position:relative;width:22px;height:30px;border-radius:5px;overflow:hidden;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px;background:var(--black3);">${thumbImg}${coverLetterPh(s,!!s.cover)}</div>`;
-    const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':`border-color:${tagColor}66;color:${tagColor};`}display:inline-flex;align-items:center;">${thumb}${esc(s.name)} <b style="font-size:8.5px;opacity:.85;font-weight:700;">${tagLabel}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
-    const descBox=`<textarea class="form-textarea" placeholder="${isMain?'Bu seri hakkında kısa bir not… (opsiyonel)':'Bu bağlantı hakkında kısa bir not… (ör. Yuno karakterine odaklanan yan seri)'}" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:36px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`;
+    const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':''}">${esc(s.name)} <b style="font-size:8.5px;opacity:.75;font-weight:700;">${isMain?'ANA SERİ':'YAN SERİ'}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
+    const descBox=!isMain?`<textarea class="form-textarea" placeholder="Bu yan seri hakkında kısa bir not… (ör. Yuno'ya odaklanan yan seri)" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:40px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`:'';
     return `<div style="margin-bottom:7px;">${chip}${descBox}</div>`;
   }).join('');
-  renderChainOrderEditor();
 }
 function updateLinkDesc(targetId,val){
   const l=formLinks.find(x=>x.id===targetId);
   if(l) l.desc=val;
-}
-// ===== Ana Seri zincirini sürükle-bırakla sıralama =====
-// formChainOrder: düzenlenmekte olan serinin ait olduğu TAM zincirin (transitive) sıralı ID
-// listesi. Sadece görüntüleme/sürükleme içindir — gerçek mainOrder değerleri saveSeries()
-// içinde, bu listenin son haline göre 1'den başlayarak yazılır.
-let formChainOrder=[];
-function syncFormChainOrder(){
-  if(!editingId){ formChainOrder=[]; return; }
-  const baseIds=getMainChain(editingId).map(x=>x.id);
-  const set=new Set(baseIds);
-  formLinks.forEach(l=>{ if(l.type==='main') set.add(l.id); });
-  const original=series.find(x=>x.id===editingId);
-  const directOriginalMainIds=(original?.links||[]).filter(l=>l.type==='main').map(l=>l.id);
-  directOriginalMainIds.forEach(id=>{
-    if(!formLinks.some(l=>l.id===id&&l.type==='main')) set.delete(id);
-  });
-  const ids=[...set];
-  const prevOrder=formChainOrder.filter(id=>ids.includes(id));
-  const newOnes=ids.filter(id=>!prevOrder.includes(id)).sort((a,b)=>{
-    const sa=a===editingId?original:series.find(x=>x.id===a);
-    const sb=b===editingId?original:series.find(x=>x.id===b);
-    return (sa?.mainOrder||9999)-(sb?.mainOrder||9999);
-  });
-  formChainOrder=[...prevOrder,...newOnes];
-}
-function renderChainOrderEditor(){
-  const wrap=document.getElementById('chainOrderWrap'); if(!wrap) return;
-  if(formChainOrder.length<2){ wrap.innerHTML=''; wrap.style.display='none'; return; }
-  wrap.style.display='';
-  const grip='<svg width="11" height="15" viewBox="0 0 12 16" fill="currentColor" style="opacity:.5;flex-shrink:0;"><circle cx="3" cy="2" r="1.3"/><circle cx="9" cy="2" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="9" cy="8" r="1.3"/><circle cx="3" cy="14" r="1.3"/><circle cx="9" cy="14" r="1.3"/></svg>';
-  wrap.innerHTML=`<label class="form-label" style="margin-bottom:4px;">Ana Seri Sırası <span style="font-weight:400;color:var(--text3);">(sürükleyerek sırala)</span></label>
-    <div id="chainOrderList">${formChainOrder.map((id,idx)=>{
-      const isSelf=id===editingId;
-      const s=series.find(x=>x.id===id);
-      const name=isSelf?(document.getElementById('seriesName')?.value||s?.name||'(bu seri)'):(s?s.name:null);
-      if(name===null) return '';
-      const cover=isSelf?(s?.cover||''):(s?.cover||'');
-      const img=cover?`<img src="${esc(cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
-      const ph=coverLetterPh({name,category:s?.category||'reading'},!!cover);
-      return `<div class="chain-order-row" data-chain-id="${id}" style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:${isSelf?'var(--purpleG)':'var(--black4)'};border:1px solid ${isSelf?'var(--purple2)':'var(--line)'};border-radius:9px;margin-bottom:6px;">
-        ${grip}
-        <div style="position:relative;width:26px;height:36px;border-radius:5px;overflow:hidden;flex-shrink:0;background:var(--black3);">${img}${ph}</div>
-        <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:600;">${esc(name)}${isSelf?' <span style="font-weight:400;color:var(--purple3);font-size:10px;">(bu seri)</span>':''}</div>
-        <div style="font-size:10px;color:var(--text3);flex-shrink:0;">#${idx+1}</div>
-      </div>`;
-    }).join('')}</div>`;
-  initChainRowTouchDrag();
-}
-let _chainDragState=null;
-function initChainRowTouchDrag(){
-  const list=document.getElementById('chainOrderList'); if(!list) return;
-  list.querySelectorAll('.chain-order-row').forEach(row=>{
-    row.addEventListener('touchstart',e=>{
-      const id=row.dataset.chainId;
-      const touch=e.touches[0];
-      _chainDragState={ id, originalRow:row, startX:touch.clientX, startY:touch.clientY, active:false, moved:false,
-        longPressTimer:setTimeout(()=>startChainTouchDrag(row,touch),350) };
-    },{passive:true});
-    row.addEventListener('touchmove',e=>{
-      if(!_chainDragState)return;
-      const touch=e.touches[0];
-      const dx=Math.abs(touch.clientX-_chainDragState.startX), dy=Math.abs(touch.clientY-_chainDragState.startY);
-      if(!_chainDragState.active){
-        if(dx>8||dy>8){ clearTimeout(_chainDragState.longPressTimer); _chainDragState.moved=true; }
-        return;
-      }
-      e.preventDefault();
-      moveChainGhost(touch);
-      highlightChainTarget(touch);
-    },{passive:false});
-    row.addEventListener('touchend',e=>{
-      if(!_chainDragState)return;
-      clearTimeout(_chainDragState.longPressTimer);
-      if(_chainDragState.active)endChainTouchDrag(e.changedTouches[0]);
-      _chainDragState=null;
-    });
-    row.addEventListener('touchcancel',()=>{
-      if(_chainDragState){ clearTimeout(_chainDragState.longPressTimer); cleanupChainGhost(); }
-      _chainDragState=null;
-    });
-  });
-}
-function startChainTouchDrag(rowEl,touch){
-  if(!_chainDragState||_chainDragState.moved)return;
-  _chainDragState.active=true;
-  if(navigator.vibrate)navigator.vibrate(12);
-  rowEl.style.opacity='0.35';
-  const rect=rowEl.getBoundingClientRect();
-  const ghost=rowEl.cloneNode(true);
-  ghost.id='chainDragGhost';
-  ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;z-index:9999;opacity:0.95;transform:scale(1.03);box-shadow:0 10px 28px rgba(0,0,0,.6);transition:none;margin:0;`;
-  document.body.appendChild(ghost);
-  _chainDragState.ghost=ghost;
-  _chainDragState.offsetX=touch.clientX-rect.left;
-  _chainDragState.offsetY=touch.clientY-rect.top;
-}
-function moveChainGhost(touch){
-  const st=_chainDragState; if(!st||!st.ghost)return;
-  st.ghost.style.left=(touch.clientX-st.offsetX)+'px';
-  st.ghost.style.top=(touch.clientY-st.offsetY)+'px';
-}
-function highlightChainTarget(touch){
-  const ghost=_chainDragState.ghost;
-  ghost.style.display='none';
-  const el=document.elementFromPoint(touch.clientX,touch.clientY);
-  ghost.style.display='';
-  const target=el&&el.closest('[data-chain-id]');
-  document.querySelectorAll('.chain-order-row.drag-over').forEach(r=>r.classList.remove('drag-over'));
-  if(target&&target.dataset.chainId!==_chainDragState.id)target.classList.add('drag-over');
-}
-function endChainTouchDrag(touch){
-  const st=_chainDragState; if(!st)return;
-  const ghost=st.ghost;
-  if(ghost)ghost.style.display='none';
-  const el=document.elementFromPoint(touch.clientX,touch.clientY);
-  if(ghost)ghost.style.display='';
-  const target=el&&el.closest('[data-chain-id]');
-  cleanupChainGhost();
-  if(st.originalRow)st.originalRow.style.opacity='';
-  if(target&&target.dataset.chainId!==st.id) reorderChainOrder(st.id,target.dataset.chainId);
-}
-function cleanupChainGhost(){
-  const ghost=document.getElementById('chainDragGhost'); if(ghost)ghost.remove();
-  document.querySelectorAll('.chain-order-row.drag-over').forEach(r=>r.classList.remove('drag-over'));
-}
-function reorderChainOrder(draggedId,targetId){
-  const draggedIdx=formChainOrder.indexOf(draggedId), targetIdx=formChainOrder.indexOf(targetId);
-  if(draggedIdx<0||targetIdx<0)return;
-  const [dragged]=formChainOrder.splice(draggedIdx,1);
-  const newTargetIdx=formChainOrder.indexOf(targetId);
-  formChainOrder.splice(newTargetIdx,0,dragged);
-  renderChainOrderEditor();
 }
 // Bir seriye bağlantı eklenip/kaldırıldığında karşı taraftaki seriyi de günceller —
 // elle iki kere eklemek zorunda kalmıyorsun.
@@ -2204,8 +1994,8 @@ function syncSeriesLinks(seriesId,newLinks,oldLinksJSON){
     const target=series.find(x=>x.id===l.id); if(!target) return;
     target.links=target.links||[];
     const existing=target.links.find(tl=>tl.id===seriesId);
-    if(existing){ existing.type=l.type; existing.desc=l.desc||''; existing.relation=l.relation||''; }
-    else target.links.push({id:seriesId,type:l.type,desc:l.desc||'',relation:l.relation||''});
+    if(existing){ existing.type=l.type; existing.desc=l.desc||''; }
+    else target.links.push({id:seriesId,type:l.type,desc:l.desc||''});
   });
   oldLinks.forEach(l=>{
     if(!newIds.has(l.id)){
