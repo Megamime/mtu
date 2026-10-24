@@ -115,6 +115,7 @@ function tick(now){
 requestAnimationFrame(tick);
 
 var mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.innerWidth<768;
+['app.js',mobile?'mobile.html':'desktop.html'].forEach(function(h){var l=document.createElement('link');l.rel='prefetch';l.href=h;document.head.appendChild(l);});
 setTimeout(function(){window.location.replace(mobile?'mobile.html':'desktop.html');},REDIRECT_DELAY);
 </script>
 </body>

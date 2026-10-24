@@ -67,6 +67,48 @@
   });
 })();
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Inline onclick="..." içine kullanıcı verisi gömmek için güvenli JS string literal'i üretir.
+// (Eski esc(x).replace(/'/g,"\\'") yöntemi ters eğik çizgi içeren verilerde string'den kaçışa izin veriyordu.)
+function jsArg(v){return esc(JSON.stringify(String(v==null?'':v)));}
+// Yalnızca http(s) bağlantılarına izin verir (javascript:, data: vb. engellenir). Şemasız "site.com/yol" → https://
+function safeUrl(u){
+  const t=String(u==null?'':u).trim(); if(!t) return '';
+  if(/^https?:\/\//i.test(t)) return t;
+  if(t.startsWith('//')) return 'https:'+t;
+  if(/^[a-z][a-z0-9+.-]*:/i.test(t)) return '';
+  if(/^[\w-]+(\.[\w-]+)+(\/|\?|#|$)/.test(t)) return 'https://'+t;
+  return '';
+}
+function openExternal(u){
+  const url=safeUrl(u);
+  if(!url){ showToast('warn','Geçersiz bağlantı'); return; }
+  window.open(url,'_blank','noopener');
+}
+function cssUrl(u){return String(u==null?'':u).replace(/['"()\\\s]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0'));}
+// Kapaklar base64 data-URI olarak saklanıyor. Bunları HTML string'lerine gömmek her render'da
+// yüzlerce KB'lık metni yeniden ayrıştırtıyordu. Burada bir kez Blob URL'ye çevirip önbelleğe alıyoruz:
+// HTML küçük kalıyor, görüntü çözme işi ana iş parçacığının dışında yapılıyor, görüntü kalitesi aynı.
+const _coverBlobCache=new Map();
+function coverSrc(src){
+  if(typeof src!=='string'||src.length<4096||!src.startsWith('data:')) return src||'';
+  let u=_coverBlobCache.get(src);
+  if(u) return u;
+  try{
+    const comma=src.indexOf(',');
+    const head=src.slice(5,comma);
+    if(!/;base64$/i.test(head)) return src;
+    const mime=head.replace(/;base64$/i,'')||'application/octet-stream';
+    const bin=atob(src.slice(comma+1));
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    u=URL.createObjectURL(new Blob([bytes],{type:mime}));
+  }catch(e){ return src; }
+  if(_coverBlobCache.size>=300){
+    let n=0; for(const [k,v] of _coverBlobCache){ _coverBlobCache.delete(k); try{URL.revokeObjectURL(v);}catch(e){} if(++n>=100)break; }
+  }
+  _coverBlobCache.set(src,u);
+  return u;
+}
 const _coverColorCache={};
 function extractCoverColors(src){
   return new Promise((resolve)=>{
@@ -168,24 +210,66 @@ function openDB(){
     req.onerror=e=>{console.error('IndexedDB error',e);reject(e);};
   });
 }
-async function save(){
-  const d=await openDB();
-  const tx=d.transaction(STORE,'readwrite');
-  const st=tx.objectStore(STORE);
-  st.clear();
-  series.forEach(s=>st.put(s));
-  return new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+// ===== Kayıt katmanı — artımlı (diff'li) kayıt =====
+// Eskiden her save() tüm depoyu silip bütün serileri (kapak base64'leriyle) baştan yazıyordu: seri sayısı
+// arttıkça yavaşlıyor ve yazma sırasında uygulama kapanırsa veri kaybı riski doğuyordu. Artık yalnızca
+// değişen serileri yazıyor, silinenleri siliyoruz; tek bir transaction ile atomik.
+const _savedSig=new Map();
+// Bir serinin "imzası": büyük metinler (base64 kapak vb.) JSON'a girmez, yerine sıra numarası konur ve
+// metinlerin kendisi (referans olarak, kopyalanmadan) yanında tutulur. Karşılaştırmada === kullanılır:
+// değişmemiş metin aynı nesne olduğu için anında eşit çıkar, değişen metin ise bayt bayt farkı yakalar.
+function _serSig(o){
+  const b=[];
+  const j=JSON.stringify(o,(k,v)=>{
+    if(typeof v==='string'&&v.length>4096){ b.push(v); return '\u0000'+(b.length-1); }
+    return v;
+  });
+  return {j,b};
 }
+function _sameSig(x,y){
+  if(!x||!y||x.j!==y.j||x.b.length!==y.b.length) return false;
+  for(let i=0;i<x.b.length;i++) if(x.b[i]!==y.b[i]) return false;
+  return true;
+}
+function _resetSigs(){ _savedSig.clear(); series.forEach(x=>{ try{ _savedSig.set(x.id,_serSig(x)); }catch(e){} }); }
+async function _doSave(){
+  const d=await openDB();
+  const cur=new Map(), puts=[];
+  for(const x of series){ const sig=_serSig(x); cur.set(x.id,sig); if(!_sameSig(_savedSig.get(x.id),sig)) puts.push(x); }
+  const dels=[]; for(const id of _savedSig.keys()) if(!cur.has(id)) dels.push(id);
+  if(!puts.length&&!dels.length) return;
+  await new Promise((res,rej)=>{
+    const tx=d.transaction(STORE,'readwrite'); const st=tx.objectStore(STORE);
+    puts.forEach(x=>st.put(x)); dels.forEach(id=>st.delete(id));
+    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('Kayıt iptal edildi'));
+  });
+  for(const x of puts) _savedSig.set(x.id,cur.get(x.id));
+  for(const id of dels) _savedSig.delete(id);
+}
+let _saveTail=Promise.resolve(), _savePending=null;
+function save(){
+  if(_savePending) return _savePending; // henüz başlamamış bir kayıt varsa onunla birleş
+  const p=_saveTail.catch(()=>{}).then(()=>{ _savePending=null; return _doSave(); }).catch(err=>{
+    console.error('[Megami] Kayıt hatası:',err);
+    try{ showToast('warn','Kaydedilemedi! Depolama alanı dolu olabilir.'); }catch(e){}
+    throw err;
+  });
+  _savePending=p; _saveTail=p;
+  return p;
+}
+function _requestPersist(){ try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){} }
 // ===== Sınırsız aktivite arşivi — eskiden localStorage'da seri başına son 20 kayıtla
 // sınırlıydı (mv_log_<id>). Artık IndexedDB'de, sınır olmadan, tüm geçmiş boyunca saklanıyor.
 // Sayfa render'ları senkron kalabilsin diye tüm kayıtlar açılışta belleğe (activityLog) yükleniyor. =====
 let activityLog=[];
+let _logIdx=new Map();
+function _rebuildLogIdx(){ _logIdx=new Map(); for(const l of activityLog){ let a=_logIdx.get(l.seriesId); if(!a)_logIdx.set(l.seriesId,a=[]); a.push(l); } }
 async function loadActivityLog(){
   const d=await openDB();
   const tx=d.transaction(LOG_STORE,'readonly');
   const req=tx.objectStore(LOG_STORE).getAll();
   await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
-  activityLog=req.result||[];
+  activityLog=req.result||[]; _rebuildLogIdx();
   // Eski localStorage tabanlı (20 kayıtla sınırlı) günlükleri bir kereye mahsus yeni,
   // sınırsız arşive taşı — sonra eski anahtarları temizle.
   let migratedAny=false;
@@ -209,12 +293,13 @@ async function loadActivityLog(){
     const tx2=d.transaction(LOG_STORE,'readonly');
     const req2=tx2.objectStore(LOG_STORE).getAll();
     await new Promise((res,rej)=>{req2.onsuccess=res;req2.onerror=rej;});
-    activityLog=req2.result||[];
+    activityLog=req2.result||[]; _rebuildLogIdx();
   }
 }
 async function addLog(seriesId,text,ts){
   const entry={seriesId,text,ts:ts||Date.now()};
   activityLog.push(entry);
+  { let a=_logIdx.get(seriesId); if(!a)_logIdx.set(seriesId,a=[]); a.push(entry); }
   try{
     const d=await openDB();
     const tx=d.transaction(LOG_STORE,'readwrite');
@@ -223,7 +308,18 @@ async function addLog(seriesId,text,ts){
   }catch(e){ console.error('[Megami] Aktivite kaydı yazılamadı:',e); }
 }
 function getSeriesLog(seriesId){
-  return activityLog.filter(l=>l.seriesId===seriesId).sort((a,b)=>b.ts-a.ts);
+  const a=_logIdx.get(seriesId);
+  return a?[...a].sort((x,y)=>y.ts-x.ts):[];
+}
+async function replaceActivityLog(entries){
+  const clean=entries.map(e=>({seriesId:e.seriesId,text:e.text,ts:e.ts}));
+  const d=await openDB();
+  await new Promise((res,rej)=>{
+    const tx=d.transaction(LOG_STORE,'readwrite'); const st=tx.objectStore(LOG_STORE);
+    st.clear(); clean.forEach(e=>st.add(e));
+    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('Günlük yazılamadı'));
+  });
+  activityLog=clean; _rebuildLogIdx();
 }
 async function load(){
   try{
@@ -233,6 +329,7 @@ async function load(){
     const req=st.getAll();
     await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
     series=req.result||[];
+    _resetSigs(); _requestPersist();
     const old=localStorage.getItem(SK);
     if(old&&series.length===0){
       try{
@@ -644,7 +741,7 @@ function openGenreFilter(){
     wrap.innerHTML=`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye tür eklenmemiş. Bir seriyi düzenleyip tür ekleyebilirsin.</p>`;
   } else {
     wrap.innerHTML=`<div class="genre-filter-grid">${used.map(g=>
-      `<div class="genre-chip ${currentGenre===g?'active':''}" onclick="setGenreFilter('${esc(g).replace(/'/g,"\\'")}')">${esc(g)}</div>`
+      `<div class="genre-chip ${currentGenre===g?'active':''}" onclick="setGenreFilter(${jsArg(g)})">${esc(g)}</div>`
     ).join('')}</div>`;
   }
   document.getElementById('genreFilterOverlay').classList.remove('hidden');
@@ -768,13 +865,13 @@ function syncCatTabsActions(){
 // bölüm gelen seriler, sezon arasından dönenler, ve güncel olmayıp okumaya devam ettiğin
 // seriler için "kaldığın yer" hatırlatması. =====
 function getTodaysNewChapters(){
-  const todayStr=new Date().toDateString();
-  const sorted=[...activityLog].sort((a,b)=>b.ts-a.ts);
+  const start=new Date(); start.setHours(0,0,0,0);
+  const end=new Date(start); end.setDate(end.getDate()+1);
+  const t0=start.getTime(), t1=end.getTime();
+  const today=activityLog.filter(l=>l.ts>=t0&&l.ts<t1&&l.text&&l.text.startsWith('TR bölüm ')).sort((a,b)=>b.ts-a.ts);
   const seen=new Set();
   const results=[];
-  sorted.forEach(l=>{
-    if(!l.text||!l.text.startsWith('TR bölüm ')) return;
-    if(new Date(l.ts).toDateString()!==todayStr) return;
+  today.forEach(l=>{
     if(seen.has(l.seriesId)) return;
     const s=series.find(x=>x.id===l.seriesId);
     if(!s) return;
@@ -847,7 +944,7 @@ function openNotificationsSheet(){
   const returned=getReturnedFromHiatus();
   const reading=getUnfinishedReading();
   const notifItem=(s,showCh)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
+    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
     return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
@@ -861,7 +958,7 @@ function openWeeklyForecast(){
   if(!body)return;
   const days=getWeeklyForecast();
   const forecastRow=(s,isReturn)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" class="forecast-cov">`:`<div class="forecast-cov">${ic('img',12)}</div>`;
+    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="forecast-cov">`:`<div class="forecast-cov">${ic('img',12)}</div>`;
     return `<div class="forecast-row" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span class="forecast-name">${esc(s.name)}</span>${isReturn?`<span class="forecast-badge green">Dönüş</span>`:`<span class="forecast-badge">+${s.autoIncrAmt||1}</span>`}</div>`;
   };
   body.innerHTML=days.map((day,i)=>{
@@ -886,7 +983,7 @@ function buildDailyDigestHTML(){
   const reading=getUnfinishedReading();
   if(!newCh.length&&!returned.length&&!reading.length) return '';
   const digestItem=(s,showCh)=>{
-    const cov=s.cover?`<img src="${esc(s.cover)}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
+    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
     return `<div class="digest-item" onclick="openPreview('${s.id}',event)">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
   };
   let sections='';
@@ -992,7 +1089,7 @@ function renderHome(){
 function heroSpotlight(items){
   const slides=items.map(s=>{
     const bg=s.cover
-      ?`<img class="hero-bg" src="${esc(s.cover)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="hero-bg-ph" style="display:none"></div>`
+      ?`<img class="hero-bg" decoding="async" src="${esc(coverSrc(s.cover))}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="hero-bg-ph" style="display:none"></div>`
       :`<div class="hero-bg-ph"></div>`;
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -1007,7 +1104,7 @@ function heroSpotlight(items){
         ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}${pct>0?` · %${pct}`:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
         <div class="hero-actions">
-          <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
+          <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`openExternal(${jsArg(s.readUrl)})`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
           <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.1"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9.3,11.5 L12,11.5 L12,17.5" stroke-width="1.6"/></svg></div>
         </div>
       </div>
@@ -1095,7 +1192,7 @@ function cardMeta(s){
 function carouselCard(s,i,canReorder){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    ?`<img class="card-cover" decoding="async" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
   const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
   const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
@@ -1117,7 +1214,7 @@ function carouselCard(s,i,canReorder){
 function flatCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" src="${esc(s.cover)}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    ?`<img class="card-cover" decoding="async" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
   const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
   const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
@@ -1149,7 +1246,7 @@ function openPreview(id,ev){
   window._previewId=id;
   const cat=CATS[s.category]||{};
   const pct=s.chapterTotal>0?Math.min(100,Math.round((s.chapterTR/s.chapterTotal)*100)):0;
-  const cov=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
+  const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
   document.getElementById('previewBody').innerHTML=`
     <div class="preview-close" onclick="closeSheet('previewOverlay')">${ic('close',13)}</div>
     <div class="preview-cover-row">
@@ -1168,7 +1265,7 @@ function openPreview(id,ev){
     ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct} güncel</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
     <div class="preview-row1">
       <div class="preview-icon-btn ${s.favorited?'active':''}" onclick="toggleFav('${id}');openPreview('${id}');event.stopPropagation();">${s.favorited?ic('heartFill',17):ic('heart',17)}</div>
-      <div class="preview-read-btn" onclick="${s.readUrl?`window.open('${esc(s.readUrl)}','_blank')`:`openQuick('${id}')`};event.stopPropagation();">${ic('bolt',14)} Oku</div>
+      <div class="preview-read-btn" onclick="${s.readUrl?`openExternal(${jsArg(s.readUrl)})`:`openQuick('${id}')`};event.stopPropagation();">${ic('bolt',14)} Oku</div>
       <div class="preview-icon-btn ${s.pinned?'pinned':''}" onclick="togglePin('${id}');openPreview('${id}');event.stopPropagation();">${s.pinned?ic('pinFill',17):ic('pin',17)}</div>
     </div>
     <div class="preview-chapter-edit" onclick="event.stopPropagation()">
@@ -1300,8 +1397,8 @@ function getSeriesDetailSections(s){
         const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
         const inner=`<div class="detail-fansub-logo" style="position:relative;">${logoImg}<span style="display:${meta.logo?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;">${esc(initials)}</span></div>
           <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">Bu seride takip ettiğin grup</div></div>`;
-        return meta.url
-          ?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="detail-fansub-row" style="margin-bottom:8px;text-decoration:none;">${inner}</a>`
+        return safeUrl(meta.url)
+          ?`<a href="${esc(safeUrl(meta.url))}" target="_blank" rel="noopener" class="detail-fansub-row" style="margin-bottom:8px;text-decoration:none;">${inner}</a>`
           :`<div class="detail-fansub-row" style="margin-bottom:8px;">${inner}</div>`;
       }).join('')}
       ${fans.length>FANSUB_LIMIT?`<div class="more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;font-size:11px;color:var(--purple3);">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
@@ -1329,7 +1426,7 @@ function getSeriesDetailSections(s){
     const maxBranches=Math.max(0,...nodeBranches.map(b=>b.length));
     const padTop=42+Math.max(0,maxBranches-1)*BR_H;
     const trunkY=padTop+TRUNK_Y_IN_ROW;
-    const cov=ls=>ls.cover?`<img src="${esc(ls.cover)}" class="detail-htree-cover-img">`:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+    const cov=ls=>ls.cover?`<img src="${esc(coverSrc(ls.cover))}" class="detail-htree-cover-img">`:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
     const branchesH=chain.map((node,i)=>nodeBranches[i].map((b,bi)=>{
       const cx=i*STEP+20;
       const top=trunkY-BR_H*(bi+1);
@@ -1354,7 +1451,7 @@ function getSeriesDetailSections(s){
   }
   const oldC=s.oldCovers||[];
   const oldCH=oldC.length?`<div><div class="detail-sec-title">${ic('img',10)} Eski Kapaklar</div><div class="old-covers-row" id="oldCRow-${id}">
-      ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('')}
+      ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('')}
       ${oldC.length>4?`<div class="old-cover-more" onclick="expandOldCovers('${id}')" style="flex-shrink:0;width:60px;height:84px;border-radius:7px;border:1px dashed var(--line2);background:var(--black3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;">+${oldC.length-4}</div>`:''}
     </div></div>`:'';
   const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Yorumun</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
@@ -1378,9 +1475,9 @@ function openDetail(id,skipHistory){
   currentPage='detail';
   currentDetailId=id;
   const cat=CATS[s.category]||CATS.reading;
-  const bgS=s.cover?`background-image:url('${esc(s.cover)}')`:'background:var(--black4)';
+  const bgS=s.cover?`background-image:url('${esc(cssUrl(coverSrc(s.cover)))}')`:'background:var(--black4)';
   const coverImg=s.cover
-    ?`<img class="detail-cover-img" src="${esc(s.cover)}" onerror="this.style.display='none'" onclick="openLightbox('${esc(s.cover)}')">`
+    ?`<img class="detail-cover-img" src="${esc(coverSrc(s.cover))}" onerror="this.style.display='none'" onclick="openLightbox(${jsArg(coverSrc(s.cover))})">`
     :``;
   const {chTR,total,pct,altH,fanH,genreH,linksH,oldCH,noteH,opinionH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
   const el=document.getElementById('mainContent');
@@ -1472,14 +1569,14 @@ function expandTags(wrapId, seriesId, type){
       const meta=getFansubMeta(f);
       const logo=meta.logo?`<img src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
       const inner=`${logo}<span class="fansub-card-name">${esc(f)}</span>`;
-      return meta.url?`<a href="${esc(meta.url)}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`:`<div class="fansub-card">${inner}</div>`;
+      return safeUrl(meta.url)?`<a href="${esc(safeUrl(meta.url))}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`:`<div class="fansub-card">${inner}</div>`;
     }).join('');
   }
 }
 function expandOldCovers(id){
   const s=series.find(x=>x.id===id); if(!s) return;
   const row=document.getElementById('oldCRow-'+id); if(!row) return;
-  row.innerHTML=(s.oldCovers||[]).map(c=>`<img class="old-cover-thumb" src="${esc(c)}" loading="lazy" onclick="openLightbox('${esc(c)}')" style="cursor:zoom-in;">`).join('');
+  row.innerHTML=(s.oldCovers||[]).map(c=>`<img class="old-cover-thumb" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('');
 }
 function expandLog(id){
   const log=getSeriesLog(id);
@@ -1865,11 +1962,11 @@ function renderGenreUI(){
   const customWrap=document.getElementById('customGenreTagsWrap');
   if(!presetWrap||!customWrap)return; // sayfa henüz bu elemanları içermiyorsa (eski önbellek) sessizce çık
   presetWrap.innerHTML=GENRES_PRESET.map(g=>
-    `<div class="genre-chip ${genres.includes(g)?'active':''}" onclick="toggleGenrePreset('${esc(g).replace(/'/g,"\\'")}')">${esc(g)}</div>`
+    `<div class="genre-chip ${genres.includes(g)?'active':''}" onclick="toggleGenrePreset(${jsArg(g)})">${esc(g)}</div>`
   ).join('');
   const customGenres=genres.filter(g=>!GENRES_PRESET.includes(g));
   customWrap.innerHTML=customGenres.map(g=>
-    `<span class="alt-tag">${esc(g)}<button onclick="removeGenre('${esc(g).replace(/'/g,"\\'")}')">&#x2715;</button></span>`
+    `<span class="alt-tag">${esc(g)}<button onclick="removeGenre(${jsArg(g)})">&#x2715;</button></span>`
   ).join('');
 }
 function openFansubMetaEditor(i){
@@ -1942,7 +2039,7 @@ function renderFansubListPage(){
     const meta=getFansubMeta(name);
     const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
     const logo=meta.logo?`<img src="${esc(meta.logo)}" onerror="this.style.display='none'">`:esc(initials);
-    return `<div class="fteam-row" onclick="openFansubMetaEditorByName('${esc(name).replace(/'/g,"\\'")}')">
+    return `<div class="fteam-row" onclick="openFansubMetaEditorByName(${jsArg(name)})">
       <div class="fteam-logo-wrap">
         <div class="fteam-logo">${logo}</div>
         <div class="fteam-upload-badge">${ic('edit',9)}</div>
@@ -1999,7 +2096,7 @@ function searchLinkableSeries(){
   const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&s.name.toLowerCase().includes(q)).slice(0,6);
   if(!matches.length){ dd.classList.add('hidden'); dd.innerHTML='<div class="autocomplete-item" style="opacity:.6;cursor:default;">Eşleşme yok</div>'; dd.classList.remove('hidden'); return; }
   const thumb=s=>{
-    const img=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+    const img=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
     return `<div style="position:relative;width:30px;height:42px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--black3);">${img}${coverLetterPh(s,!!s.cover)}</div>`;
   };
   dd.innerHTML=matches.map(s=>`
@@ -2045,7 +2142,7 @@ function renderLinkChips(){
     const rel=RELATION_TYPES[l.relation];
     const tagLabel=isMain?'ANA SERİ':(rel?rel.label.toUpperCase():'YAN SERİ');
     const tagColor=isMain?'var(--purple3)':(rel?rel.color:'#34d399');
-    const thumbImg=s.cover?`<img src="${esc(s.cover)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+    const thumbImg=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
     const thumb=`<div style="position:relative;width:22px;height:30px;border-radius:5px;overflow:hidden;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px;background:var(--black3);">${thumbImg}${coverLetterPh(s,!!s.cover)}</div>`;
     const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':`border-color:${tagColor}66;color:${tagColor};`}display:inline-flex;align-items:center;">${thumb}${esc(s.name)} <b style="font-size:8.5px;opacity:.85;font-weight:700;">${tagLabel}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
     const descBox=`<textarea class="form-textarea" placeholder="${isMain?'Bu seri hakkında kısa bir not… (opsiyonel)':'Bu bağlantı hakkında kısa bir not… (ör. Yuno karakterine odaklanan yan seri)'}" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:36px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`;
@@ -2258,7 +2355,7 @@ function renderFansubSuggestions(){
   const known=getAllKnownFansubs().filter(f=>!fansubList.some(existing=>existing.toLowerCase()===f.toLowerCase()));
   const matches=q?known.filter(f=>f.toLowerCase().includes(q)):known;
   if(matches.length===0){hideFansubSuggestions();return;}
-  wrap.innerHTML=matches.slice(0,8).map(f=>`<div class="autocomplete-item" onclick="addFansub('${esc(f).replace(/'/g,"\\'")}')">${ic('bolt',11)} ${esc(f)}</div>`).join('');
+  wrap.innerHTML=matches.slice(0,8).map(f=>`<div class="autocomplete-item" onclick="addFansub(${jsArg(f)})">${ic('bolt',11)} ${esc(f)}</div>`).join('');
   wrap.classList.remove('hidden');
 }
 function hideFansubSuggestions(){
@@ -2419,8 +2516,9 @@ if('serviceWorker' in navigator){
     }).catch(err=>console.warn('[Megami] Service worker kaydı başarısız:',err));
     // Kontrolcü değiştiğinde (yeni SW devraldığında) de güvenlik amaçlı yenile
     let _swRefreshed=false;
+    const _hadSwController=!!navigator.serviceWorker.controller; // ilk kurulumda (kontrolcü yokken) gereksiz yenileme yapma
     navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(_swRefreshed)return;
+      if(_swRefreshed||!_hadSwController)return;
       _swRefreshed=true;
       location.reload();
     });
@@ -2651,14 +2749,123 @@ function lbInitEvents(){
     }
   });
 }
+// ===== Yedekleme =====
+// v3: seriler + aktivite günlüğü + çeviri ekibi logo/linkleri + profil/tema gibi ayarlar. (v2 ve düz dizi yedekleri de açılır.)
+const BACKUP_SETTING_KEYS=['megami_fansub_meta','megami_profile','mv_streak','megami_tab_usage','megami_theme','megami_sort'];
+function collectBackupSettings(){
+  const o={};
+  BACKUP_SETTING_KEYS.forEach(k=>{ try{ const v=localStorage.getItem(k); if(v!=null) o[k]=v; }catch(e){} });
+  return o;
+}
+function _cleanImgUrl(v){
+  if(typeof v!=='string') return '';
+  const t=v.trim();
+  if(/^https?:\/\//i.test(t)||t.startsWith('data:image/')) return t;
+  return '';
+}
+function _cleanChapter(v){ return (v==null?'':String(v)).replace(/[<>"'`&\\]/g,'').slice(0,32); }
+function _strList(a,maxItems,maxLen){ return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,maxItems||100).map(x=>x.slice(0,maxLen||200)):[]; }
+function sanitizeFansubMeta(obj){
+  const out={};
+  if(!obj||typeof obj!=='object'||Array.isArray(obj)) return out;
+  Object.keys(obj).slice(0,2000).forEach(name=>{
+    const m=obj[name]; if(!m||typeof m!=='object') return;
+    const logo=_cleanImgUrl(m.logo), url=safeUrl(m.url);
+    if(logo||url) out[String(name).slice(0,200)]={logo,url};
+  });
+  return out;
+}
+// İçe aktarılan (güvenilmeyen) bir seri kaydını tiplerine ve güvenli değer aralıklarına zorlar.
+function sanitizeSeriesRecord(item){
+  const out={};
+  for(const k of Object.keys(item)){
+    const v=item[k];
+    if((typeof v==='number'&&isFinite(v))||typeof v==='boolean') out[k]=v;
+    else if(typeof v==='string') out[k]=v.slice(0,5000);
+  }
+  const str=(v,n)=>(typeof v==='string'?v:'').slice(0,n);
+  out.name=str(item.name,300).trim();
+  out.originalName=str(item.originalName,300);
+  out.note=str(item.note,20000);
+  out.opinion=str(item.opinion,20000);
+  out.cover=_cleanImgUrl(item.cover);
+  out.oldCovers=(Array.isArray(item.oldCovers)?item.oldCovers:[]).map(_cleanImgUrl).filter(Boolean).slice(0,20);
+  out.readUrl=safeUrl(item.readUrl)?str(item.readUrl,2000).trim():'';
+  out.releaseDay=str(item.releaseDay,100);
+  out.releaseDayNote=str(item.releaseDayNote,200);
+  out.returnDate=/^\d{4}-\d{2}-\d{2}$/.test(str(item.returnDate,20))?item.returnDate:'';
+  out.category=(typeof item.category==='string'&&item.category!=='all'&&Object.prototype.hasOwnProperty.call(CATS,item.category))?item.category:'reading';
+  out.chapterTR=_cleanChapter(item.chapterTR);
+  out.chapterEN=_cleanChapter(item.chapterEN);
+  out.chapterTotal=_cleanChapter(item.chapterTotal);
+  out.altNames=_strList(item.altNames); out.fansubList=_strList(item.fansubList); out.genres=_strList(item.genres,50,60);
+  const num=(v,def,lo,hi)=>{ v=Number(v); if(!isFinite(v)) return def; return Math.min(hi,Math.max(lo,v)); };
+  out.rating=Math.round(num(item.rating,0,0,5));
+  out.mainOrder=Math.round(num(item.mainOrder,0,0,100000));
+  out.updatedAt=num(item.updatedAt,Date.now(),0,8.64e15);
+  out.autoIncrAmt=num(item.autoIncrAmt,0,0,100000);
+  out.autoIncrDay=Math.round(num(item.autoIncrDay,1,0,31));
+  out.autoIncrDate=Math.round(num(item.autoIncrDate,1,1,31));
+  out.autoIncrNext=(item.autoIncrNext==null||!isFinite(Number(item.autoIncrNext)))?null:Number(item.autoIncrNext);
+  out.autoIncrFreq=['daily','weekly','monthly','irregular','completed'].includes(item.autoIncrFreq)?item.autoIncrFreq:'';
+  out.autoIncrSkips=Array.isArray(item.autoIncrSkips)?item.autoIncrSkips.filter(x=>typeof x==='number'||typeof x==='string').slice(0,500).map(x=>typeof x==='string'?x.slice(0,40):x):[];
+  out.favorited=!!item.favorited; out.pinned=!!item.pinned; if('newChapter' in item) out.newChapter=!!item.newChapter;
+  out.links=(Array.isArray(item.links)?item.links:[]).filter(l=>l&&typeof l==='object'&&(l.type==='main'||l.type==='side')&&l.id!=null).slice(0,200).map(l=>({
+    id:String(l.id), type:l.type, desc:str(l.desc,500),
+    relation:Object.prototype.hasOwnProperty.call(RELATION_TYPES,l.relation)?l.relation:''
+  }));
+  return out;
+}
+function sanitizeLogEntries(arr){
+  const out=[];
+  for(const e of arr){
+    if(!e||typeof e!=='object') continue;
+    const ts=Number(e.ts);
+    if(e.seriesId==null||typeof e.text!=='string'||!isFinite(ts)) continue;
+    out.push({seriesId:String(e.seriesId),text:e.text.slice(0,500),ts});
+    if(out.length>=500000) break;
+  }
+  return out;
+}
+// Ayarları geri yükler. replace=true ise yedekte olmayan anahtarlar silinir (Geri Al için).
+function applyBackupSettings(st,replace){
+  if(!st||typeof st!=='object') return;
+  for(const k of BACKUP_SETTING_KEYS){
+    try{
+      let v=st[k];
+      if(typeof v!=='string'||v.length>6e6){ if(replace&&!(k in st)) localStorage.removeItem(k); continue; }
+      if(k==='megami_theme'){ if(v!=='light'&&v!=='dark') continue; }
+      else if(k==='megami_sort'){ if(!['default','name_az','rating','updated','chapters'].includes(v)) continue; }
+      else{
+        let p=JSON.parse(v);
+        if(!p||typeof p!=='object'||Array.isArray(p)) continue;
+        if(k==='megami_fansub_meta') p=sanitizeFansubMeta(p);
+        else if(k==='megami_profile') p={avatar:(typeof p.avatar==='string'?p.avatar:'').slice(0,2000000),name:(typeof p.name==='string'?p.name:'').slice(0,60),bio:(typeof p.bio==='string'?p.bio:'').slice(0,500)};
+        else{ const q={}; Object.keys(p).slice(0,500).forEach(x=>{ const y=p[x]; if(typeof y==='number'||typeof y==='boolean'||(typeof y==='string'&&y.length<100)) q[x]=y; }); p=q; }
+        v=JSON.stringify(p);
+      }
+      localStorage.setItem(k,v);
+    }catch(e){}
+  }
+  if(replace) BACKUP_SETTING_KEYS.forEach(k=>{ if(!(k in st)) try{ localStorage.removeItem(k); }catch(e){} });
+  try{ fansubMeta=JSON.parse(localStorage.getItem('megami_fansub_meta')||'{}'); }catch(e){ fansubMeta={}; }
+  try{ applyTheme(getTheme()); updateThemeToggleIcon(); }catch(e){}
+  try{ currentSort=localStorage.getItem('megami_sort')||'default'; }catch(e){}
+  try{ updateProfileAvatarBtn(); }catch(e){}
+}
 async function exportBackup(){
-  const data={ version:2, exportedAt:new Date().toISOString(), series };
+  const data={
+    version:3, exportedAt:new Date().toISOString(), series,
+    activityLog:activityLog.map(l=>({seriesId:l.seriesId,text:l.text,ts:l.ts})),
+    settings:collectBackupSettings()
+  };
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   const date=new Date().toISOString().slice(0,10);
-  a.href=url; a.download=`mangavault-yedek-${date}.json`;
-  a.click(); URL.revokeObjectURL(url);
+  a.href=url; a.download=`megami-yedek-${date}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000); // hemen iptal etmek iOS Safari'de indirmeyi yarıda kesebiliyordu
   localStorage.setItem('megami_last_backup',JSON.stringify({ts:Date.now(),count:series.length,size:blob.size}));
   updateBackupInfo();
   showToast('check','Yedek dosyası indiriliyor…');
@@ -2666,7 +2873,7 @@ async function exportBackup(){
 // ===== Yedekleme bilgi paneli — son ne zaman yedek aldığını, kaç seri olduğunu ve tahmini
 // boyutunu gösterir. 14 günden uzun süredir yedek alınmadıysa uyarı rengine döner. =====
 function estimateBackupSize(){
-  try{ return new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),series})]).size; }
+  try{ return new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),series,activityLog,settings:collectBackupSettings()})]).size; }
   catch(e){ return 0; }
 }
 function formatBytes(bytes){
@@ -2696,17 +2903,27 @@ function updateBackupInfo(){
     </div>`;
 }
 function validateSeriesShape(arr){
-  // Her elemanın gerçek bir "seri" objesi olduğunu doğrular.
-  // id ve name zorunlu; diğer alanlar eksikse makul varsayılanlarla tamamlanır.
-  const cleaned=[];
-  let skipped=0;
+  // Her elemanın gerçek bir "seri" objesi olduğunu doğrular ve alanları güvenli tiplere zorlar.
+  // id ve name zorunlu. Güvensiz/yinelenen id'ler yeniden üretilir, bağlantılar (links) buna göre güncellenir.
+  const cleaned=[]; let skipped=0;
+  const used=new Set(), idMap=new Map(); let n=0; const base=Date.now();
+  const freshId=()=>{ let id; do{ id=String(base+(n++)); }while(used.has(id)); return id; };
   for(const item of arr){
-    if(!item||typeof item!=='object'){skipped++;continue;}
-    const id=item.id;
+    if(!item||typeof item!=='object'||Array.isArray(item)){skipped++;continue;}
     const name=typeof item.name==='string'?item.name.trim():'';
-    if(!id||!name){skipped++;continue;}
-    cleaned.push(item);
+    if(item.id==null||item.id===''||!name){skipped++;continue;}
+    const rec=sanitizeSeriesRecord(item);
+    const oldId=String(item.id);
+    let id=oldId;
+    if(!/^[\w.-]{1,80}$/.test(id)||used.has(id)) id=freshId();
+    used.add(id);
+    if(!idMap.has(oldId)) idMap.set(oldId,id);
+    rec.id=id;
+    cleaned.push(rec);
   }
+  cleaned.forEach(r=>{
+    r.links=r.links.map(l=>({...l,id:idMap.has(l.id)?idMap.get(l.id):l.id})).filter(l=>/^[\w.-]{1,80}$/.test(l.id));
+  });
   return {cleaned,skipped};
 }
 let _lastBackupBeforeImport=null;
@@ -2726,7 +2943,7 @@ async function importBackup(e){
   // ---- Bir arkadaştan gelen tekil seri paylaşımı — EKLEMELİ, mevcut kütüphaneye
   // dokunmadan sadece yeni bir seri ekliyor. Tam yedekten (aşağıdaki) farklı olarak yıkıcı değil. ----
   if(data&&data.type==='megami-series-share'&&data.series&&typeof data.series==='object'&&!Array.isArray(data.series)){
-    const incoming=data.series;
+    const incoming=sanitizeSeriesRecord(data.series);
     const name=typeof incoming.name==='string'?incoming.name.trim():'';
     if(!name){ showToast('warn','Geçersiz seri dosyası!'); inputEl.value=''; return; }
     showConfirm(`"${name}" serisini kütüphanene eklemek ister misin? (Kişisel not/puan gibi bilgiler dahil değildir.)`,async()=>{
@@ -2760,7 +2977,9 @@ async function importBackup(e){
       // kayıtlı olmayan ekipler için bu bilgiyi de al (var olanların üzerine yazma).
       if(data.fansubMetaSnapshot&&typeof data.fansubMetaSnapshot==='object'){
         Object.entries(data.fansubMetaSnapshot).forEach(([fname,meta])=>{
-          if(!fansubMeta[fname]&&meta&&(meta.logo||meta.url)) fansubMeta[fname]={logo:meta.logo||'',url:meta.url||''};
+          if(!meta||typeof meta!=='object'||fname.length>200) return;
+          const lg=_cleanImgUrl(meta.logo), ul=safeUrl(meta.url);
+          if(!fansubMeta[fname]&&(lg||ul)) fansubMeta[fname]={logo:lg,url:ul};
         });
         saveFansubMeta();
       }
@@ -2774,20 +2993,34 @@ async function importBackup(e){
   }
 
   // ---- Tam yedek — mevcut kütüphanenin tamamının üzerine yazar (yıkıcı, geri alınabilir) ----
-  const imported=data.series||data;
+  const isArr=Array.isArray(data);
+  const imported=isArr?data:(data&&data.series);
   if(!Array.isArray(imported)){ showToast('warn','Geçersiz yedek dosyası!'); inputEl.value=''; return; }
+  const importedLog=(!isArr&&Array.isArray(data.activityLog))?data.activityLog:null;
+  const importedSettings=(!isArr&&data.settings&&typeof data.settings==='object')?data.settings:null;
   showConfirm('Mevcut verilerinin üzerine yazılacak. Emin misin?',async()=>{
     const {cleaned,skipped}=validateSeriesShape(imported);
     if(cleaned.length===0){ showToast('warn','Dosyada geçerli seri bulunamadı'); return; }
-    // Geri alınabilmesi için mevcut veriyi bellekte sakla (sayfa açıkken geçerli)
-    _lastBackupBeforeImport=JSON.parse(JSON.stringify(series));
+    // Geri alınabilmesi için mevcut durumu bellekte sakla. series dizisi aşağıda yenisiyle değiştirildiği
+    // için eski dizi/objeler olduğu gibi kalır; derin kopyaya gerek yok.
+    const snapshot={series,log:activityLog,settings:collectBackupSettings(),logReplaced:!!importedLog,settingsReplaced:!!importedSettings};
     series=cleaned;
-    await save();
+    try{
+      await save();
+      if(importedLog) await replaceActivityLog(sanitizeLogEntries(importedLog));
+      if(importedSettings) applyBackupSettings(importedSettings,false);
+    }catch(err){
+      series=snapshot.series;
+      showToast('warn','İçe aktarma başarısız oldu, verilerin değişmedi.');
+      try{ await save(); }catch(e){}
+      return;
+    }
+    _lastBackupBeforeImport=snapshot;
     if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
     renderTabs(); renderContent();
     closeSheet('backupOverlay');
     const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
-    if(_lastBackupBeforeImport&&_lastBackupBeforeImport.length>0){
+    if(snapshot.series&&snapshot.series.length>0){
       showUndoBanner(`${series.length} seri geri yüklendi!${skipMsg}`,undoImport);
     } else {
       showToast('check',`${series.length} seri geri yüklendi!${skipMsg}`);
@@ -2796,10 +3029,14 @@ async function importBackup(e){
   inputEl.value='';
 }
 async function undoImport(){
-  if(!_lastBackupBeforeImport)return;
-  series=_lastBackupBeforeImport;
+  const snap=_lastBackupBeforeImport; if(!snap)return;
   _lastBackupBeforeImport=null;
-  await save();
+  series=snap.series;
+  try{
+    await save();
+    if(snap.logReplaced) await replaceActivityLog(snap.log);
+    if(snap.settingsReplaced) applyBackupSettings(snap.settings,true);
+  }catch(e){ showToast('warn','Geri alma sırasında bir sorun oluştu.'); return; }
   if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
   renderTabs(); renderContent();
   showToast('check','Önceki verilerine geri dönüldü.');
