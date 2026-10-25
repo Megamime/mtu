@@ -102,8 +102,11 @@ for(var i=0;i<24;i++){
   pagesEl.appendChild(p);
 }
 
-var DURATION = 2500;
-var REDIRECT_DELAY = 2600;
+// Uygulama yakın zamanda (30 dk) açıldıysa kısa, değilse normal açılış animasyonu.
+var lastOpen=0;try{lastOpen=+localStorage.getItem('megami_last_open')||0;}catch(e){}
+var warm=(Date.now()-lastOpen)<30*60*1000;
+var DURATION = warm ? 600 : 1600;
+var REDIRECT_DELAY = warm ? 700 : 1700;
 
 var pctEl=document.getElementById('pct'),pct=0,start=performance.now();
 function tick(now){

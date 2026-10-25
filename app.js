@@ -193,9 +193,11 @@ function ic(n,s=13){
 const SK='mangavault_v3';
 const DB_NAME='MegamiDB', DB_VER=2, STORE='series', LOG_STORE='activityLog';
 let db=null;
+let _dbPromise=null;
 function openDB(){
-  return new Promise((resolve,reject)=>{
-    if(db){resolve(db);return;}
+  if(db) return Promise.resolve(db);
+  if(_dbPromise) return _dbPromise; // aynı anda gelen çağrılar tek bağlantıyı paylaşsın
+  _dbPromise=new Promise((resolve,reject)=>{
     const req=indexedDB.open(DB_NAME,DB_VER);
     req.onupgradeneeded=e=>{
       const d=e.target.result;
@@ -207,17 +209,54 @@ function openDB(){
       }
     };
     req.onsuccess=e=>{db=e.target.result;resolve(db);};
-    req.onerror=e=>{console.error('IndexedDB error',e);reject(e);};
+    req.onerror=e=>{console.error('IndexedDB error',e);_dbPromise=null;reject(e);};
   });
+  return _dbPromise;
 }
 // ===== Kayıt katmanı — artımlı (diff'li) kayıt =====
 // Eskiden her save() tüm depoyu silip bütün serileri (kapak base64'leriyle) baştan yazıyordu: seri sayısı
 // arttıkça yavaşlıyor ve yazma sırasında uygulama kapanırsa veri kaybı riski doğuyordu. Artık yalnızca
 // değişen serileri yazıyor, silinenleri siliyoruz; tek bir transaction ile atomik.
+// ----- Kapak deposu -----
+// Kapaklar (base64) seri kayıtlarından ayrı bir veritabanında ("MegamiCovers") tutulur. Böylece açılışta
+// yalnızca küçük seri kayıtları okunur, liste hemen çizilir; kapaklar arkadan yüklenip yerine konur.
+// Ayrı veritabanı olduğu için "MegamiDB" şeması değişmedi: eski sürüme dönülse bile uygulama açılır
+// (yalnızca kapaklar görünmez, silinmez).
+const COV_DB_NAME='MegamiCovers', COV_STORE='covers';
+let covDb=null, _covDbPromise=null, _covUsable=true;
+function openCovDB(){
+  if(covDb) return Promise.resolve(covDb);
+  if(_covDbPromise) return _covDbPromise;
+  _covDbPromise=new Promise((resolve,reject)=>{
+    let req;
+    try{ req=indexedDB.open(COV_DB_NAME,1); }catch(e){ _covDbPromise=null; reject(e); return; }
+    req.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains(COV_STORE)) d.createObjectStore(COV_STORE,{keyPath:'id'}); };
+    req.onsuccess=e=>{ covDb=e.target.result; resolve(covDb); };
+    req.onerror=e=>{ _covDbPromise=null; reject(e); };
+  });
+  return _covDbPromise;
+}
+const _savedCov=new Map();   // id -> {cover, oldCovers}: kapak deposunda şu an yazılı olan
+let _covPending=new Set();   // kapağı henüz okunmamış seri id'leri
+let _covReady=Promise.resolve(), _covLoadFailed=false, _covLoadStarted=false;
+function _covOf(x){ return {id:x.id,cover:typeof x.cover==='string'?x.cover:'',oldCovers:Array.isArray(x.oldCovers)?x.oldCovers:[]}; }
+function _covSame(a,b){
+  if(!a||!b||a.cover!==b.cover||a.oldCovers.length!==b.oldCovers.length) return false;
+  for(let i=0;i<a.oldCovers.length;i++) if(a.oldCovers[i]!==b.oldCovers[i]) return false;
+  return true;
+}
+// Seri deposuna yazılacak kayıt: kapak deposu kullanılabiliyorsa kapaksız (kapak ayrı yazılır).
+function _recOf(x){
+  if(!_covUsable&&!_covPending.has(x.id)) return x;
+  const r={}; for(const k in x){ if(k!=='cover'&&k!=='oldCovers') r[k]=x[k]; }
+  return r;
+}
+function _markCovUnusable(){ _covUsable=false; for(const k of _savedSig.keys()) _savedSig.set(k,null); }
+
 const _savedSig=new Map();
-// Bir serinin "imzası": büyük metinler (base64 kapak vb.) JSON'a girmez, yerine sıra numarası konur ve
-// metinlerin kendisi (referans olarak, kopyalanmadan) yanında tutulur. Karşılaştırmada === kullanılır:
-// değişmemiş metin aynı nesne olduğu için anında eşit çıkar, değişen metin ise bayt bayt farkı yakalar.
+// Bir serinin "imzası": büyük metinler JSON'a girmez, yerine sıra numarası konur ve metinlerin kendisi
+// (referans olarak, kopyalanmadan) yanında tutulur. Karşılaştırmada === kullanılır: değişmemiş metin aynı
+// nesne olduğu için anında eşit çıkar, değişen metin ise bayt bayt farkı yakalar.
 function _serSig(o){
   const b=[];
   const j=JSON.stringify(o,(k,v)=>{
@@ -231,20 +270,107 @@ function _sameSig(x,y){
   for(let i=0;i<x.b.length;i++) if(x.b[i]!==y.b[i]) return false;
   return true;
 }
-function _resetSigs(){ _savedSig.clear(); series.forEach(x=>{ try{ _savedSig.set(x.id,_serSig(x)); }catch(e){} }); }
+function _resetSigs(){
+  _savedSig.clear(); _savedCov.clear(); _covPending=new Set();
+  series.forEach(x=>{
+    // Kayıtta kapak alanı varsa (eski biçim) imza null: ilk kayıtta kapak deposuna taşınıp kayıt kapaksız yazılır.
+    const inline=('cover' in x)||('oldCovers' in x);
+    if(inline){ _savedSig.set(x.id,null); }
+    else{ _covPending.add(x.id); x.cover=''; x.oldCovers=[]; try{ _savedSig.set(x.id,_serSig(_recOf(x))); }catch(e){} }
+  });
+}
+const _txDone=tx=>new Promise((res,rej)=>{ tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('İşlem iptal edildi')); });
 async function _doSave(){
   const d=await openDB();
-  const cur=new Map(), puts=[];
-  for(const x of series){ const sig=_serSig(x); cur.set(x.id,sig); if(!_sameSig(_savedSig.get(x.id),sig)) puts.push(x); }
+  if(_covUsable){ try{ await openCovDB(); }catch(e){ console.error('[Megami] Kapak deposu açılamadı, kapaklar kayıtla birlikte tutulacak:',e); _markCovUnusable(); } }
+  const cur=new Map(), puts=[], covPuts=[];
+  for(const x of series){
+    const sig=_serSig(_recOf(x)); cur.set(x.id,sig);
+    if(!_sameSig(_savedSig.get(x.id),sig)) puts.push(x);
+    if(_covUsable){
+      const c=_covOf(x), empty=!c.cover&&c.oldCovers.length===0;
+      if(_covPending.has(x.id)&&empty) continue; // kapağı henüz yüklenmemiş: depodakini ezme
+      const base=_savedCov.get(x.id);
+      if(base?!_covSame(base,c):!empty) covPuts.push(c);
+    }
+  }
   const dels=[]; for(const id of _savedSig.keys()) if(!cur.has(id)) dels.push(id);
-  if(!puts.length&&!dels.length) return;
-  await new Promise((res,rej)=>{
+  const covDels=_covUsable?[..._savedCov.keys()].filter(id=>!cur.has(id)):[];
+  if(!puts.length&&!dels.length&&!covPuts.length&&!covDels.length) return;
+  // 1) kapaklar, 2) kayıtlar: kayıt kapaksız yazılmadan önce kapağın depoya güvenle ulaşmış olması gerekir.
+  if(covPuts.length){
+    const cd=await openCovDB();
+    const tx=cd.transaction(COV_STORE,'readwrite'); const st=tx.objectStore(COV_STORE);
+    covPuts.forEach(c=>st.put({id:c.id,cover:c.cover,oldCovers:c.oldCovers}));
+    await _txDone(tx);
+    covPuts.forEach(c=>_savedCov.set(c.id,{cover:c.cover,oldCovers:c.oldCovers.slice()}));
+  }
+  if(puts.length||dels.length){
     const tx=d.transaction(STORE,'readwrite'); const st=tx.objectStore(STORE);
-    puts.forEach(x=>st.put(x)); dels.forEach(id=>st.delete(id));
-    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('Kayıt iptal edildi'));
-  });
-  for(const x of puts) _savedSig.set(x.id,cur.get(x.id));
-  for(const id of dels) _savedSig.delete(id);
+    puts.forEach(x=>st.put(_recOf(x))); dels.forEach(id=>st.delete(id));
+    await _txDone(tx);
+    for(const x of puts) _savedSig.set(x.id,cur.get(x.id));
+    for(const id of dels) _savedSig.delete(id);
+  }
+  if(covDels.length){
+    try{
+      const cd=await openCovDB();
+      const tx=cd.transaction(COV_STORE,'readwrite'); const st=tx.objectStore(COV_STORE);
+      covDels.forEach(id=>st.delete(id));
+      await _txDone(tx);
+      covDels.forEach(id=>_savedCov.delete(id));
+    }catch(e){ console.error('[Megami] Silinen serilerin kapakları temizlenemedi:',e); }
+  }
+}
+// Açılıştan sonra kapakları arkadan yükler. Biter bitmez ekran yenilenir (kapaklar yerine oturur).
+function startCoverLoad(){
+  if(_covLoadStarted) return _covReady;
+  _covLoadStarted=true;
+  _covReady=(async()=>{
+    try{
+      const cd=await openCovDB();
+      // Küçük gruplar halinde oku: ana iş parçacığı uzun süre kilitlenmesin, kaydırma/dokunma akıcı kalsın.
+      const rows=[]; let last=null;
+      for(;;){
+        const range=last===null?undefined:IDBKeyRange.lowerBound(last,true);
+        const part=await new Promise((res,rej)=>{
+          const r=cd.transaction(COV_STORE,'readonly').objectStore(COV_STORE).getAll(range,20);
+          r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error);
+        });
+        if(!part.length) break;
+        for(const row of part) rows.push(row);
+        last=part[part.length-1].id;
+        if(part.length<20) break;
+        await new Promise(r=>setTimeout(r,0));
+      }
+      const byId=new Map(series.map(x=>[x.id,x]));
+      let assigned=0;
+      for(const row of rows){
+        _savedCov.set(row.id,{cover:row.cover||'',oldCovers:Array.isArray(row.oldCovers)?row.oldCovers.slice():[]});
+        const x=byId.get(row.id);
+        if(x&&_covPending.has(row.id)&&!x.cover&&!(x.oldCovers&&x.oldCovers.length)){
+          x.cover=row.cover||''; x.oldCovers=Array.isArray(row.oldCovers)?row.oldCovers.slice():[];
+          if(x.cover||x.oldCovers.length) assigned++;
+        }
+      }
+      _covPending.clear();
+      if(assigned) _afterCoversLoaded();
+      // Eski biçimde (kapaklı) kayıt kaldıysa depoyu yeni biçime taşı.
+      if(_covUsable&&[..._savedSig.values()].some(v=>v===null)) save().catch(()=>{});
+    }catch(e){
+      console.error('[Megami] Kapaklar yüklenemedi:',e);
+      _covLoadFailed=true; _markCovUnusable(); // eski biçimli kayıtlar kapaklarıyla birlikte yazılmaya devam eder
+    }
+  })();
+  return _covReady;
+}
+function _afterCoversLoaded(){
+  try{
+    const y=window.scrollY||0;
+    if(currentPage==='detail'&&currentDetailId&&typeof openDetail==='function') openDetail(currentDetailId,true);
+    else renderContent();
+    window.scrollTo(0,y);
+  }catch(e){ console.error(e); }
 }
 let _saveTail=Promise.resolve(), _savePending=null;
 function save(){
@@ -264,12 +390,20 @@ function _requestPersist(){ try{ if(navigator.storage&&navigator.storage.persist
 let activityLog=[];
 let _logIdx=new Map();
 function _rebuildLogIdx(){ _logIdx=new Map(); for(const l of activityLog){ let a=_logIdx.get(l.seriesId); if(!a)_logIdx.set(l.seriesId,a=[]); a.push(l); } }
-async function loadActivityLog(){
+// Günlüğü okumak serilere bağlı değil; açılışta load() ile paralel çalışsın diye ayrıldı.
+async function readActivityLog(){
   const d=await openDB();
   const tx=d.transaction(LOG_STORE,'readonly');
   const req=tx.objectStore(LOG_STORE).getAll();
   await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
   activityLog=req.result||[]; _rebuildLogIdx();
+}
+async function loadActivityLog(){
+  await readActivityLog();
+  await migrateOldLogs();
+}
+async function migrateOldLogs(){
+  const d=await openDB();
   // Eski localStorage tabanlı (20 kayıtla sınırlı) günlükleri bir kereye mahsus yeni,
   // sınırsız arşive taşı — sonra eski anahtarları temizle.
   let migratedAny=false;
@@ -330,6 +464,7 @@ async function load(){
     await new Promise((res,rej)=>{req.onsuccess=res;req.onerror=rej;});
     series=req.result||[];
     _resetSigs(); _requestPersist();
+    setTimeout(startCoverLoad,120); // ilk çizimden sonra
     const old=localStorage.getItem(SK);
     if(old&&series.length===0){
       try{
@@ -944,7 +1079,7 @@ function openNotificationsSheet(){
   const returned=getReturnedFromHiatus();
   const reading=getUnfinishedReading();
   const notifItem=(s,showCh)=>{
-    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
+    const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
     return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
@@ -958,7 +1093,7 @@ function openWeeklyForecast(){
   if(!body)return;
   const days=getWeeklyForecast();
   const forecastRow=(s,isReturn)=>{
-    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="forecast-cov">`:`<div class="forecast-cov">${ic('img',12)}</div>`;
+    const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="forecast-cov">`:`<div class="forecast-cov">${ic('img',12)}</div>`;
     return `<div class="forecast-row" onclick="closeSheet('forecastOverlay');openDetail('${s.id}')">${cov}<span class="forecast-name">${esc(s.name)}</span>${isReturn?`<span class="forecast-badge green">Dönüş</span>`:`<span class="forecast-badge">+${s.autoIncrAmt||1}</span>`}</div>`;
   };
   body.innerHTML=days.map((day,i)=>{
@@ -983,7 +1118,7 @@ function buildDailyDigestHTML(){
   const reading=getUnfinishedReading();
   if(!newCh.length&&!returned.length&&!reading.length) return '';
   const digestItem=(s,showCh)=>{
-    const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
+    const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
     return `<div class="digest-item" onclick="openPreview('${s.id}',event)">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
   };
   let sections='';
@@ -1015,16 +1150,32 @@ function hideHeroSection(){
   if(!heroEl||heroEl.classList.contains('hero-collapsed'))return;
   heroEl.classList.add('hero-collapsed');
   clearTimeout(heroEl._clearTimer);
-  heroEl._clearTimer=setTimeout(()=>{ if(heroEl.classList.contains('hero-collapsed'))heroEl.innerHTML=''; },300);
+  heroEl._clearTimer=setTimeout(()=>{ if(heroEl.classList.contains('hero-collapsed')){ heroEl.innerHTML=''; heroEl._lastHtml=null; } },300);
 }
 function showHeroSection(html){
   const heroEl=document.getElementById('heroSection');
   if(!heroEl)return;
   clearTimeout(heroEl._clearTimer);
+  // Hero zaten görünüyorsa ve içerik aynıysa yeniden kurma: görseller yeniden yüklenip yanıp sönmesin,
+  // kaydırma konumu ve otomatik geçiş bozulmasın. (renderHome her filtre/ilerleme değişiminde çağrılıyor.)
+  const keep=heroEl.style.display!=='none'&&!heroEl.classList.contains('hero-collapsed')&&heroEl._lastHtml===html&&heroEl.firstElementChild;
   heroEl.style.display='';
-  heroEl.innerHTML=html;
+  if(keep) return;
+  heroEl.innerHTML=html; heroEl._lastHtml=html;
   heroEl.classList.remove('hero-collapsed');
   initHeroRail();
+  // Ekran dışındaki slaytların görselleri de önceden çözülsün: kaydırınca boş kare görünmesin.
+  heroEl.querySelectorAll('img.hero-bg').forEach(im=>{ try{ if(im.decode) im.decode().catch(()=>{}); }catch(e){} });
+}
+// Uzak kapak URL'si geçici bir hatayla yüklenemezse bir kez daha dener; olmazsa görseli gizler (arkadaki yer tutucu kalır).
+function coverImgErr(img){
+  const u=img.getAttribute('src')||'';
+  if(!img._retried&&/^https?:/i.test(u)){
+    img._retried=1;
+    setTimeout(()=>{ img.removeAttribute('src'); img.setAttribute('src',u); },1500);
+    return;
+  }
+  img.style.display='none';
 }
 function renderHome(){
   const el=document.getElementById('mainContent');
@@ -1087,9 +1238,9 @@ function renderHome(){
   initPinnedDragSort();
 }
 function heroSpotlight(items){
-  const slides=items.map(s=>{
+  const slides=items.map((s,i)=>{
     const bg=s.cover
-      ?`<img class="hero-bg" decoding="async" src="${esc(coverSrc(s.cover))}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="hero-bg-ph" style="display:none"></div>`
+      ?`<div class="hero-bg-ph"></div><img class="hero-bg" decoding="async" referrerpolicy="no-referrer" ${i===0?'fetchpriority="high" ':''}src="${esc(coverSrc(s.cover))}" onerror="coverImgErr(this)">`
       :`<div class="hero-bg-ph"></div>`;
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -1192,7 +1343,7 @@ function cardMeta(s){
 function carouselCard(s,i,canReorder){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" decoding="async" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    ?`<img class="card-cover" decoding="async" referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
   const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
   const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
@@ -1214,7 +1365,7 @@ function carouselCard(s,i,canReorder){
 function flatCard(s,i){
   const cat=CATS[s.category]||CATS.reading;
   const cover=s.cover
-    ?`<img class="card-cover" decoding="async" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
+    ?`<img class="card-cover" decoding="async" referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" loading="lazy" onerror="console.warn('[Megami] Kapak yüklenemedi:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex'">${coverLetterPh(s,true)}`
     :coverLetterPh(s,false);
   const {chTR,total,pct,chText,staleBadge}=cardMeta(s);
   const pinB=staleBadge||(s.pinned?`<div class="pin-badge">${ic('pin',8)}</div>`:'<div></div>');
@@ -1246,7 +1397,7 @@ function openPreview(id,ev){
   window._previewId=id;
   const cat=CATS[s.category]||{};
   const pct=s.chapterTotal>0?Math.min(100,Math.round((s.chapterTR/s.chapterTotal)*100)):0;
-  const cov=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
+  const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;">`:ic('img',26);
   document.getElementById('previewBody').innerHTML=`
     <div class="preview-close" onclick="closeSheet('previewOverlay')">${ic('close',13)}</div>
     <div class="preview-cover-row">
@@ -1426,7 +1577,7 @@ function getSeriesDetailSections(s){
     const maxBranches=Math.max(0,...nodeBranches.map(b=>b.length));
     const padTop=42+Math.max(0,maxBranches-1)*BR_H;
     const trunkY=padTop+TRUNK_Y_IN_ROW;
-    const cov=ls=>ls.cover?`<img src="${esc(coverSrc(ls.cover))}" class="detail-htree-cover-img">`:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+    const cov=ls=>ls.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(ls.cover))}" class="detail-htree-cover-img">`:`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
     const branchesH=chain.map((node,i)=>nodeBranches[i].map((b,bi)=>{
       const cx=i*STEP+20;
       const top=trunkY-BR_H*(bi+1);
@@ -1451,7 +1602,7 @@ function getSeriesDetailSections(s){
   }
   const oldC=s.oldCovers||[];
   const oldCH=oldC.length?`<div><div class="detail-sec-title">${ic('img',10)} Eski Kapaklar</div><div class="old-covers-row" id="oldCRow-${id}">
-      ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('')}
+      ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" referrerpolicy="no-referrer" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('')}
       ${oldC.length>4?`<div class="old-cover-more" onclick="expandOldCovers('${id}')" style="flex-shrink:0;width:60px;height:84px;border-radius:7px;border:1px dashed var(--line2);background:var(--black3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;">+${oldC.length-4}</div>`:''}
     </div></div>`:'';
   const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Yorumun</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
@@ -1477,7 +1628,7 @@ function openDetail(id,skipHistory){
   const cat=CATS[s.category]||CATS.reading;
   const bgS=s.cover?`background-image:url('${esc(cssUrl(coverSrc(s.cover)))}')`:'background:var(--black4)';
   const coverImg=s.cover
-    ?`<img class="detail-cover-img" src="${esc(coverSrc(s.cover))}" onerror="this.style.display='none'" onclick="openLightbox(${jsArg(coverSrc(s.cover))})">`
+    ?`<img class="detail-cover-img" referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" onerror="this.style.display='none'" onclick="openLightbox(${jsArg(coverSrc(s.cover))})">`
     :``;
   const {chTR,total,pct,altH,fanH,genreH,linksH,oldCH,noteH,opinionH,ratingH,logH,countdownH}=getSeriesDetailSections(s);
   const el=document.getElementById('mainContent');
@@ -1576,7 +1727,7 @@ function expandTags(wrapId, seriesId, type){
 function expandOldCovers(id){
   const s=series.find(x=>x.id===id); if(!s) return;
   const row=document.getElementById('oldCRow-'+id); if(!row) return;
-  row.innerHTML=(s.oldCovers||[]).map(c=>`<img class="old-cover-thumb" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('');
+  row.innerHTML=(s.oldCovers||[]).map(c=>`<img class="old-cover-thumb" referrerpolicy="no-referrer" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('');
 }
 function expandLog(id){
   const log=getSeriesLog(id);
@@ -2096,7 +2247,7 @@ function searchLinkableSeries(){
   const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&s.name.toLowerCase().includes(q)).slice(0,6);
   if(!matches.length){ dd.classList.add('hidden'); dd.innerHTML='<div class="autocomplete-item" style="opacity:.6;cursor:default;">Eşleşme yok</div>'; dd.classList.remove('hidden'); return; }
   const thumb=s=>{
-    const img=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+    const img=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
     return `<div style="position:relative;width:30px;height:42px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--black3);">${img}${coverLetterPh(s,!!s.cover)}</div>`;
   };
   dd.innerHTML=matches.map(s=>`
@@ -2142,7 +2293,7 @@ function renderLinkChips(){
     const rel=RELATION_TYPES[l.relation];
     const tagLabel=isMain?'ANA SERİ':(rel?rel.label.toUpperCase():'YAN SERİ');
     const tagColor=isMain?'var(--purple3)':(rel?rel.color:'#34d399');
-    const thumbImg=s.cover?`<img src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+    const thumbImg=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
     const thumb=`<div style="position:relative;width:22px;height:30px;border-radius:5px;overflow:hidden;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px;background:var(--black3);">${thumbImg}${coverLetterPh(s,!!s.cover)}</div>`;
     const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':`border-color:${tagColor}66;color:${tagColor};`}display:inline-flex;align-items:center;">${thumb}${esc(s.name)} <b style="font-size:8.5px;opacity:.85;font-weight:700;">${tagLabel}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
     const descBox=`<textarea class="form-textarea" placeholder="${isMain?'Bu seri hakkında kısa bir not… (opsiyonel)':'Bu bağlantı hakkında kısa bir not… (ör. Yuno karakterine odaklanan yan seri)'}" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:36px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`;
@@ -2854,6 +3005,9 @@ function applyBackupSettings(st,replace){
   try{ updateProfileAvatarBtn(); }catch(e){}
 }
 async function exportBackup(){
+  // Kapaklar arkadan yükleniyor olabilir: yedek eksik kapakla alınmasın.
+  await startCoverLoad();
+  if(_covPending.size>0){ showToast('warn','Kapaklar okunamadığı için yedek alınamadı. Sayfayı yenileyip tekrar dene.'); return; }
   const data={
     version:3, exportedAt:new Date().toISOString(), series,
     activityLog:activityLog.map(l=>({seriesId:l.seriesId,text:l.text,ts:l.ts})),
@@ -2999,6 +3153,7 @@ async function importBackup(e){
   const importedLog=(!isArr&&Array.isArray(data.activityLog))?data.activityLog:null;
   const importedSettings=(!isArr&&data.settings&&typeof data.settings==='object')?data.settings:null;
   showConfirm('Mevcut verilerinin üzerine yazılacak. Emin misin?',async()=>{
+    await startCoverLoad();
     const {cleaned,skipped}=validateSeriesShape(imported);
     if(cleaned.length===0){ showToast('warn','Dosyada geçerli seri bulunamadı'); return; }
     // Geri alınabilmesi için mevcut durumu bellekte sakla. series dizisi aşağıda yenisiyle değiştirildiği
@@ -3031,6 +3186,7 @@ async function importBackup(e){
 async function undoImport(){
   const snap=_lastBackupBeforeImport; if(!snap)return;
   _lastBackupBeforeImport=null;
+  await startCoverLoad();
   series=snap.series;
   try{
     await save();
