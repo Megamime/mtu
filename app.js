@@ -366,11 +366,25 @@ function startCoverLoad(){
 }
 function _afterCoversLoaded(){
   try{
-    const y=window.scrollY||0;
+    const sc=document.getElementById('app'); const y=sc?sc.scrollTop:0;
     if(currentPage==='detail'&&currentDetailId&&typeof openDetail==='function') openDetail(currentDetailId,true);
     else renderContent();
-    window.scrollTo(0,y);
+    if(sc) sc.scrollTop=y;
+    fadeInImages(document.getElementById('mainContent'));
+    fadeInImages(document.getElementById('heroSection'));
   }catch(e){ console.error(e); }
+}
+// Kapaklar arkadan yüklenip ekran yenilendiğinde görseller aniden belirmesin, yumuşakça gelsin.
+// Güvenlik: bir şey ters giderse 2,5 sn sonra görsel her durumda görünür hale getirilir.
+function fadeInImages(root){
+  if(!root) return;
+  root.querySelectorAll('img.card-cover,img.hero-bg').forEach(im=>{
+    im.style.transition='none'; im.style.opacity='0';
+    const go=()=>requestAnimationFrame(()=>{ im.style.transition='opacity .4s ease'; im.style.opacity='1'; });
+    if(im.complete&&im.naturalWidth>0) go();
+    else{ im.addEventListener('load',go,{once:true}); im.addEventListener('error',()=>{ im.style.opacity=''; im.style.transition=''; },{once:true}); }
+    setTimeout(()=>{ im.style.opacity=''; im.style.transition=''; },2500);
+  });
 }
 let _saveTail=Promise.resolve(), _savePending=null;
 function save(){
@@ -1111,6 +1125,21 @@ function openWeeklyForecast(){
   }).join('');
   openSheet('forecastOverlay');
 }
+// Veriler yalnızca bu cihazda duruyor: yedek hiç alınmadıysa ya da 14 günden eskiyse ana sayfada hatırlat.
+function buildBackupReminderHTML(){
+  if(series.length<3) return '';
+  let last=null; try{ last=JSON.parse(localStorage.getItem('megami_last_backup')||'null'); }catch(e){}
+  const days=last?Math.floor((Date.now()-last.ts)/86400000):null;
+  if(days!==null&&days<14) return '';
+  let snooze=0; try{ snooze=+localStorage.getItem('megami_backup_snooze')||0; }catch(e){}
+  if(Date.now()<snooze) return '';
+  const msg=days===null?'Henüz hiç yedek almadın. Verilerin yalnızca bu telefonda duruyor.':`Son yedek ${days} gün önce. Verilerin yalnızca bu telefonda duruyor.`;
+  return `<div class="backup-remind"><div class="br-icon">${ic('box',16)}</div><div class="br-text"><b>Yedek zamanı</b><span>${msg}</span></div><button class="br-btn" onclick="exportBackup()">Yedekle</button><button class="br-x" onclick="snoozeBackupReminder()" aria-label="3 gün sonra hatırlat">✕</button></div>`;
+}
+function snoozeBackupReminder(){
+  try{ localStorage.setItem('megami_backup_snooze',String(Date.now()+3*86400000)); }catch(e){}
+  if(currentPage==='home') renderContent();
+}
 function buildDailyDigestHTML(){
   if(localStorage.getItem('megami_digest_dismissed')===new Date().toDateString()) return '';
   const newCh=getTodaysNewChapters();
@@ -1166,6 +1195,18 @@ function showHeroSection(html){
   initHeroRail();
   // Ekran dışındaki slaytların görselleri de önceden çözülsün: kaydırınca boş kare görünmesin.
   heroEl.querySelectorAll('img.hero-bg').forEach(im=>{ try{ if(im.decode) im.decode().catch(()=>{}); }catch(e){} });
+  setTimeout(()=>heroDiag(heroEl),3500);
+}
+// Bir hero kapağı yüklenemediyse sessizce boş bırakma: küçük bir not göster (sorunun kaynağını anlamaya yardım eder).
+function heroDiag(heroEl){
+  if(!heroEl) return;
+  heroEl.querySelectorAll('.hero-slide').forEach(sl=>{
+    const im=sl.querySelector('img.hero-bg');
+    if(!im||sl.querySelector('.hero-diag')) return;
+    if(im.style.display==='none'||!(im.complete&&im.naturalWidth>0)){
+      const d=document.createElement('div'); d.className='hero-diag'; d.textContent='Kapak yüklenemedi'; sl.appendChild(d);
+    }
+  });
 }
 // Uzak kapak URL'si geçici bir hatayla yüklenemezse bir kez daha dener; olmazsa görseli gizler (arkadaki yer tutucu kalır).
 function coverImgErr(img){
@@ -1176,6 +1217,26 @@ function coverImgErr(img){
     return;
   }
   img.style.display='none';
+}
+// renderHome çıktısını mevcut DOM'a "yama" olarak uygular: değişmeyen bölümler (içindeki görseller ve
+// yatay kaydırma konumlarıyla birlikte) olduğu gibi kalır, yalnızca değişenler yeniden kurulur.
+// Eskiden her küçük işlemde (bölüm artırma, favori vb.) tüm sayfa silinip baştan çiziliyordu.
+function patchContent(el,html){
+  const tpl=document.createElement('template'); tpl.innerHTML=html;
+  const strayText=Array.from(tpl.content.childNodes).some(n=>n.nodeType===3&&n.textContent.trim());
+  const nextEls=Array.from(tpl.content.children), curEls=Array.from(el.children);
+  const full=()=>{ el.innerHTML=html; Array.from(el.children).forEach(c=>{ c._h=c.outerHTML; }); };
+  if(strayText||!curEls.length||!nextEls.length||curEls.some(c=>c._h===undefined)){ full(); return; }
+  const min=Math.min(nextEls.length,curEls.length);
+  for(let i=0;i<min;i++){
+    const nx=nextEls[i], cx=curEls[i], h=nx.outerHTML;
+    if(cx._h===h) continue;
+    const scrolls=Array.from(cx.querySelectorAll('.carousel')).map(c=>c.scrollLeft);
+    el.replaceChild(nx,cx); nx._h=h;
+    if(scrolls.length){ const cs=nx.querySelectorAll('.carousel'); scrolls.forEach((v,k)=>{ if(cs[k]) cs[k].scrollLeft=v; }); }
+  }
+  for(let i=min;i<nextEls.length;i++){ const nx=nextEls[i]; nx._h=nx.outerHTML; el.appendChild(nx); }
+  for(let i=curEls.length-1;i>=min;i--) curEls[i].remove();
 }
 function renderHome(){
   const el=document.getElementById('mainContent');
@@ -1188,7 +1249,7 @@ function renderHome(){
     const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
     return mc&&mg&&ms;
   });
-  const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?buildDailyDigestHTML():'';
+  const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?(buildBackupReminderHTML()+buildDailyDigestHTML()):'';
   if(!filtered.length){
     hideHeroSection();
     el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>${series.length===0?'Kütüphane Boş':'Sonuç Bulunamadı'}</h3><p>${series.length===0?'+ butonuna basarak ilk serini ekleyebilirsin.':'Farklı bir arama veya kategori dene.'}</p></div>`;
@@ -1199,7 +1260,7 @@ function renderHome(){
     const sorted=sortSeries(filtered);
     const sortBar=hasFixedActions?'':`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px 8px;"><button class="btn-secondary" style="width:auto;padding:6px 12px;" onclick="toggleSelectionMode()">${selectionMode?ic('close',12):ic('check',12)} ${selectionMode?'Vazgeç':'Seç'}</button><select class="form-select" style="width:auto;font-size:11px;padding:5px 9px;" onchange="setSort(this.value)">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select></div>`;
     const bulkBar=selectionMode?renderBulkBar():'';
-    el.innerHTML=(banner?'<div style="padding:0">'+banner+'</div>':'')+sortBar+`<div class="flat-grid">${sorted.map((s,i)=>flatCard(s,i)).join('')}</div>`+bulkBar;
+    patchContent(el,(banner?'<div style="padding:0">'+banner+'</div>':'')+sortBar+`<div class="flat-grid">${sorted.map((s,i)=>flatCard(s,i)).join('')}</div>`+bulkBar);
     return;
   }
   let html=banner?`<div style="padding:0">${banner}</div>`:'';
@@ -1234,13 +1295,13 @@ function renderHome(){
   });
   if(!heroFound)hideHeroSection();
   const homeBulkBar=selectionMode?renderBulkBar():'';
-  el.innerHTML=(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar;
+  patchContent(el,(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar);
   initPinnedDragSort();
 }
 function heroSpotlight(items){
   const slides=items.map((s,i)=>{
     const bg=s.cover
-      ?`<div class="hero-bg-ph"></div><img class="hero-bg" decoding="async" referrerpolicy="no-referrer" ${i===0?'fetchpriority="high" ':''}src="${esc(coverSrc(s.cover))}" onerror="coverImgErr(this)">`
+      ?`<div class="hero-bg-ph"></div><img class="hero-bg" decoding="async" referrerpolicy="no-referrer" ${i===0?'fetchpriority="high" ':''}src="${esc(coverSrc(s.cover))}" onerror="coverImgErr(this)"><div class="hero-dim"></div>`
       :`<div class="hero-bg-ph"></div>`;
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -3014,15 +3075,33 @@ async function exportBackup(){
     settings:collectBackupSettings()
   };
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
   const date=new Date().toISOString().slice(0,10);
-  a.href=url; a.download=`megami-yedek-${date}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000); // hemen iptal etmek iOS Safari'de indirmeyi yarıda kesebiliyordu
+  const filename=`megami-yedek-${date}.json`;
+  let done=false;
+  // iPhone/iPad'de (özellikle ana ekrana eklenmiş uygulamada) doğrudan indirme güvenilmez; paylaşım menüsü
+  // "Dosyalara Kaydet" ile yedeği gerçekten bir yere koymanı sağlar.
+  const isApple=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isApple&&navigator.canShare){
+    try{
+      const file=new File([blob],filename,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file],title:'Megami yedeği'}); done=true; }
+        catch(e){ if(e&&e.name==='AbortError') return; /* vazgeçildi: yedek alınmış sayılmaz */ }
+      }
+    }catch(e){}
+  }
+  if(!done){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000); // hemen iptal etmek iOS Safari'de indirmeyi yarıda kesebiliyordu
+    done=true;
+  }
   localStorage.setItem('megami_last_backup',JSON.stringify({ts:Date.now(),count:series.length,size:blob.size}));
   updateBackupInfo();
-  showToast('check','Yedek dosyası indiriliyor…');
+  if(currentPage==='home') renderContent(); // hatırlatma şeridi kalksın
+  showToast('check','Yedek hazır!');
 }
 // ===== Yedekleme bilgi paneli — son ne zaman yedek aldığını, kaç seri olduğunu ve tahmini
 // boyutunu gösterir. 14 günden uzun süredir yedek alınmadıysa uyarı rengine döner. =====
