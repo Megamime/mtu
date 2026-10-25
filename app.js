@@ -88,6 +88,47 @@ function cssUrl(u){return String(u==null?'':u).replace(/['"()\\\s]/g,c=>'%'+c.ch
 // Kapaklar base64 data-URI olarak saklanıyor. Bunları HTML string'lerine gömmek her render'da
 // yüzlerce KB'lık metni yeniden ayrıştırtıyordu. Burada bir kez Blob URL'ye çevirip önbelleğe alıyoruz:
 // HTML küçük kalıyor, görüntü çözme işi ana iş parçacığının dışında yapılıyor, görüntü kalitesi aynı.
+// Türkçe'ye duyarlı arama: büyük/küçük harf (I/ı, İ/i) ve aksan farklarını yok sayar.
+// "Işık" ile "ışık", "Şeytan" ile "seytan" aynı sonucu verir.
+function trFold(s){
+  return String(s==null?'':s).replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ö/g,'o').replace(/ü/g,'u');
+}
+// Tür adlarını tek biçime getirir: eski/yanlış yazımlar (Dilim Hayat, Romantizm, Isekai, Ecchi…) ve
+// büyük-küçük harf farkları ön tanımlı listedeki doğru ada çevrilir. Bilinmeyen (kullanıcının eklediği) türlere dokunulmaz.
+const GENRE_ALIASES={
+  'dilim hayat':'Yaşamdan Kesitler','slice of life':'Yaşamdan Kesitler','gunluk hayat':'Yaşamdan Kesitler','gunluk yasam':'Yaşamdan Kesitler',
+  'school life':'Okul Yaşamı','okul':'Okul Yaşamı','okul hayati':'Okul Yaşamı',
+  'romantizm':'Romantik','romance':'Romantik','isekai':'İsekai','ecchi':'Eççi','ecci':'Eççi','mecha':'Meka',
+  'erotika':'Erotika (Hentai’nin yandan yemişi)','erotica':'Erotika (Hentai’nin yandan yemişi)','erotic':'Erotika (Hentai’nin yandan yemişi)','yuri':'Yuri (Kız Kıza)','adult':'Yetişkin','mature':'Yetişkin',
+  'shounen':'Şonen','shonen':'Şonen','shoujo':'Şojo','shojo':'Şojo','shounen ai':'Şonen Ai','shoujo ai':'Şojo Ai',
+  'sci-fi':'Bilim Kurgu','scifi':'Bilim Kurgu','science fiction':'Bilim Kurgu',
+  'supernatural':'Doğaüstü','martial arts':'Dövüş Sanatları','action':'Aksiyon','adventure':'Macera','comedy':'Komedi',
+  'drama':'Dram','fantasy':'Fantastik','horror':'Korku','mystery':'Gizem','psychological':'Psikolojik','historical':'Tarihi',
+  'sports':'Spor','sport':'Spor','music':'Müzik','tragedy':'Trajedi','thriller':'Gerilim','military':'Askeri'
+};
+let _genreCanon=null;
+function canonGenre(g){
+  const v=String(g==null?'':g).trim(); if(!v) return '';
+  if(!_genreCanon){ _genreCanon=new Map(); GENRES_PRESET.concat(GENRES_KNOWN_EXTRA).forEach(p=>_genreCanon.set(trFold(p),p)); }
+  const k=trFold(v);
+  return GENRE_ALIASES[k]||_genreCanon.get(k)||v;
+}
+function normalizeGenres(arr){
+  const out=[], seen=new Set();
+  (Array.isArray(arr)?arr:[]).forEach(g=>{ const c=canonGenre(g); const k=trFold(c); if(c&&!seen.has(k)){ seen.add(k); out.push(c); } });
+  return out;
+}
+function _migrateGenres(){
+  let changed=0;
+  series.forEach(x=>{
+    if(!Array.isArray(x.genres)||!x.genres.length) return;
+    const n=normalizeGenres(x.genres);
+    if(n.length!==x.genres.length||n.some((g,i)=>g!==x.genres[i])){ x.genres=n; changed++; }
+  });
+  if(changed) save().catch(()=>{});
+}
 const _coverBlobCache=new Map();
 function coverSrc(src){
   if(typeof src!=='string'||src.length<4096||!src.startsWith('data:')) return src||'';
@@ -479,6 +520,7 @@ async function load(){
     series=req.result||[];
     _resetSigs(); _requestPersist();
     setTimeout(startCoverLoad,120); // ilk çizimden sonra
+    _migrateGenres();               // eski/yanlış tür adlarını düzelt
     const old=localStorage.getItem(SK);
     if(old&&series.length===0){
       try{
@@ -530,7 +572,16 @@ function isStaleSeries(s){
   return (Date.now()-last)>getStaleThresholdMs(s);
 }
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
-const GENRES_PRESET=['Aksiyon','Macera','Komedi','Dram','Fantastik','Isekai','Romantizm','Bilim Kurgu','Korku','Gizem','Doğaüstü','Dilim Hayat','Psikolojik','Tarihi','Askeri','Spor','Ecchi','Harem','Gerilim','Trajedi'];
+const GENRES_PRESET=[
+  'Aksiyon','Macera','Komedi','Dram','Fantastik','Romantik','Bilim Kurgu','Korku','Gizem','Gerilim','Doğaüstü','Psikolojik','Trajedi','Suç','Tarihi','Askeri','Spor','Müzik','Yemek','Tıp',
+  'Harem','Eççi','Erotika (Hentai’nin yandan yemişi)','İsekai','Şonen','Şojo','Ters Harem','Yuri (Kız Kıza)','Yaşamdan Kesitler','Okul Yaşamı','Yetişkin'
+];
+// Formda hazır seçenek olarak gösterilmez ama bilinen türlerdir: bu adlar (büyük/küçük harf, Türkçe karakter
+// farkıyla yazılsa bile) tek bir doğru yazıma çevrilir. Kullanıcı bunları kendi türü olarak ekleyebilir.
+const GENRES_KNOWN_EXTRA=[
+  'Dövüş Sanatları','Süper Güç','Büyü','Mitoloji','Reenkarnasyon','Zaman Yolculuğu','Hayatta Kalma','Oyun','Distopya','Kıyamet Sonrası','Siberpunk','Meka','Kara Mizah','Parodi','İntikam','Gerçeküstü',
+  'Yaoi','Şonen Ai','Şojo Ai','Seinen','Josei'
+];
 // Bağlantılı Seriler'de "Yan Seri" için ilişki alt-türü — sadece "yan seri" demek yerine
 // artık spin-off/özet/alternatif versiyon/aynı evren ayrımı yapılabiliyor.
 const RELATION_TYPES={
@@ -708,7 +759,7 @@ function checkMidnightEgg(){
 }
 function checkSearchEgg(q){
   if(!q||q.length<2) return;
-  const match=series.find(s=>s.name.toLowerCase().includes(q));
+  const match=series.find(s=>trFold(s.name).includes(q));
   if(match&&Math.random()<0.25){
     const msgs=[
       `👀 "${match.name}" aklında mı?`,
@@ -979,7 +1030,7 @@ let _searchDebounceTimer=null;
 function handleSearch(){
   clearTimeout(_searchDebounceTimer);
   _searchDebounceTimer=setTimeout(()=>{
-    searchQ=document.getElementById('searchInput').value.toLowerCase();
+    searchQ=trFold(document.getElementById('searchInput').value).trim();
     if(searchQ.length>2) checkSearchEgg(searchQ);
     renderContent();
   },180);
@@ -1246,7 +1297,7 @@ function renderHome(){
   let filtered=series.filter(s=>{
     const mc=currentCat==='all'||s.category===currentCat;
     const mg=!currentGenre||(s.genres||[]).includes(currentGenre);
-    const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
+    const ms=!searchQ||trFold(s.name).includes(searchQ)||(s.altNames||[]).some(a=>trFold(a).includes(searchQ))||(s.fansubList||[]).some(f=>trFold(f).includes(searchQ));
     return mc&&mg&&ms;
   });
   const banner=(currentCat==='all'&&!searchQ&&!currentGenre)?(buildBackupReminderHTML()+buildDailyDigestHTML()):'';
@@ -1301,7 +1352,7 @@ function renderHome(){
 function heroSpotlight(items){
   const slides=items.map((s,i)=>{
     const bg=s.cover
-      ?`<div class="hero-bg-ph"></div><img class="hero-bg" decoding="async" referrerpolicy="no-referrer" ${i===0?'fetchpriority="high" ':''}src="${esc(coverSrc(s.cover))}" onerror="coverImgErr(this)"><div class="hero-dim"></div>`
+      ?`<div class="hero-bg-ph"></div><img class="hero-bg" decoding="async" referrerpolicy="no-referrer" ${i===0?'fetchpriority="high" ':''}src="${esc(coverSrc(s.cover))}" onerror="coverImgErr(this)">`
       :`<div class="hero-bg-ph"></div>`;
     const chTR=parseInt(s.chapterTR)||0,total=parseInt(s.chapterTotal)||0;
     const pct=total>0&&chTR>0?Math.min(100,Math.round((chTR/total)*100)):0;
@@ -1606,7 +1657,7 @@ function getSeriesDetailSections(s){
       ${fans.slice(0,FANSUB_LIMIT).map(f=>{
         const meta=getFansubMeta(f);
         const initials=f.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
-        const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
+        const logoImg=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
         const inner=`<div class="detail-fansub-logo" style="position:relative;">${logoImg}<span style="display:${meta.logo?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;">${esc(initials)}</span></div>
           <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">Bu seride takip ettiğin grup</div></div>`;
         return safeUrl(meta.url)
@@ -1617,7 +1668,7 @@ function getSeriesDetailSections(s){
     </div>`:'';
   const gens=s.genres||[];
   const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
-      ${gens.map(g=>`<span class="genre-chip-static">${esc(g)}</span>`).join('')}
+      ${gens.map(g=>`<span class="genre-chip-static" onclick="openGenreFromDetail(${jsArg(g)})">${esc(g)}</span>`).join('')}
     </div></div>`:'';
   // Bağlantılı Seriler — "Ana Seri" bağlantıları artık her serinin kendi mainOrder'ına göre
   // SIRALI bir zincir (→) olarak gösteriliyor (hangi seri sayfasından bakarsan bak aynı sıra
@@ -1779,7 +1830,7 @@ function expandTags(wrapId, seriesId, type){
   } else {
     wrap.innerHTML=items.map(f=>{
       const meta=getFansubMeta(f);
-      const logo=meta.logo?`<img src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
+      const logo=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" class="fansub-card-logo" onerror="this.parentElement.querySelector('.fansub-card-logo-ph').style.display='flex';this.style.display='none';"><div class="fansub-card-logo-ph" style="display:none;">${ic('bolt',15)}</div>`:`<div class="fansub-card-logo-ph">${ic('bolt',15)}</div>`;
       const inner=`${logo}<span class="fansub-card-name">${esc(f)}</span>`;
       return safeUrl(meta.url)?`<a href="${esc(safeUrl(meta.url))}" target="_blank" rel="noopener" class="fansub-card">${inner}</a>`:`<div class="fansub-card">${inner}</div>`;
     }).join('');
@@ -2158,10 +2209,17 @@ function toggleGenrePreset(g){
   if(i>=0) genres.splice(i,1); else genres.push(g);
   renderGenreUI();
 }
+// Detay sayfasında bir türe dokununca kütüphaneyi o türe göre süzer.
+function openGenreFromDetail(g){
+  if(typeof closeDetail==='function') closeDetail();
+  try{ setCat('all'); }catch(e){}
+  searchQ=''; const si=document.getElementById('searchInput'); if(si) si.value='';
+  currentGenre=null; setGenreFilter(g);
+}
 function addCustomGenre(){
   const input=document.getElementById('customGenreInput'); if(!input)return;
-  const v=input.value.trim(); if(!v)return;
-  if(!genres.some(g=>g.toLowerCase()===v.toLowerCase())) genres.push(v);
+  const v=canonGenre(input.value.trim()); if(!v)return;
+  if(!genres.some(g=>trFold(g)===trFold(v))) genres.push(v);
   input.value='';
   renderGenreUI();
 }
@@ -2250,7 +2308,7 @@ function renderFansubListPage(){
     const count=series.filter(s=>(s.fansubList||[]).includes(name)).length;
     const meta=getFansubMeta(name);
     const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
-    const logo=meta.logo?`<img src="${esc(meta.logo)}" onerror="this.style.display='none'">`:esc(initials);
+    const logo=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" onerror="this.style.display='none'">`:esc(initials);
     return `<div class="fteam-row" onclick="openFansubMetaEditorByName(${jsArg(name)})">
       <div class="fteam-logo-wrap">
         <div class="fteam-logo">${logo}</div>
@@ -2300,12 +2358,12 @@ function saveFansubMetaFromForm(){
 // "Yan Seri" (paralel, ör. spin-off/alternatif versiyon) olarak iki türde bağlantı.
 // Bir seriye bağlantı eklendiğinde karşı taraftaki seriye de otomatik ekleniyor (senkron). =====
 function searchLinkableSeries(){
-  const q=document.getElementById('linkSearchInput').value.trim().toLowerCase();
+  const q=trFold(document.getElementById('linkSearchInput').value.trim());
   const dd=document.getElementById('linkSuggestions');
   if(!dd)return;
   if(!q){ dd.classList.add('hidden'); dd.innerHTML=''; return; }
   const linkedIds=new Set(formLinks.map(l=>l.id));
-  const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&s.name.toLowerCase().includes(q)).slice(0,6);
+  const matches=series.filter(s=>s.id!==editingId&&!linkedIds.has(s.id)&&trFold(s.name).includes(q)).slice(0,6);
   if(!matches.length){ dd.classList.add('hidden'); dd.innerHTML='<div class="autocomplete-item" style="opacity:.6;cursor:default;">Eşleşme yok</div>'; dd.classList.remove('hidden'); return; }
   const thumb=s=>{
     const img=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
@@ -2524,7 +2582,7 @@ function renderAltTags(){document.getElementById('altTagsWrap').innerHTML=altNam
 function addFansub(value){
   const v=(value!==undefined?value:document.getElementById('fansubInput').value).trim();
   if(!v)return;
-  if(fansubList.some(f=>f.toLowerCase()===v.toLowerCase())){
+  if(fansubList.some(f=>trFold(f)===trFold(v))){
     document.getElementById('fansubInput').value='';
     hideFansubSuggestions();
     return;
@@ -2549,7 +2607,7 @@ function renderFansubTags(){
   if(!wrap)return;
   wrap.innerHTML=fansubList.map((f,i)=>{
     const meta=getFansubMeta(f);
-    const logoImg=meta.logo?`<img src="${esc(meta.logo)}" style="width:14px;height:14px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
+    const logoImg=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" style="width:14px;height:14px;border-radius:4px;object-fit:cover;" onerror="this.style.display='none'">`:ic('bolt',9);
     const linkDot=meta.url?`<span style="width:5px;height:5px;border-radius:50%;background:var(--purple3);display:inline-block;" title="Link kayıtlı"></span>`:'';
     return `<span class="fansub-tag">${logoImg} ${esc(f)} ${linkDot}<button onclick="openFansubMetaEditor(${i})" title="Logo/Link Ekle" style="opacity:.85;">${ic('edit',10)}</button><button onclick="removeFansub(${i})">&#x2715;</button></span>`;
   }).join('');
@@ -2563,9 +2621,9 @@ function renderFansubSuggestions(){
   const input=document.getElementById('fansubInput');
   const wrap=document.getElementById('fansubSuggestWrap');
   if(!input||!wrap)return;
-  const q=input.value.trim().toLowerCase();
-  const known=getAllKnownFansubs().filter(f=>!fansubList.some(existing=>existing.toLowerCase()===f.toLowerCase()));
-  const matches=q?known.filter(f=>f.toLowerCase().includes(q)):known;
+  const q=trFold(input.value.trim());
+  const known=getAllKnownFansubs().filter(f=>!fansubList.some(existing=>trFold(existing)===trFold(f)));
+  const matches=q?known.filter(f=>trFold(f).includes(q)):known;
   if(matches.length===0){hideFansubSuggestions();return;}
   wrap.innerHTML=matches.slice(0,8).map(f=>`<div class="autocomplete-item" onclick="addFansub(${jsArg(f)})">${ic('bolt',11)} ${esc(f)}</div>`).join('');
   wrap.classList.remove('hidden');
@@ -3010,7 +3068,7 @@ function sanitizeSeriesRecord(item){
   out.chapterTR=_cleanChapter(item.chapterTR);
   out.chapterEN=_cleanChapter(item.chapterEN);
   out.chapterTotal=_cleanChapter(item.chapterTotal);
-  out.altNames=_strList(item.altNames); out.fansubList=_strList(item.fansubList); out.genres=_strList(item.genres,50,60);
+  out.altNames=_strList(item.altNames); out.fansubList=_strList(item.fansubList); out.genres=normalizeGenres(_strList(item.genres,50,60));
   const num=(v,def,lo,hi)=>{ v=Number(v); if(!isFinite(v)) return def; return Math.min(hi,Math.max(lo,v)); };
   out.rating=Math.round(num(item.rating,0,0,5));
   out.mainOrder=Math.round(num(item.mainOrder,0,0,100000));

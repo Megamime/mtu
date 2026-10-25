@@ -6,11 +6,10 @@
 .hero-rail::-webkit-scrollbar{display:none;}
 .hero-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;height:440px;overflow:hidden;cursor:pointer;border-radius:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);transform:translateZ(0);isolation:isolate;}
 .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
-.hero-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);pointer-events:none;}
 .hero-diag{position:absolute;top:12px;left:14px;z-index:3;font-size:10px;font-weight:600;color:rgba(255,255,255,.72);background:rgba(0,0,0,.4);padding:3px 8px;border-radius:8px;}
 .hero-bg-ph{position:absolute;inset:0;background:linear-gradient(160deg,var(--black3),var(--black5));}
 .hero-glow{position:absolute;left:-20%;bottom:-30%;width:75%;aspect-ratio:1;background:radial-gradient(ellipse,rgba(124,58,237,.35),transparent 70%);pointer-events:none;filter:blur(6px);}
-.hero-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(5,5,7,0) 0%,rgba(5,5,7,.05) 40%,rgba(5,5,7,.92) 100%);}
+.hero-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,5,7,.96) 0%,rgba(5,5,7,.9) 24%,rgba(5,5,7,.58) 44%,rgba(5,5,7,.16) 62%,rgba(5,5,7,0) 76%);}
 .hero-content{position:absolute;left:18px;right:18px;bottom:20px;}
 .hero-eyebrow{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:9px;}
 .hero-eyebrow.fav{color:var(--fav);}
@@ -145,7 +144,7 @@
 
 .genre-chip{padding:8px 15px;border-radius:20px;background:var(--black5);border:1px solid rgba(255,255,255,.1);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .genre-chip.active{background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.4);color:var(--purple3);box-shadow:0 0 0 3px rgba(124,58,237,.1);}
-.genre-chip-static{padding:5px 11px;border-radius:14px;background:var(--purpleG);border:1px solid rgba(124,58,237,.3);color:var(--purple3);font-size:11px;font-weight:500;display:inline-flex;}
+.genre-chip-static{cursor:pointer;-webkit-tap-highlight-color:transparent;padding:5px 11px;border-radius:14px;background:var(--purpleG);border:1px solid rgba(124,58,237,.3);color:var(--purple3);font-size:11px;font-weight:500;display:inline-flex;}
 .genre-preset-grid{display:flex;flex-wrap:wrap;gap:6px;}
 .genre-filter-grid{display:flex;flex-wrap:wrap;gap:9px;}
 .card-genre-badge{font-size:8.5px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -425,6 +424,16 @@ function renderContent(){
 // ===== Seri detay sayfası (mobile'a özel Liquid Glass görünüm) =====
 // Not: Artık Ana Sayfa/İstatistik ile birebir aynı mekanizmayla çalışıyor — içerik doğrudan
 // #mainContent'e yazılıyor, ayrı bir sabit katman/pencere ve giriş-çıkış animasyonu yok.
+// Detay başlığındaki küçük bilgi etiketleri: kategori, TR/EN bölüm ve son güncelleme.
+function detailMetaHTML(s){
+  const cat=CATS[s.category]||CATS.reading;
+  const total=parseInt(s.chapterTotal)||0;
+  const parts=[`<span class="detail-meta-chip">${ic(cat.icon,9)} ${esc(cat.label)}</span>`];
+  if(s.chapterTR) parts.push(`<span class="detail-meta-chip">${ic('tr',9)} ${esc(s.chapterTR)}${total>0?'/'+total:''}</span>`);
+  if(s.chapterEN) parts.push(`<span class="detail-meta-chip">EN ${esc(s.chapterEN)}</span>`);
+  if(s.updatedAt) parts.push(`<span class="detail-meta-chip" style="opacity:.8;font-weight:600;">${ic('clock',9)} ${esc(timeAgo(s.updatedAt))}</span>`);
+  return parts.join('');
+}
 function openDetail(id,skipHistoryOrEvent){
   const s=series.find(x=>x.id===id); if(!s) return;
   if(s.newChapter){ s.newChapter=false; save(); }
@@ -471,10 +480,7 @@ function openDetail(id,skipHistoryOrEvent){
             </div>
             <div class="detail-title">${esc(s.name)}</div>
             ${s.originalName?`<div class="detail-original">${esc(s.originalName)}</div>`:''}
-            <div class="detail-meta-row">
-              <span class="detail-meta-chip">${ic(cat.icon,9)} ${cat.label}</span>
-              ${s.chapterTR?`<span class="detail-meta-chip">${ic('tr',9)} ${s.chapterTR}${total>0?'/'+total:''}</span>`:''}
-            </div>
+            <div class="detail-meta-row">${detailMetaHTML(s)}</div>
           </div>
         </div>
       </div>
@@ -559,10 +565,8 @@ function updateDetailPageInPlace(s){
   }
   // Bölüm sayısı / ilerleme çubuğu (Hızlı Düzenle veya form kaydından sonra değişmiş olabilir)
   const {chTR,total,pct}=getSeriesDetailSections(s);
-  const metaChip=document.querySelector('.detail-meta-chip:nth-child(2)');
-  if(metaChip&&s.chapterTR){
-    metaChip.innerHTML=`${ic('tr',9)} ${s.chapterTR}${total>0?'/'+total:''}`;
-  }
+  const metaRow=document.querySelector('.detail-meta-row');
+  if(metaRow) metaRow.innerHTML=detailMetaHTML(s);
   const progressFill=document.querySelector('.preview-progress-fill');
   const progressLabel=document.querySelector('.detail-progress-title b');
   if(progressFill&&pct>0){
@@ -1135,7 +1139,7 @@ function renderListPage(){
 
   const filtered=sortSeries(series.filter(s=>{
     const mc=listCat==='all'||s.category===listCat;
-    const ms=!searchQ||s.name.toLowerCase().includes(searchQ)||(s.altNames||[]).some(a=>a.toLowerCase().includes(searchQ))||(s.fansubList||[]).some(f=>f.toLowerCase().includes(searchQ));
+    const ms=!searchQ||trFold(s.name).includes(searchQ)||(s.altNames||[]).some(a=>trFold(a).includes(searchQ))||(s.fansubList||[]).some(f=>trFold(f).includes(searchQ));
     return mc&&ms;
   }));
 
