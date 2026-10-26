@@ -339,6 +339,18 @@
 .br-btn{flex-shrink:0;padding:8px 13px;border-radius:10px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;}
 .br-btn:active{transform:scale(.95);}
 .br-x{flex-shrink:0;background:none;border:none;color:var(--text3);font-size:14px;padding:4px 6px;opacity:.8;cursor:pointer;}
+.pc-step{width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;font-size:21px;font-weight:700;line-height:1;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;}
+.pc-step.plus{background:var(--purple);border-color:transparent;}
+.pc-step:active{transform:scale(.92);}
+.pc-mid{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;}
+.preview-unread{font-size:11px;color:rgba(255,255,255,.5);text-align:center;margin-top:7px;min-height:14px;}
+.track-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.track-btn{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--black4);color:var(--text);font-size:24px;font-weight:700;line-height:1;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;}
+.track-btn.plus{background:var(--purple);border-color:transparent;color:#fff;}
+.track-btn:active{transform:scale(.93);}
+.track-count{flex:1;text-align:center;font-size:12.5px;color:var(--text3);font-weight:600;}
+.track-count b{font-size:30px;color:var(--text);font-weight:800;letter-spacing:-.5px;}
+.track-sub{margin-top:10px;font-size:11.5px;color:var(--text3);text-align:center;}
 </style></head><body><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header" id="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div><span id="logoWord">Megami</span><span id="logoSubWrap"></span>
 </div><div class="hdr-right" id="hdrRightHome"><div class="hdr-btn hdr-avatar-btn" id="profileAvatarBtn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" id="notifBtn" onclick="openNotificationsSheet()" title="Bildirimler" style="position:relative;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge hidden" id="notifBadge">0</span></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('homeMoreMenu').classList.toggle('open')" title="Diğer"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div><div class="more-menu" id="homeMoreMenu"><div class="more-item" id="themeToggleBtn" onclick="toggleTheme();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div></div><div class="hdr-right" id="hdrRightSub" style="display:none;"><div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('subMoreMenu').classList.toggle('open')" title="Diğer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div><div class="more-menu" id="subMoreMenu"><div class="more-item" onclick="switchPage('home');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Ana Sayfa</div><div class="more-item" onclick="toggleTheme();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div></div></div><div id="heroSection" style="display:none;"></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions" style="display:none;"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="cat-tab-filter-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
 <div id="radialMenu"></div>
@@ -428,6 +440,25 @@ function renderContent(){
 // Not: Artık Ana Sayfa/İstatistik ile birebir aynı mekanizmayla çalışıyor — içerik doğrudan
 // #mainContent'e yazılıyor, ayrı bir sabit katman/pencere ve giriş-çıkış animasyonu yok.
 // Detay başlığındaki küçük bilgi etiketleri: kategori, TR/EN bölüm ve son güncelleme.
+// Detay sayfasındaki "Bölüm Takibi" kartı: −/+ ile tek dokunuşla bölüm ilerlet, okunmamış bölüm sayısını gör.
+function trackCardHTML(s){
+  const tr=_chNum(s.chapterTR), total=_chNum(s.chapterTotal);
+  const pct=total>0?Math.min(100,Math.round(tr/total*100)):0;
+  const sub=unreadText(s);
+  return `<div class="detail-progress-title">Bölüm Takibi<b>${total>0?'%'+pct:''}</b></div>
+    <div class="track-row">
+      <button class="track-btn" onclick="detailStep(-1)" aria-label="Bir bölüm geri">−</button>
+      <div class="track-count"><b>${tr}</b>${total>0?`<span> / ${total}</span>`:''}</div>
+      <button class="track-btn plus" onclick="detailStep(1)" aria-label="Bir bölüm ileri">+</button>
+    </div>
+    ${total>0?`<div class="preview-progress-track" style="margin-top:12px;"><div class="preview-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,#34d399,#6ee7b7);"></div></div>`:''}
+    ${sub?`<div class="track-sub">${esc(sub)}</div>`:''}`;
+}
+function detailStep(delta){
+  const s=series.find(x=>x.id===currentDetailId); if(!s) return;
+  setChapterTR(s,_chNum(s.chapterTR)+delta);
+  updateDetailPageInPlace(s); scheduleTrackRefresh();
+}
 function detailMetaHTML(s){
   const cat=CATS[s.category]||CATS.reading;
   const total=parseInt(s.chapterTotal)||0;
@@ -489,13 +520,10 @@ function openDetail(id,skipHistoryOrEvent){
       </div>
       <div class="detail-body">
         ${s.readUrl
-          ?`<div class="detail-read-btn" onclick="openExternal(${jsArg(s.readUrl)})">${ic('bolt',15)} Oku</div>`
+          ?`<div class="detail-read-btn" onclick="openRead('${s.id}')">${ic('bolt',15)} Oku</div>`
           :`<div class="detail-read-btn detail-read-btn-empty" onclick="openEditSheet('${s.id}')">${ic('edit',14)} Okuma Linki Ekle</div>`}
         ${countdownH?`<div class="stat-card-wrap">${countdownH}</div>`:''}
-        ${pct>0?`<div class="stat-card-wrap">
-          <div class="detail-progress-title">İlerleme<b>%${pct}</b></div>
-          <div class="preview-progress-track" style="margin-top:0;"><div class="preview-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,#34d399,#6ee7b7);"></div></div>
-        </div>`:''}
+        <div class="stat-card-wrap" id="trackCard">${trackCardHTML(s)}</div>
         <div class="detail-action-row">
           <div class="detail-action-btn ${s.pinned?'pinned':''}" onclick="togglePin('${s.id}')">${s.pinned?ic('pinFill',18):ic('pin',18)}<span>${s.pinned?'Sabitli':'Sabitle'}</span></div>
           <div class="detail-action-btn ${s.favorited?'active':''}" onclick="toggleFav('${s.id}')">${s.favorited?ic('heartFill',18):ic('heart',18)}<span>${s.favorited?'Favoride':'Favorile'}</span></div>
@@ -570,12 +598,8 @@ function updateDetailPageInPlace(s){
   const {chTR,total,pct}=getSeriesDetailSections(s);
   const metaRow=document.querySelector('.detail-meta-row');
   if(metaRow) metaRow.innerHTML=detailMetaHTML(s);
-  const progressFill=document.querySelector('.preview-progress-fill');
-  const progressLabel=document.querySelector('.detail-progress-title b');
-  if(progressFill&&pct>0){
-    progressFill.style.width=pct+'%';
-    if(progressLabel)progressLabel.textContent='%'+pct;
-  }
+  const tc=document.getElementById('trackCard');
+  if(tc) tc.innerHTML=trackCardHTML(s);
 }
 function closeDetail(){
   // Artık Ana Sayfa/İstatistik sekmeleri arasında geçiş (switchPage) ile birebir aynı

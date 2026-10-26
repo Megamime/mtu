@@ -547,6 +547,7 @@ async function load(){
     _resetSigs(); _requestPersist();
     setTimeout(startCoverLoad,120); // ilk çizimden sonra
     _migrateGenres();               // eski/yanlış tür adlarını düzelt
+    setTimeout(checkPendingRead,1500); // "Oku"dan döndüysen bölümü sor
     const old=localStorage.getItem(SK);
     if(old&&series.length===0){
       try{
@@ -1402,7 +1403,7 @@ function heroSpotlight(items){
         ${s.chapterTR?`<div class="hero-meta">Böl. ${esc(s.chapterTR)}${total>0?' / '+total:''}${pct>0?` · %${pct}`:''}</div>`:''}
         ${pct>0?`<div class="hero-progress"><div class="hero-progress-fill" style="width:${pct}%"></div></div>`:''}
         <div class="hero-actions">
-          <div class="hero-cta" onclick="event.stopPropagation();${s.readUrl?`openExternal(${jsArg(s.readUrl)})`:`openQuick('${s.id}')`};"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
+          <div class="hero-cta" onclick="event.stopPropagation();openRead('${s.id}');"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>${isNew?'Yeni Bölümü Oku':'Kaldığın Yerden Oku'}</div>
           <div class="hero-info-btn" title="Seri sayfasına git" onclick="event.stopPropagation();openDetail('${s.id}');"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.1"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9.3,11.5 L12,11.5 L12,17.5" stroke-width="1.6"/></svg></div>
         </div>
       </div>
@@ -1560,17 +1561,22 @@ function openPreview(id,ev){
         ${(s.genres&&s.genres.length)||s.rating?`<div class="preview-genre-row">${(s.genres||[]).slice(0,3).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}${s.rating?`<span style="font-size:11px;color:#fbbf24;font-weight:700;margin-left:2px;">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:''}</div>`:''}
       </div>
     </div>
-    ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span>Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span>%${pct} güncel</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span>Böl. ${s.chapterTR||0}</span></div>`}
+    ${s.chapterTotal>0?`<div class="preview-progress-track"><div class="preview-progress-fill" id="pvFill" style="width:${pct}%;"></div></div><div class="preview-progress-label"><span id="pvLabL">Böl. ${s.chapterTR||0}/${s.chapterTotal}</span><span id="pvLabR">%${pct} güncel</span></div>`:`<div class="preview-progress-label" style="margin-top:10px;"><span id="pvLabL">Böl. ${s.chapterTR||0}</span></div>`}
     <div class="preview-row1">
       <div class="preview-icon-btn ${s.favorited?'active':''}" onclick="toggleFav('${id}');openPreview('${id}');event.stopPropagation();">${s.favorited?ic('heartFill',17):ic('heart',17)}</div>
-      <div class="preview-read-btn" onclick="${s.readUrl?`openExternal(${jsArg(s.readUrl)})`:`openQuick('${id}')`};event.stopPropagation();">${ic('bolt',14)} Oku</div>
+      <div class="preview-read-btn" onclick="openRead('${id}');event.stopPropagation();">${ic('bolt',14)} Oku</div>
       <div class="preview-icon-btn ${s.pinned?'pinned':''}" onclick="togglePin('${id}');openPreview('${id}');event.stopPropagation();">${s.pinned?ic('pinFill',17):ic('pin',17)}</div>
     </div>
     <div class="preview-chapter-edit" onclick="event.stopPropagation()">
-      <label>Bölüm</label>
-      <input type="number" id="previewChapterInput" value="${s.chapterTR||0}" min="0" onchange="previewSetChapter(this.value)"/>
-      ${s.chapterTotal>0?`<span class="preview-chapter-total">/ ${s.chapterTotal}</span>`:''}
+      <button class="pc-step" onclick="previewStep(-1)" aria-label="Bir bölüm geri">−</button>
+      <div class="pc-mid">
+        <label>Bölüm</label>
+        <input type="number" id="previewChapterInput" value="${s.chapterTR||0}" min="0" onchange="previewSetChapter(this.value)"/>
+        ${s.chapterTotal>0?`<span class="preview-chapter-total">/ ${s.chapterTotal}</span>`:''}
+      </div>
+      <button class="pc-step plus" onclick="previewStep(1)" aria-label="Bir bölüm ileri">+</button>
     </div>
+    <div class="preview-unread" id="pvUnread">${esc(unreadText(s))}</div>
     <div class="preview-bottom-row">
       <div class="preview-share-btn" title="Durumu Değiştir" onclick="closeSheet('previewOverlay');openQuick('${id}');event.stopPropagation();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></div>
       <div class="preview-detail-link" onclick="closeSheet('previewOverlay');openDetail('${id}');event.stopPropagation();">Detaylı Sayfayı Aç ${ic('chevron',11)}</div>
@@ -1578,14 +1584,110 @@ function openPreview(id,ev){
     </div>`;
   document.getElementById('previewOverlay').classList.remove('hidden');
 }
-function previewSetChapter(val){
-  const s=series.find(x=>x.id===window._previewId);if(!s)return;
-  const prevTR=s.chapterTR;
-  s.chapterTR=Math.max(0,parseInt(val)||0);
-  if(s.chapterTR!==prevTR) addLog(s.id,`Bölüm ${prevTR||0}→${s.chapterTR}`);
-  s.updatedAt=Date.now();
-  save().then(()=>{renderTabs();renderContent();openPreview(s.id);});
+// ===== Bölüm takibi =====
+// Tek noktadan bölüm değişimi: hem önizleme hem detay sayfası hem de "okudun mu?" sorusu bunu kullanır.
+function _chNum(v){ return Math.max(0,parseInt(v)||0); }
+function unreadText(s){
+  const tr=_chNum(s.chapterTR), total=_chNum(s.chapterTotal);
+  if(total<=0) return '';
+  if(tr>=total) return 'Seriye yetiştin 🎉';
+  return `${total-tr} bölüm okunmamış`;
 }
+// Art arda hızlı dokunuşlar tek bir günlük kaydına birleştirilir ("5→6, 6→7, 7→8" yerine "5→8").
+let _chLog=null;
+function flushChapterLog(){
+  if(!_chLog) return;
+  clearTimeout(_chLog.timer);
+  const {id,from,to}=_chLog; _chLog=null;
+  if(from!==to&&series.some(x=>x.id===id)) addLog(id,`TR bölüm ${from}→${to}`);
+}
+function setChapterTR(s,n){
+  n=_chNum(n);
+  const cur=_chNum(s.chapterTR);
+  if(n===cur) return false;
+  if(_chLog&&_chLog.id!==s.id) flushChapterLog();
+  if(!_chLog) _chLog={id:s.id,from:cur,to:n,timer:null}; else _chLog.to=n;
+  clearTimeout(_chLog.timer); _chLog.timer=setTimeout(flushChapterLog,1500);
+  s.chapterTR=String(n);   // form ve içe aktarma da metin olarak tutuyor: tür tutarlı kalsın
+  s.updatedAt=Date.now();
+  const total=_chNum(s.chapterTotal);
+  if(total>0&&n>=total&&s.newChapter) s.newChapter=false; // yetiştiysen "yeni bölüm" rozeti söner
+  save().catch(()=>{});
+  return true;
+}
+let _trackTimer=null;
+function scheduleTrackRefresh(){
+  clearTimeout(_trackTimer);
+  _trackTimer=setTimeout(()=>{
+    flushChapterLog();
+    renderTabs();
+    if(currentPage!=='detail') renderContent();
+  },450);
+}
+function previewRefresh(s){
+  const tr=_chNum(s.chapterTR), total=_chNum(s.chapterTotal);
+  const pct=total>0?Math.min(100,Math.round(tr/total*100)):0;
+  const inp=document.getElementById('previewChapterInput'); if(inp) inp.value=tr;
+  const f=document.getElementById('pvFill'); if(f) f.style.width=pct+'%';
+  const l=document.getElementById('pvLabL'); if(l) l.textContent=total>0?`Böl. ${tr}/${total}`:`Böl. ${tr}`;
+  const r=document.getElementById('pvLabR'); if(r) r.textContent=`%${pct} güncel`;
+  const u=document.getElementById('pvUnread'); if(u) u.textContent=unreadText(s);
+}
+function previewStep(delta){
+  const s=series.find(x=>x.id===window._previewId); if(!s) return;
+  setChapterTR(s,_chNum(s.chapterTR)+delta);
+  previewRefresh(s); scheduleTrackRefresh();
+}
+function previewSetChapter(val){
+  const s=series.find(x=>x.id===window._previewId); if(!s) return;
+  setChapterTR(s,val);
+  previewRefresh(s); scheduleTrackRefresh();
+}
+// "Oku" düğmesi: okuma bağlantısını açar ve geri döndüğünde "Bölümü okudun mu?" diye sorar.
+function openRead(id){
+  const s=series.find(x=>x.id===id); if(!s) return;
+  if(!s.readUrl){ openQuick(id); return; }
+  try{ localStorage.setItem('megami_pending_read',JSON.stringify({id,ts:Date.now()})); }catch(e){}
+  openExternal(s.readUrl);
+}
+function checkPendingRead(){
+  let p=null; try{ p=JSON.parse(localStorage.getItem('megami_pending_read')||'null'); }catch(e){}
+  if(!p||!p.id) return;
+  const age=Date.now()-(+p.ts||0);
+  if(age<20000) return;                       // hâlâ okuma sitesinde olabilirsin
+  try{ localStorage.removeItem('megami_pending_read'); }catch(e){}
+  if(age>6*3600*1000) return;                 // eski: sorma
+  const s=series.find(x=>x.id===p.id); if(!s) return;
+  const next=_chNum(s.chapterTR)+1, total=_chNum(s.chapterTotal);
+  if(total>0&&next>total) return;             // zaten yetişmişsin
+  showReadPrompt(s,next);
+}
+function hideReadPrompt(){ const b=document.getElementById('readPrompt'); if(b) b.style.display='none'; clearTimeout(window._readPromptTimer); }
+function showReadPrompt(s,next){
+  let b=document.getElementById('readPrompt');
+  if(!b){
+    b=document.createElement('div'); b.id='readPrompt';
+    b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(104px + env(safe-area-inset-bottom,0px));max-width:420px;width:calc(100% - 28px);z-index:9998;background:var(--black5);border:1px solid var(--purple2);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);';
+    document.body.appendChild(b);
+  }
+  b.innerHTML=`<div style="font-size:12.5px;color:var(--text);line-height:1.4;margin-bottom:10px;"><b></b><br><span style="color:var(--text3);font-size:11.5px;"></span></div><div style="display:flex;gap:8px;"><button data-a="yes" style="flex:1;background:var(--purple);border:none;color:#fff;font-size:12.5px;font-weight:700;padding:9px;border-radius:10px;cursor:pointer;">Evet, okudum (+1)</button><button data-a="no" style="background:var(--black4);border:1px solid var(--line);color:var(--text2);font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:10px;cursor:pointer;">Hayır</button></div>`;
+  b.querySelector('b').textContent=s.name;
+  b.querySelector('span').textContent=`Bölüm ${next}'i okudun mu?`;
+  b.querySelector('[data-a="yes"]').onclick=()=>{
+    hideReadPrompt();
+    setChapterTR(s,next); scheduleTrackRefresh();
+    if(currentPage==='detail'&&currentDetailId===s.id&&typeof updateDetailPageInPlace==='function') updateDetailPageInPlace(s);
+    showUndoBanner(`${s.name}: Bölüm ${next} olarak işaretlendi`,()=>{ setChapterTR(s,next-1); scheduleTrackRefresh(); if(currentPage==='detail'&&currentDetailId===s.id&&typeof updateDetailPageInPlace==='function') updateDetailPageInPlace(s); });
+  };
+  b.querySelector('[data-a="no"]').onclick=hideReadPrompt;
+  b.style.display='block';
+  clearTimeout(window._readPromptTimer);
+  window._readPromptTimer=setTimeout(hideReadPrompt,25000);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') setTimeout(checkPendingRead,400); else flushChapterLog();
+});
+window.addEventListener('pagehide',flushChapterLog);
 function openQuick(id){
   const s=series.find(x=>x.id===id);if(!s)return;
   quickId=id;quickCat=s.category;quickSkipping=false;
@@ -1621,7 +1723,8 @@ function stepCh(lang,delta){
 async function saveQuick(){
   const s=series.find(x=>x.id===quickId);if(!s)return;
   const prevCat=s.category;
-  const prevTR=s.chapterTR;
+  flushChapterLog();
+  const prevTR=s.chapterTR, prevEN=s.chapterEN;
   s.chapterTR=document.getElementById('quickTR').value||'';
   s.chapterEN=document.getElementById('quickEN').value||'';
   s.category=quickCat;
@@ -1633,7 +1736,10 @@ async function saveQuick(){
     s.autoIncrSkips=s.autoIncrSkips.slice(-20);
     addLog(s.id,`Otomatik artırma bu periyot atlandı.`);
   }
-  if(s.chapterTR!==prevTR) addLog(s.id,`TR bölüm ${prevTR||0}→${s.chapterTR}`);
+  // Tür farkı (metin/sayı) yüzünden değişmemiş bölüm değişmiş gibi kaydedilmesin
+  if(_chNum(prevTR)!==_chNum(s.chapterTR)) addLog(s.id,`TR bölüm ${_chNum(prevTR)}→${_chNum(s.chapterTR)}`);
+  if(_chNum(prevEN)!==_chNum(s.chapterEN)) addLog(s.id,`EN bölüm ${_chNum(prevEN)}→${_chNum(s.chapterEN)}`);
+  { const tt=_chNum(s.chapterTotal); if(tt>0&&_chNum(s.chapterTR)>=tt) s.newChapter=false; }
   if(quickCat==='completed'&&prevCat!=='completed'){
     setTimeout(()=>{spawnConfetti();showToast('star','Tebrikler! Seriyi bitirdin! 🎉');},300);
   }
