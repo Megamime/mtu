@@ -1,6 +1,6 @@
 # Megami
 
-Manga ve fansub takip kütüphanesi (PWA). Sunucu yok, dış API yok — veriler cihazda tutulur.
+Manga takip kütüphanesi (PWA). Sunucu yok, dış API yok — veriler cihazda tutulur.
 
 ## Dosyalar
 - `index.html` — açılış ekranı; cihaza göre `mobile.html` / `desktop.html`'e yönlendirir
