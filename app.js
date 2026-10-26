@@ -101,7 +101,7 @@ const GENRE_ALIASES={
   'dilim hayat':'Yaşamdan Kesitler','slice of life':'Yaşamdan Kesitler','gunluk hayat':'Yaşamdan Kesitler','gunluk yasam':'Yaşamdan Kesitler',
   'school life':'Okul Yaşamı','okul':'Okul Yaşamı','okul hayati':'Okul Yaşamı',
   'romantizm':'Romantik','romance':'Romantik','isekai':'İsekai','ecchi':'Eççi','ecci':'Eççi','mecha':'Meka',
-  'erotika':'Erotika (Hentai’nin yandan yemişi)','erotica':'Erotika (Hentai’nin yandan yemişi)','erotic':'Erotika (Hentai’nin yandan yemişi)','yuri':'Yuri (Kız Kıza)','adult':'Yetişkin','mature':'Yetişkin',
+  'erotika':'Erotika (Hentai’nin yandan yemişi)','erotica':'Erotika (Hentai’nin yandan yemişi)','erotic':'Erotika (Hentai’nin yandan yemişi)','yuri':'Yuri (Kız Kıza)',
   'shounen':'Şonen','shonen':'Şonen','shoujo':'Şojo','shojo':'Şojo','shounen ai':'Şonen Ai','shoujo ai':'Şojo Ai',
   'sci-fi':'Bilim Kurgu','scifi':'Bilim Kurgu','science fiction':'Bilim Kurgu',
   'supernatural':'Doğaüstü','martial arts':'Dövüş Sanatları','action':'Aksiyon','adventure':'Macera','comedy':'Komedi',
@@ -120,12 +120,38 @@ function normalizeGenres(arr){
   (Array.isArray(arr)?arr:[]).forEach(g=>{ const c=canonGenre(g); const k=trFold(c); if(c&&!seen.has(k)){ seen.add(k); out.push(c); } });
   return out;
 }
+const TAG_ALIASES={
+  'yetiskin':'Yetişkin','adult':'Yetişkin','mature':'Yetişkin','18+':'Yetişkin',
+  'one shot':'Tek Sayı | One Shot','oneshot':'Tek Sayı | One Shot','one-shot':'Tek Sayı | One Shot','tek sayi':'Tek Sayı | One Shot','tek sayi | one shot':'Tek Sayı | One Shot'
+};
+function isKnownTag(v){ const k=trFold(v); return !!TAG_ALIASES[k]||TAGS_PRESET.some(x=>trFold(x)===k); }
+function canonTag(t){
+  const v=String(t==null?'':t).trim(); if(!v) return '';
+  const k=trFold(v);
+  return TAG_ALIASES[k]||TAGS_PRESET.find(x=>trFold(x)===k)||v;
+}
+function normalizeTags(arr){
+  const out=[], seen=new Set();
+  (Array.isArray(arr)?arr:[]).forEach(t=>{ const c=canonTag(t); const k=trFold(c); if(c&&!seen.has(k)){ seen.add(k); out.push(c); } });
+  return out;
+}
+// Türler listesinde yanlışlıkla duran etiketleri (ör. "Yetişkin") etiketlere taşır, ikisini de tek biçime getirir.
+function splitGenresTags(genresIn,tagsIn){
+  const tags=Array.isArray(tagsIn)?[...tagsIn]:[]; const gens=[];
+  (Array.isArray(genresIn)?genresIn:[]).forEach(g=>{ if(isKnownTag(g)) tags.push(g); else gens.push(g); });
+  return {genres:normalizeGenres(gens),tags:normalizeTags(tags)};
+}
 function _migrateGenres(){
   let changed=0;
   series.forEach(x=>{
-    if(!Array.isArray(x.genres)||!x.genres.length) return;
-    const n=normalizeGenres(x.genres);
-    if(n.length!==x.genres.length||n.some((g,i)=>g!==x.genres[i])){ x.genres=n; changed++; }
+    const curG=Array.isArray(x.genres)?x.genres:[], curT=Array.isArray(x.tags)?x.tags:[];
+    if(!curG.length&&!curT.length) return;
+    const r=splitGenresTags(curG,curT);
+    const gCh=r.genres.length!==curG.length||r.genres.some((g,i)=>g!==curG[i]);
+    const tCh=r.tags.length!==curT.length||r.tags.some((t,i)=>t!==curT[i]);
+    if(gCh) x.genres=r.genres;
+    if(tCh) x.tags=r.tags;
+    if(gCh||tCh) changed++;
   });
   if(changed) save().catch(()=>{});
 }
@@ -542,7 +568,7 @@ let series=[],editingId=null,currentPage='home',currentCat='all',searchQ='',curr
 // büyük base64 kapak verisini input'a değil, bu değişkene yazıyoruz.
 let _pendingCoverData=null;
 let selectionMode=false,selectedIds=new Set();
-let altNames=[],oldCovers=[],fansubList=[],genres=[],formLinks=[],formFav=false,formPin=false,formRating=0;
+let altNames=[],oldCovers=[],fansubList=[],genres=[],formTags=[],formLinks=[],formFav=false,formPin=false,formRating=0;
 let quickId=null,quickCat=null;
 const SECTIONS=[
   {key:'hero',    label:'Yeni Bölüm & Favorilerim',          icon:'sparkle',  heroOnly:true},
@@ -574,8 +600,10 @@ function isStaleSeries(s){
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
 const GENRES_PRESET=[
   'Aksiyon','Macera','Komedi','Dram','Fantastik','Romantik','Bilim Kurgu','Korku','Gizem','Gerilim','Doğaüstü','Psikolojik','Trajedi','Suç','Tarihi','Askeri','Spor','Müzik','Yemek','Tıp',
-  'Harem','Eççi','Erotika (Hentai’nin yandan yemişi)','İsekai','Şonen','Şojo','Ters Harem','Yuri (Kız Kıza)','Yaşamdan Kesitler','Okul Yaşamı','Yetişkin'
+  'Harem','Eççi','Erotika (Hentai’nin yandan yemişi)','İsekai','Şonen','Şojo','Ters Harem','Yuri (Kız Kıza)','Yaşamdan Kesitler','Okul Yaşamı'
 ];
+// Etiketler: türden bağımsız, serinin "ne tür bir içerik/biçim olduğunu" belirten işaretler.
+const TAGS_PRESET=['Yetişkin','Tek Sayı | One Shot'];
 // Formda hazır seçenek olarak gösterilmez ama bilinen türlerdir: bu adlar (büyük/küçük harf, Türkçe karakter
 // farkıyla yazılsa bile) tek bir doğru yazıma çevrilir. Kullanıcı bunları kendi türü olarak ekleyebilir.
 const GENRES_KNOWN_EXTRA=[
@@ -933,16 +961,23 @@ function getAllUsedGenres(){
   series.forEach(s=>(s.genres||[]).forEach(g=>{if(g&&g.trim())set.add(g.trim());}));
   return Array.from(set).sort((a,b)=>a.localeCompare(b,'tr'));
 }
+function getAllUsedTags(){
+  const set=new Set();
+  series.forEach(s=>(s.tags||[]).forEach(t=>{if(t&&t.trim())set.add(t.trim());}));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'tr'));
+}
 function openGenreFilter(){
-  const used=getAllUsedGenres();
+  const used=getAllUsedGenres(), usedTags=getAllUsedTags();
   const wrap=document.getElementById('genreFilterList');
   if(!wrap)return;
-  if(used.length===0){
+  if(used.length===0&&usedTags.length===0){
     wrap.innerHTML=`<p style="font-size:12px;color:var(--text3);padding:6px 2px;">Henüz hiçbir seriye tür eklenmemiş. Bir seriyi düzenleyip tür ekleyebilirsin.</p>`;
   } else {
-    wrap.innerHTML=`<div class="genre-filter-grid">${used.map(g=>
+    wrap.innerHTML=(used.length?`<div class="genre-filter-grid">${used.map(g=>
       `<div class="genre-chip ${currentGenre===g?'active':''}" onclick="setGenreFilter(${jsArg(g)})">${esc(g)}</div>`
-    ).join('')}</div>`;
+    ).join('')}</div>`:'')+(usedTags.length?`<div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:${used.length?'16px':'2px'} 0 8px;">Etiketler</div><div class="genre-filter-grid">${usedTags.map(t=>
+      `<div class="genre-chip tag-chip ${currentGenre===t?'active':''}" onclick="setGenreFilter(${jsArg(t)})">${esc(t)}</div>`
+    ).join('')}</div>`:'');
   }
   document.getElementById('genreFilterOverlay').classList.remove('hidden');
 }
@@ -1296,7 +1331,7 @@ function renderHome(){
   if(hasFixedActions)syncCatTabsActions();
   let filtered=series.filter(s=>{
     const mc=currentCat==='all'||s.category===currentCat;
-    const mg=!currentGenre||(s.genres||[]).includes(currentGenre);
+    const mg=!currentGenre||(s.genres||[]).includes(currentGenre)||(s.tags||[]).includes(currentGenre);
     const ms=!searchQ||trFold(s.name).includes(searchQ)||(s.altNames||[]).some(a=>trFold(a).includes(searchQ))||(s.fansubList||[]).some(f=>trFold(f).includes(searchQ));
     return mc&&mg&&ms;
   });
@@ -1666,10 +1701,12 @@ function getSeriesDetailSections(s){
       }).join('')}
       ${fans.length>FANSUB_LIMIT?`<div class="more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;font-size:11px;color:var(--purple3);">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
     </div>`:'';
-  const gens=s.genres||[];
-  const genreH=gens.length?`<div><div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
+  const gens=s.genres||[], tgs=s.tags||[];
+  const genreH=(gens.length||tgs.length)?`<div>${gens.length?`<div class="detail-sec-title">${ic('sparkle',10)} Tür</div><div class="alt-tags-wrap">
       ${gens.map(g=>`<span class="genre-chip-static" onclick="openGenreFromDetail(${jsArg(g)})">${esc(g)}</span>`).join('')}
-    </div></div>`:'';
+    </div>`:''}${tgs.length?`<div class="detail-sec-title"${gens.length?' style="margin-top:12px;"':''}>${ic('bookmark',10)} Etiket</div><div class="alt-tags-wrap">
+      ${tgs.map(t=>`<span class="genre-chip-static tag-chip-static" onclick="openGenreFromDetail(${jsArg(t)})">${esc(t)}</span>`).join('')}
+    </div>`:''}</div>`:'';
   // Bağlantılı Seriler — "Ana Seri" bağlantıları artık her serinin kendi mainOrder'ına göre
   // SIRALI bir zincir (→) olarak gösteriliyor (hangi seri sayfasından bakarsan bak aynı sıra
   // çıkıyor, çünkü sıra numarası linke değil serinin kendisine ait). "Yan Seri" bağlantıları
@@ -1878,7 +1915,7 @@ function showAddOverlay(){
   if(typeof onAddOverlayShown==='function') onAddOverlayShown();
 }
 function openAddSheet(){
-  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formLinks=[];formChainOrder=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
+  editingId=null;altNames=[];oldCovers=[];fansubList=[];genres=[];formTags=[];formLinks=[];formChainOrder=[];window._originalLinksSnapshot='[]';formFav=false;formPin=false;formRating=0;
   _pendingCoverData=null;
   document.getElementById('addSheetTitle').textContent='Yeni Seri';
   ['seriesName','altNameInput','fansubInput','coverUrlInput','seriesNote','seriesOpinion','chapterTotal','autoIncrAmt','readUrlInput','originalNameInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -1905,7 +1942,7 @@ function openAddSheet(){
 }
 function openEditSheet(id){
   const s=series.find(x=>x.id===id);if(!s)return;
-  editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];
+  editingId=id;altNames=[...(s.altNames||[])];oldCovers=[...(s.oldCovers||[])];fansubList=[...(s.fansubList||[])];genres=[...(s.genres||[])];formTags=[...(s.tags||[])];
   formLinks=[...(s.links||[])];window._originalLinksSnapshot=JSON.stringify(formLinks);
   syncFormChainOrder();
   formFav=!!s.favorited;formPin=!!s.pinned;formRating=s.rating||0;
@@ -2002,7 +2039,7 @@ async function saveSeries(){
   else if(autoFreq==='completed') releaseDay='Tamamlandı';
   const data={
     id:editingId||Date.now().toString(),name,
-    altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],links:[...formLinks],
+    altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],tags:[...formTags],links:[...formLinks],
     mainOrder:(editingId&&series.find(x=>x.id===editingId)?.mainOrder)||0,
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
@@ -2216,9 +2253,19 @@ function openGenreFromDetail(g){
   searchQ=''; const si=document.getElementById('searchInput'); if(si) si.value='';
   currentGenre=null; setGenreFilter(g);
 }
+function toggleTagPreset(t){
+  const i=formTags.indexOf(t);
+  if(i>=0) formTags.splice(i,1); else formTags.push(t);
+  renderGenreUI();
+}
 function addCustomGenre(){
   const input=document.getElementById('customGenreInput'); if(!input)return;
-  const v=canonGenre(input.value.trim()); if(!v)return;
+  const raw=input.value.trim(); if(!raw)return;
+  if(isKnownTag(raw)){ // "Yetişkin" gibi bir etiket yazıldıysa tür değil etiket olarak ekle
+    const t=canonTag(raw); if(!formTags.includes(t)) formTags.push(t);
+    input.value=''; renderGenreUI(); return;
+  }
+  const v=canonGenre(raw); if(!v)return;
   if(!genres.some(g=>trFold(g)===trFold(v))) genres.push(v);
   input.value='';
   renderGenreUI();
@@ -2237,6 +2284,10 @@ function renderGenreUI(){
   const customGenres=genres.filter(g=>!GENRES_PRESET.includes(g));
   customWrap.innerHTML=customGenres.map(g=>
     `<span class="alt-tag">${esc(g)}<button onclick="removeGenre(${jsArg(g)})">&#x2715;</button></span>`
+  ).join('');
+  const tagWrap=document.getElementById('tagPresetWrap');
+  if(tagWrap) tagWrap.innerHTML=TAGS_PRESET.map(t=>
+    `<div class="genre-chip tag-chip ${formTags.includes(t)?'active':''}" onclick="toggleTagPreset(${jsArg(t)})">${esc(t)}</div>`
   ).join('');
 }
 function openFansubMetaEditor(i){
@@ -3068,7 +3119,7 @@ function sanitizeSeriesRecord(item){
   out.chapterTR=_cleanChapter(item.chapterTR);
   out.chapterEN=_cleanChapter(item.chapterEN);
   out.chapterTotal=_cleanChapter(item.chapterTotal);
-  out.altNames=_strList(item.altNames); out.fansubList=_strList(item.fansubList); out.genres=normalizeGenres(_strList(item.genres,50,60));
+  out.altNames=_strList(item.altNames); out.fansubList=_strList(item.fansubList); { const gt=splitGenresTags(_strList(item.genres,50,60),_strList(item.tags,20,60)); out.genres=gt.genres; out.tags=gt.tags; }
   const num=(v,def,lo,hi)=>{ v=Number(v); if(!isFinite(v)) return def; return Math.min(hi,Math.max(lo,v)); };
   out.rating=Math.round(num(item.rating,0,0,5));
   out.mainOrder=Math.round(num(item.mainOrder,0,0,100000));
@@ -3248,6 +3299,7 @@ async function importBackup(e){
         altNames:Array.isArray(incoming.altNames)?[...incoming.altNames]:[],
         fansubList:Array.isArray(incoming.fansubList)?[...incoming.fansubList]:[],
         genres:Array.isArray(incoming.genres)?[...incoming.genres]:[],
+        tags:Array.isArray(incoming.tags)?[...incoming.tags]:[],
         cover:incoming.cover||'',
         oldCovers:Array.isArray(incoming.oldCovers)?[...incoming.oldCovers]:[],
         category:incoming.category||'reading',
