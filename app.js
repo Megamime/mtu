@@ -1152,7 +1152,7 @@ function getWeeklyForecast(){
         const cd=new Date(cursor); cd.setHours(0,0,0,0);
         const key=_forecastDateKey(cd);
         if(byDay[key]) byDay[key].newCh.push(s);
-        cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor);
+        cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor,s.autoIncrEvery);
       }
     }
   });
@@ -2029,20 +2029,15 @@ function openAddSheet(){
   document.getElementById('autoIncrDay').value='1';
   document.getElementById('autoIncrDate').value='1';
   document.getElementById('releaseDayNote').value='';
-  document.getElementById('incrDayWrap').style.display='none';
-  document.getElementById('incrDateWrap').style.display='none';
-  document.getElementById('incrIrregularWrap').style.display='none';
+  { const e=document.getElementById('autoIncrEvery'); if(e) e.value='1'; } // masaüstü formunda bu alan yok
   document.getElementById('returnDate').value='';
-  document.getElementById('returnDateWrap').style.display='none';
-  document.getElementById('incrAmtWrap').style.opacity='0.35';
-  document.getElementById('incrAmtWrap').style.pointerEvents='none';
-  updateIncrSummary();
   document.getElementById('altTagsWrap').innerHTML='';document.getElementById('fansubTagsWrap').innerHTML='';hideFansubSuggestions();
   document.getElementById('oldCoversPreviews').innerHTML='';
   document.getElementById('seriesCategory').value='reading';
   document.getElementById('chapterTR').value='';document.getElementById('chapterEN').value='';
   resetCoverPreview();updateFormToggles();renderRatingStars(0);renderGenreUI();renderLinkChips();
   const linkSearchEl=document.getElementById('linkSearchInput'); if(linkSearchEl)linkSearchEl.value='';
+  syncTakipUI();
   document.getElementById('deleteBtn').classList.add('hidden');
   showAddOverlay();
 }
@@ -2074,18 +2069,12 @@ function openEditSheet(id){
   document.getElementById('altNameInput').value='';document.getElementById('fansubInput').value='';
   document.getElementById('autoIncrAmt').value=s.autoIncrAmt||'';
   document.getElementById('autoIncrFreq').value=s.autoIncrFreq||'';
+  { const e=document.getElementById('autoIncrEvery'); if(e) e.value=String(s.autoIncrEvery||1); }
   document.getElementById('autoIncrDay').value=s.autoIncrDay??1;
   document.getElementById('autoIncrDate').value=s.autoIncrDate??1;
   document.getElementById('releaseDayNote').value=s.releaseDayNote||'';
   document.getElementById('returnDate').value=s.returnDate||'';
-  document.getElementById('returnDateWrap').style.display=s.category==='season'?'':'none';
-  document.getElementById('incrDayWrap').style.display=s.autoIncrFreq==='weekly'?'':'none';
-  document.getElementById('incrDateWrap').style.display=s.autoIncrFreq==='monthly'?'':'none';
-  document.getElementById('incrIrregularWrap').style.display=s.autoIncrFreq==='irregular'?'':'none';
-  const noIncr=!s.autoIncrFreq||s.autoIncrFreq==='irregular'||s.autoIncrFreq==='completed';
-  document.getElementById('incrAmtWrap').style.opacity=noIncr?'0.35':'1';
-  document.getElementById('incrAmtWrap').style.pointerEvents=noIncr?'none':'';
-  updateIncrSummary();
+  syncTakipUI();
   renderAltTags();renderFansubTags();renderOldCoverPreviews();renderGenreUI();renderLinkChips();
   const linkSearchEl2=document.getElementById('linkSearchInput'); if(linkSearchEl2)linkSearchEl2.value='';
   if(s.cover)showCoverPreview(s.cover);else resetCoverPreview();
@@ -2098,6 +2087,7 @@ function toggleFormFav(){formFav=!formFav;updateFormToggles();}
 // formda iki ayrı (bitişik olmayan) bloğa yayıldığı için data-tab ile TÜM eşleşen panelleri
 // birden gösterip gizliyoruz, tek bir id'ye değil.
 function showFormTab(tab,el){
+  if(tab==='takip'&&typeof syncTakipUI==='function') syncTakipUI();
   document.querySelectorAll('.form-tab-panel').forEach(function(p){
     p.style.display=(p.getAttribute('data-tab')===tab)?'':'none';
   });
@@ -2133,16 +2123,27 @@ async function saveSeries(){
   const newTR=document.getElementById('chapterTR').value||'';
   const autoAmt=parseInt(document.getElementById('autoIncrAmt').value)||0;
   const autoFreq=document.getElementById('autoIncrFreq').value||'';
-  const autoDay=parseInt(document.getElementById('autoIncrDay').value)||1;
+  const _rawDay=parseInt(document.getElementById('autoIncrDay').value);
+  const autoDay=isNaN(_rawDay)?1:_rawDay; // 0 = Pazar geçerli; eski "||1" Pazar'ı Pazartesi'ye çeviriyordu
   const autoDate=parseInt(document.getElementById('autoIncrDate').value)||1;
+  const autoEvery=Math.max(1,Math.min(12,parseInt(_elv('autoIncrEvery'))||1));
   const releaseDayNote=document.getElementById('releaseDayNote').value.trim();
   const dayNames=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   let releaseDay='';
-  if(autoFreq==='weekly') releaseDay=dayNames[autoDay]||'';
+  if(autoFreq==='weekly') releaseDay=(autoEvery===2?'İki haftada bir ':autoEvery>2?`${autoEvery} haftada bir `:'')+(dayNames[autoDay]||'');
   else if(autoFreq==='monthly') releaseDay=`Ayın ${autoDate}. günü`;
   else if(autoFreq==='daily') releaseDay='Her gün';
   else if(autoFreq==='irregular') releaseDay=releaseDayNote?`Düzensiz (${releaseDayNote})`:'Düzensiz';
   else if(autoFreq==='completed') releaseDay='Tamamlandı';
+  // Program (sıklık/gün/miktar) değişmediyse mevcut "sıradaki yayın" tarihini koru: her düzenlemede 2 haftalık
+  // döngünün fazı sıfırlanmasın, bekleyen artışlar kaybolmasın.
+  const _oldForNext=editingId?series.find(x=>x.id===editingId):null;
+  let nextIncr=null;
+  if(autoFreq&&autoFreq!=='irregular'&&autoFreq!=='completed'){
+    const keep=_oldForNext&&_oldForNext.autoIncrNext&&_oldForNext.autoIncrFreq===autoFreq&&_oldForNext.autoIncrAmt>0&&autoAmt>0
+      &&Number(_oldForNext.autoIncrDay??1)===autoDay&&Number(_oldForNext.autoIncrDate??1)===autoDate&&(_oldForNext.autoIncrEvery||1)===autoEvery;
+    nextIncr=keep?_oldForNext.autoIncrNext:calcNextIncr(autoFreq,autoDay,autoDate,null,autoEvery);
+  }
   const data={
     id:editingId||Date.now().toString(),name,
     altNames:[...altNames],fansubList:[...fansubList],genres:[...genres],tags:[...formTags],links:[...formLinks],
@@ -2162,7 +2163,8 @@ async function saveSeries(){
     autoIncrFreq:autoFreq,
     autoIncrDay:autoDay,
     autoIncrDate:autoDate,
-    autoIncrNext:(autoFreq&&autoFreq!=='irregular'&&autoFreq!=='completed')?calcNextIncr(autoFreq,autoDay,autoDate):null,
+    autoIncrEvery:autoEvery,
+    autoIncrNext:nextIncr,
     autoIncrSkips:[],
   };
   // Sürükle-bırakla düzenlenen Ana Seri sırasını, bu seriyle birlikte ZİNCİRDEKİ DİĞER
@@ -2230,34 +2232,128 @@ function toggleReturnDate(){
   const cat=document.getElementById('seriesCategory').value;
   document.getElementById('returnDateWrap').style.display=cat==='season'?'':'none';
 }
-function updateIncrExtra(){
-  const freq=document.getElementById('autoIncrFreq').value;
-  document.getElementById('incrDayWrap').style.display=freq==='weekly'?'':'none';
-  document.getElementById('incrDateWrap').style.display=freq==='monthly'?'':'none';
-  document.getElementById('incrIrregularWrap').style.display=freq==='irregular'?'':'none';
-  document.getElementById('incrAmtWrap').style.opacity=(freq==='irregular'||freq==='completed'||freq==='')?'0.35':'1';
-  document.getElementById('incrAmtWrap').style.pointerEvents=(freq==='irregular'||freq==='completed'||freq==='')?'none':'';
+// ===== Takip sekmesi: durum, yayın sıklığı, bölüm sayaçları =====
+// Alttaki asıl denetimler (select/input'lar) formun diğer kodlarının okuduğu yerde duruyor (gizli); görünen
+// arayüz bunları dokunmatik seçicilerle (çipler, gün düğmeleri, −/+) yönetir.
+const STATUS_GROUPS=[
+  {title:'Okuma',keys:['reading','planned','stockpile']},
+  {title:'Güncel',keys:['current','current_en','current_both']},
+  {title:'Ara / bitiş',keys:['season','paused','dropped','completed']}
+];
+const STATUS_HELP={
+  reading:'Bölümleri sırayla okuyorsun.',
+  planned:'Okumak için listede bekliyor.',
+  stockpile:'Bölümleri biriktirip sonra toplu okuyorsun.',
+  current:'Türkçe çevirinin son bölümüne yetiştin.',
+  current_en:'İngilizce son bölüme yetiştin.',
+  current_both:'Hem Türkçe hem İngilizce güncelsin.',
+  season:'Yeni sezonu bekliyor. Dönüş tarihini aşağıdan girebilirsin.',
+  paused:'Şimdilik ara verdin, sonra devam edebilirsin.',
+  dropped:'Artık takip etmiyorsun.',
+  completed:'Seriyi bitirdin.'
+};
+const FREQ_UI=[
+  {k:'',e:1,label:'Belirtilmemiş'},
+  {k:'daily',e:1,label:'Her gün'},
+  {k:'weekly',e:1,label:'Haftalık'},
+  {k:'weekly',e:2,label:'2 haftada bir'},
+  {k:'monthly',e:1,label:'Aylık'},
+  {k:'irregular',e:1,label:'Düzensiz'},
+  {k:'completed',e:1,label:'Tamamlandı'}
+];
+const DAY_UI=[{v:1,l:'Pzt'},{v:2,l:'Sal'},{v:3,l:'Çar'},{v:4,l:'Per'},{v:5,l:'Cum'},{v:6,l:'Cmt'},{v:0,l:'Paz'}];
+const DAY_NAMES=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+function _elv(id){ const e=document.getElementById(id); return e?e.value:''; }
+function renderStatusPicker(){
+  const wrap=document.getElementById('statusPicker'); if(!wrap) return;
+  const cur=_elv('seriesCategory')||'reading';
+  wrap.innerHTML=STATUS_GROUPS.map(g=>`<div class="tk-group">${g.title}</div><div class="pk-wrap">${g.keys.map(k=>
+    `<button type="button" class="pk-chip ${cur===k?'active':''}" onclick="pickStatus('${k}')">${ic(CATS[k].icon,12)} ${esc(CATS[k].label)}</button>`).join('')}</div>`).join('');
+  const help=document.getElementById('statusHelp'); if(help) help.textContent=STATUS_HELP[cur]||'';
+}
+function pickStatus(k){
+  const sel=document.getElementById('seriesCategory'); if(!sel||!CATS[k]) return;
+  sel.value=k; toggleReturnDate(); renderStatusPicker();
+}
+function renderFreqPicker(){
+  const wrap=document.getElementById('freqPicker'); if(!wrap) return;
+  const f=_elv('autoIncrFreq'), e=Math.max(1,parseInt(_elv('autoIncrEvery'))||1);
+  wrap.innerHTML=FREQ_UI.map((o,i)=>{
+    const on=f===o.k&&(o.k!=='weekly'||(o.e===2)===(e===2));
+    return `<button type="button" class="pk-chip ${on?'active':''}" onclick="pickFreq(${i})">${o.label}</button>`;
+  }).join('');
+}
+function pickFreq(i){
+  const o=FREQ_UI[i]; if(!o) return;
+  document.getElementById('autoIncrFreq').value=o.k;
+  document.getElementById('autoIncrEvery').value=String(o.e);
+  // Sıklık seçip miktarı boş bırakmak otomatik artışı sessizce kapatıyordu: varsayılan +1.
+  const amt=document.getElementById('autoIncrAmt');
+  if((o.k==='daily'||o.k==='weekly'||o.k==='monthly')&&amt&&!(parseInt(amt.value)>0)) amt.value='1';
+  syncTakipUI();
+}
+function renderDayPicker(){
+  const wrap=document.getElementById('dayPicker'); if(!wrap) return;
+  const raw=parseInt(_elv('autoIncrDay')), cur=isNaN(raw)?1:raw;
+  wrap.innerHTML=DAY_UI.map(d=>`<button type="button" class="pk-day ${cur===d.v?'active':''}" onclick="pickDay(${d.v})">${d.l}</button>`).join('');
+}
+function pickDay(v){ document.getElementById('autoIncrDay').value=String(v); renderDayPicker(); updateIncrSummary(); }
+function stepInput(id,delta){
+  const el=document.getElementById(id); if(!el) return;
+  const cur=parseInt(el.value);
+  if(isNaN(cur)) el.value=delta>0?'1':'';
+  else el.value=String(Math.max(0,cur+delta));
+  if(id==='autoIncrAmt') updateIncrSummary();
+}
+function stepSelect(id,delta){
+  const sel=document.getElementById(id); if(!sel) return;
+  const vals=Array.from(sel.options).map(o=>o.value);
+  let i=vals.indexOf(sel.value); if(i<0) i=0;
+  sel.value=vals[Math.max(0,Math.min(vals.length-1,i+delta))];
+  syncTakipUI();
+}
+function syncTakipUI(){
+  if(!document.getElementById('statusPicker')) return;
+  renderStatusPicker(); toggleReturnDate();
+  const freq=_elv('autoIncrFreq');
+  const show=(id,on)=>{ const e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
+  show('incrDayWrap',freq==='weekly'); show('incrDateWrap',freq==='monthly'); show('incrIrregularWrap',freq==='irregular');
+  show('incrAmtWrap',freq==='daily'||freq==='weekly'||freq==='monthly');
+  renderFreqPicker(); renderDayPicker();
+  const dl=document.getElementById('incrDateLabel'); if(dl) dl.textContent=String(parseInt(_elv('autoIncrDate'))||1);
   updateIncrSummary();
 }
-// Ayarladığın otomatik artırma kuralını insan diliyle özetleyen, canlı güncellenen bir
-// satır — "bu ayarı doğru mu yaptım?" diye tahmin etmek zorunda kalmayasın diye.
+function updateIncrExtra(){ syncTakipUI(); }
+// Kuralı insan diliyle özetleyen, canlı güncellenen satır: ayarı doğru yaptığını anında görürsün.
 function updateIncrSummary(){
-  const el=document.getElementById('incrSummary'); if(!el)return;
-  const freq=document.getElementById('autoIncrFreq').value;
-  const amt=parseInt(document.getElementById('autoIncrAmt').value)||0;
-  if(!freq||freq==='irregular'||freq==='completed'||amt<=0){ el.textContent=''; el.style.display='none'; return; }
-  const dayNames=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-  let when='';
-  if(freq==='daily') when='her gün';
-  else if(freq==='weekly') when='her hafta '+dayNames[parseInt(document.getElementById('autoIncrDay').value)||1];
-  else if(freq==='monthly') when='her ayın '+(parseInt(document.getElementById('autoIncrDate').value)||1)+'. günü';
-  const next=calcNextIncr(freq,document.getElementById('autoIncrDay').value,document.getElementById('autoIncrDate').value);
-  const nextLabel=next?new Date(next).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}):'';
-  el.style.display='';
-  el.innerHTML=`${ic('bolt',10)} <b>${when}</b> toplam bölüme <b>+${amt}</b> eklenecek${nextLabel?` — sıradaki: <b>${nextLabel}</b>`:''}.`;
+  const el=document.getElementById('incrSummary'); if(!el) return;
+  const freq=_elv('autoIncrFreq');
+  const every=Math.max(1,parseInt(_elv('autoIncrEvery'))||1);
+  const amt=parseInt(_elv('autoIncrAmt'))||0;
+  const rd=parseInt(_elv('autoIncrDay')), dayV=isNaN(rd)?1:rd;
+  const date=parseInt(_elv('autoIncrDate'))||1;
+  let html='';
+  if(freq==='completed') html='Seri tamamlandı: yeni bölüm beklenmiyor.';
+  else if(freq==='irregular') html='Düzensiz yayın: toplam bölüm kendiliğinden artmaz, bölümleri kendin güncellersin.';
+  else if(freq==='daily'||freq==='weekly'||freq==='monthly'){
+    const cap=t=>t.charAt(0).toLocaleUpperCase('tr')+t.slice(1);
+    const when0=freq==='daily'?'her gün':freq==='weekly'?((every>1?(every===2?'iki haftada bir ':every+' haftada bir '):'her hafta ')+DAY_NAMES[dayV]):`her ayın ${date}. günü`;
+    const when=cap(when0);
+    if(amt<=0) html=`${ic('bolt',10)} <b>${when}</b> yayınlanıyor. Otomatik bölüm ekleme <b>kapalı</b>; toplamı elle güncellersin.`;
+    else{
+      const next=calcNextIncr(freq,dayV,date,null,every);
+      const nextLabel=next?new Date(next).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}):'';
+      html=`${ic('bolt',10)} <b>${when}</b> toplam bölüme <b>+${amt}</b> eklenecek${nextLabel?` — sıradaki: <b>${nextLabel}</b>`:''}.`;
+    }
+  }
+  if(!html){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display=''; el.innerHTML=html;
 }
-function calcNextIncr(freq, day, date, fromTs){
+// every: "kaç periyotta bir" (örn. 2 = iki haftada bir). Yalnızca zincirleme hesapta (fromTs verilince) uygulanır;
+// ilk planlamada en yakın yayın gününü verir.
+function calcNextIncr(freq, day, date, fromTs, every){
   const now=fromTs?new Date(fromTs):new Date();
+  const step=Math.max(1,parseInt(every)||1);
   if(freq==='daily'){
     const d=new Date(now); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.getTime();
   }
@@ -2269,7 +2365,7 @@ function calcNextIncr(freq, day, date, fromTs){
     d.setHours(9,0,0,0);
     let diff=(target-d.getDay()+7)%7;
     if(diff===0) diff=7;
-    d.setDate(d.getDate()+diff);
+    d.setDate(d.getDate()+diff+(fromTs?(step-1)*7:0));
     return d.getTime();
   }
   if(freq==='monthly'){
@@ -2278,6 +2374,7 @@ function calcNextIncr(freq, day, date, fromTs){
     d.setHours(9,0,0,0);
     d.setDate(target);
     if(d<=now) d.setMonth(d.getMonth()+1);
+    if(fromTs&&step>1) d.setMonth(d.getMonth()+step-1);
     return d.getTime();
   }
   return null;
@@ -2309,7 +2406,7 @@ async function runAutoIncrement(){
     const guardMax=1000; // bozuk/aşırı eski veri için güvenlik sınırı
     while(cursor&&now>=cursor&&missed<guardMax){
       missed++;
-      cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor);
+      cursor=calcNextIncr(s.autoIncrFreq,s.autoIncrDay,s.autoIncrDate,cursor,s.autoIncrEvery);
     }
     if(missed===0) return;
 
@@ -3233,6 +3330,7 @@ function sanitizeSeriesRecord(item){
   out.autoIncrAmt=num(item.autoIncrAmt,0,0,100000);
   out.autoIncrDay=Math.round(num(item.autoIncrDay,1,0,31));
   out.autoIncrDate=Math.round(num(item.autoIncrDate,1,1,31));
+  out.autoIncrEvery=Math.round(num(item.autoIncrEvery,1,1,12));
   out.autoIncrNext=(item.autoIncrNext==null||!isFinite(Number(item.autoIncrNext)))?null:Number(item.autoIncrNext);
   out.autoIncrFreq=['daily','weekly','monthly','irregular','completed'].includes(item.autoIncrFreq)?item.autoIncrFreq:'';
   out.autoIncrSkips=Array.isArray(item.autoIncrSkips)?item.autoIncrSkips.filter(x=>typeof x==='number'||typeof x==='string').slice(0,500).map(x=>typeof x==='string'?x.slice(0,40):x):[];
@@ -3398,7 +3496,7 @@ async function importBackup(e){
       let newId=Date.now().toString();
       while(series.some(x=>x.id===newId)) newId=(Date.now()+Math.floor(Math.random()*1000)).toString();
       const autoIncrNext=(incoming.autoIncrFreq&&incoming.autoIncrFreq!=='irregular'&&incoming.autoIncrFreq!=='completed')
-        ?calcNextIncr(incoming.autoIncrFreq,incoming.autoIncrDay||1,incoming.autoIncrDate||1):null;
+        ?calcNextIncr(incoming.autoIncrFreq,Number.isFinite(+incoming.autoIncrDay)?+incoming.autoIncrDay:1,incoming.autoIncrDate||1,null,incoming.autoIncrEvery||1):null;
       const newSeries={
         id:newId,name,
         originalName:incoming.originalName||'',
@@ -3416,8 +3514,9 @@ async function importBackup(e){
         returnDate:incoming.returnDate||'',
         autoIncrAmt:incoming.autoIncrAmt||0,
         autoIncrFreq:incoming.autoIncrFreq||'',
-        autoIncrDay:incoming.autoIncrDay||1,
+        autoIncrDay:Number.isFinite(+incoming.autoIncrDay)?+incoming.autoIncrDay:1,
         autoIncrDate:incoming.autoIncrDate||1,
+        autoIncrEvery:incoming.autoIncrEvery||1,
         autoIncrNext,
         autoIncrSkips:[],
       };
