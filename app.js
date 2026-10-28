@@ -88,6 +88,37 @@ function cssUrl(u){return String(u==null?'':u).replace(/['"()\\\s]/g,c=>'%'+c.ch
 // Kapaklar base64 data-URI olarak saklanıyor. Bunları HTML string'lerine gömmek her render'da
 // yüzlerce KB'lık metni yeniden ayrıştırtıyordu. Burada bir kez Blob URL'ye çevirip önbelleğe alıyoruz:
 // HTML küçük kalıyor, görüntü çözme işi ana iş parçacığının dışında yapılıyor, görüntü kalitesi aynı.
+// Gün sayımı takvim gününe göre yapılır (saat farkı değil): "Yarın"/"Bugün" gece yarısı ile sabah arasında şaşmasın,
+// "2025-12-01" gibi tarih metinleri UTC yerine yerel gün olarak okunsun.
+function parseLocalDate(str){ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(str||'')); return m?new Date(+m[1],+m[2]-1,+m[3]):new Date(NaN); }
+function _localMidnight(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.getTime(); }
+function daysUntil(target){ return Math.round((_localMidnight(target)-_localMidnight(Date.now()))/86400000); }
+// localStorage dolu/kapalıysa (özel sekme, kota) yazma istisna fırlatır: uygulamayı düşürmesin, sonucu bildirsin.
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+// Bölüm değerini güvenli aralığa getirir: boş/geçersiz → '', negatif → 0, üst sınır 99999, gereksiz ondalık yok.
+function cleanChapterValue(v){
+  const t=String(v==null?'':v).trim(); if(!t) return '';
+  const n=parseFloat(t); if(!isFinite(n)) return '';
+  const c=Math.min(99999,Math.max(0,n));
+  return Number.isInteger(c)?String(c):String(Math.round(c*100)/100);
+}
+// Silinen serilere bağlı kalan bağlantıları diğer serilerden temizler; geri alma için çıkarılanları döndürür.
+function detachLinksTo(ids){
+  const idSet=new Set(ids), removed=[];
+  series.forEach(o=>{
+    if(idSet.has(o.id)||!Array.isArray(o.links)||!o.links.length) return;
+    const gone=o.links.filter(l=>idSet.has(l.id));
+    if(gone.length){ o.links=o.links.filter(l=>!idSet.has(l.id)); removed.push({id:o.id,links:gone}); }
+  });
+  return removed;
+}
+function restoreLinks(removed){
+  (removed||[]).forEach(r=>{
+    const o=series.find(x=>x.id===r.id); if(!o) return;
+    o.links=o.links||[];
+    r.links.forEach(l=>{ if(!o.links.some(x=>x.id===l.id)) o.links.push(l); });
+  });
+}
 // Türkçe'ye duyarlı arama: büyük/küçük harf (I/ı, İ/i) ve aksan farklarını yok sayar.
 // "Işık" ile "ışık", "Şeytan" ile "seytan" aynı sonucu verir.
 function trFold(s){
@@ -228,7 +259,7 @@ function applyTheme(t){
 let _themeToggleTimes=[];
 function toggleTheme(){
   const next=getTheme()==='light'?'dark':'light';
-  localStorage.setItem(THEME_KEY,next);
+  lsSet(THEME_KEY,next);
   applyTheme(next);
   updateThemeToggleIcon();
   const now=Date.now();
@@ -646,12 +677,12 @@ let currentGenre=null;
 // girmek zorunda kalmazsın.
 let fansubMeta={};
 try{ fansubMeta=JSON.parse(localStorage.getItem('megami_fansub_meta')||'{}'); }catch(e){ fansubMeta={}; }
-function saveFansubMeta(){ try{ localStorage.setItem('megami_fansub_meta',JSON.stringify(fansubMeta)); }catch(e){} }
+function saveFansubMeta(){ return lsSet('megami_fansub_meta',JSON.stringify(fansubMeta)); }
 function getFansubMeta(name){ return fansubMeta[name]||{logo:'',url:''}; }
 function setFansubMeta(name,logo,url){
   if(!name)return;
   fansubMeta[name]={logo:(logo||'').trim(),url:(url||'').trim()};
-  saveFansubMeta();
+  return saveFansubMeta();
 }
 
 const CATS={
@@ -674,7 +705,7 @@ function updateStreak(){
   if(data.last===today){}
   else if(data.last===new Date(Date.now()-86400000).toDateString()){data.count=(data.count||0)+1;data.last=today;}
   else{data.count=1;data.last=today;}
-  localStorage.setItem('mv_streak',JSON.stringify(data));
+  lsSet('mv_streak',JSON.stringify(data));
   const streakNumEl=document.getElementById('streakNum');
   if(streakNumEl)streakNumEl.textContent=data.count||1;
   const streakSidebarNumEl=document.getElementById('streakSidebarNum');
@@ -818,11 +849,25 @@ function luckyPick(){
   showToast('star',`🎲 Bugünkü serin: "${pick.name}"!`);
   setTimeout(()=>openDetail(pick.id),600);
 }
+// ===== Tarayıcı geçmişi (Geri tuşu) =====
+// Eskiden detay/form her kapanışta geçmişe YENİ bir kayıt ekleniyordu: ana ekranda Geri'ye basınca daha önce
+// kapattığın detay yeniden açılıyor, uygulamadan çıkmak için defalarca basmak gerekiyordu. Artık girerken
+// eklediğimiz kayıtları çıkarken geri alıyoruz (yeni kayıt eklemeden).
+let _formBackPending=false;
+function _pushDetailHistory(id){
+  const depth=((history.state&&history.state.megamiDepth)||0)+1;
+  history.pushState({megamiDetail:id,megamiDepth:depth},'',location.pathname+'?seri='+encodeURIComponent(id));
+}
+function _unwindHistory(){
+  const d=(history.state&&history.state.megamiDepth)||0;
+  if(d>0) history.go(-d);                                   // detaya girerken eklenen tüm kayıtları geri al
+  else if(location.search) history.replaceState({},'',location.pathname); // doğrudan bağlantıyla açıldıysa sadece adresi temizle
+}
 function switchPage(p){
   if(currentPage==='detail'&&p!=='detail'){
     currentDetailId=null;
     _detailReturnState=null;
-    history.pushState({},'',location.pathname);
+    _unwindHistory();
   }
   currentPage=p;
   const headerEl=document.getElementById('header');
@@ -883,7 +928,7 @@ function bumpTabUsage(cat){
   if(cat==='all')return; // Tümü zaten her zaman sabit, sayaç gereksiz
   const usage=getTabUsage();
   usage[cat]=(usage[cat]||0)+1;
-  localStorage.setItem(TAB_USAGE_KEY,JSON.stringify(usage));
+  lsSet(TAB_USAGE_KEY,JSON.stringify(usage));
 }
 let _otherTabsOpen=false;
 function renderTabs(){
@@ -1052,11 +1097,13 @@ function bulkDelete(){
   showConfirm(`${n} seriyi silmek istediğine emin misin?`,async()=>{
     const deletedSeries=series.filter(s=>selectedIds.has(s.id));
     series=series.filter(s=>!selectedIds.has(s.id));
+    const removedLinks=detachLinksTo(deletedSeries.map(d=>d.id));
     await save();
     selectionMode=false;selectedIds.clear();
     renderTabs();renderHome();
     showUndoBanner(`${n} seri silindi.`,async()=>{
       series=series.concat(deletedSeries);
+      restoreLinks(removedLinks);
       await save();renderTabs();renderHome();
       showToast('check','Seriler geri getirildi.');
     });
@@ -1082,7 +1129,7 @@ const SORT_OPTIONS={
 };
 function setSort(val){
   currentSort=val;
-  localStorage.setItem('megami_sort',val);
+  lsSet('megami_sort',val);
   renderContent();
 }
 function sortSeries(arr){
@@ -1120,7 +1167,7 @@ function getReturnedFromHiatus(){
   const today=new Date(); today.setHours(0,0,0,0);
   return series.filter(s=>{
     if(s.category!=='season'||!s.returnDate) return false;
-    const rd=new Date(s.returnDate); rd.setHours(0,0,0,0);
+    const rd=parseLocalDate(s.returnDate);
     return rd<=today;
   });
 }
@@ -1141,7 +1188,7 @@ function getWeeklyForecast(){
   }
   series.forEach(s=>{
     if(s.category==='season'&&s.returnDate){
-      const rd=new Date(s.returnDate+'T00:00:00');
+      const rd=parseLocalDate(s.returnDate);
       const key=_forecastDateKey(rd);
       if(byDay[key]) byDay[key].returning.push(s);
     }
@@ -1159,7 +1206,7 @@ function getWeeklyForecast(){
   return Object.values(byDay);
 }
 function dismissDailyDigest(){
-  localStorage.setItem('megami_digest_dismissed',new Date().toDateString());
+  lsSet('megami_digest_dismissed',new Date().toDateString());
   const el=document.getElementById('dailyDigestCard');
   if(el) el.remove();
 }
@@ -1470,8 +1517,8 @@ function cardMeta(s){
   let chText='';
   let staleBadge='';
   if(s.category==='season'&&s.returnDate){
-    const d=new Date(s.returnDate+'T00:00:00');
-    const diff=Math.ceil((d-new Date())/(1000*60*60*24));
+    const d=parseLocalDate(s.returnDate);
+    const diff=daysUntil(d);
     chText=`${cardDateSuffix(d)} dönüyor`;
     staleBadge=`<div class="stale-badge">${ic('moon',9)} ${diff>0?diff+' gün':'Bugün'}</div>`;
   }else if(s.category==='stockpile'){
@@ -1586,7 +1633,7 @@ function openPreview(id,ev){
 }
 // ===== Bölüm takibi =====
 // Tek noktadan bölüm değişimi: hem önizleme hem detay sayfası hem de "okudun mu?" sorusu bunu kullanır.
-function _chNum(v){ return Math.max(0,parseInt(v)||0); }
+function _chNum(v){ return Math.min(99999,Math.max(0,parseInt(v)||0)); }
 function unreadText(s){
   const tr=_chNum(s.chapterTR), total=_chNum(s.chapterTotal);
   if(total<=0) return '';
@@ -1684,8 +1731,16 @@ function showReadPrompt(s,next){
   clearTimeout(window._readPromptTimer);
   window._readPromptTimer=setTimeout(hideReadPrompt,25000);
 }
+// Uygulama arka plandan geri döndüğünde (kapanıp açılmadan) yayın günü geçmişse bölüm toplamları güncellensin.
+function _resumeAutoIncrement(){
+  if(!series.length||Date.now()-_lastAutoRun<60000) return;
+  const ov=document.getElementById('addOverlay');
+  if(ov&&!ov.classList.contains('hidden')) return; // form açıkken seriyi değiştirme
+  runAutoIncrement().catch(()=>{});
+}
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible') setTimeout(checkPendingRead,400); else flushChapterLog();
+  if(document.visibilityState==='visible'){ setTimeout(checkPendingRead,400); setTimeout(_resumeAutoIncrement,700); }
+  else flushChapterLog();
 });
 window.addEventListener('pagehide',flushChapterLog);
 function openQuick(id){
@@ -1713,8 +1768,7 @@ function openQuick(id){
 }
 function selectQuickCat(k){
   quickCat=k;
-  document.querySelectorAll('.status-chip').forEach(el=>el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.status-chip').forEach(el=>el.classList.toggle('active',(el.getAttribute('onclick')||'')===`selectQuickCat('${k}')`));
 }
 function stepCh(lang,delta){
   const inp=document.getElementById('quick'+lang);
@@ -1725,8 +1779,8 @@ async function saveQuick(){
   const prevCat=s.category;
   flushChapterLog();
   const prevTR=s.chapterTR, prevEN=s.chapterEN;
-  s.chapterTR=document.getElementById('quickTR').value||'';
-  s.chapterEN=document.getElementById('quickEN').value||'';
+  s.chapterTR=cleanChapterValue(document.getElementById('quickTR').value);
+  s.chapterEN=cleanChapterValue(document.getElementById('quickEN').value);
   s.category=quickCat;
   s.updatedAt=Date.now();
   if(quickSkipping&&s.autoIncrFreq){
@@ -1753,13 +1807,13 @@ const ALT_LIMIT=3, FANSUB_LIMIT=3, LOG_LIMIT=3;
 // gereksiz doldurmasın diye.
 function getCardCountdownBadge(s){
   if(s.category==='season'&&s.returnDate){
-    const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
+    const diff=daysUntil(parseLocalDate(s.returnDate));
     if(diff<=0) return {text:'Döndü!',cls:'ret'};
     if(diff===1) return {text:'Yarın',cls:'ret'};
     return null;
   }
   if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
-    const diff=Math.ceil((s.autoIncrNext-Date.now())/(1000*60*60*24));
+    const diff=daysUntil(s.autoIncrNext);
     if(diff<=0) return {text:'Bugün!',cls:'new'};
     if(diff===1) return {text:'Yarın',cls:'new'};
   }
@@ -1767,16 +1821,15 @@ function getCardCountdownBadge(s){
 }
 function buildCountdown(s){
   if(s.category==='season'&&s.returnDate){
-    const diff=Math.ceil((new Date(s.returnDate)-new Date())/(1000*60*60*24));
-    const rdLabel=new Date(s.returnDate+'T00:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+    const diff=daysUntil(parseLocalDate(s.returnDate));
+    const rdLabel=parseLocalDate(s.returnDate).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
     if(diff<=0) return '<div class="countdown-box"><div><div class="countdown-label">Geri Dönüş</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">'+esc(rdLabel)+'</div></div><div class="countdown-icon" style="color:var(--green);border-color:rgba(52,211,153,.4);">'+ic('checkcirc',26)+'</div></div>';
     return '<div class="countdown-box"><div><div class="countdown-label">Sezon Dönüşüne</div><div class="countdown-days">'+diff+'</div><div class="countdown-sub">gün kaldı · '+esc(rdLabel)+'</div></div><div class="countdown-icon">'+ic('clock',26)+'</div></div>';
   }
   // Sezon arasında değilse ve otomatik bölüm artırma açıksa, sıradaki bölümün ne zaman
   // ekleneceğini de göster — eskiden bu bilgi hiçbir yerde görünmüyordu.
   if(s.autoIncrFreq&&s.autoIncrFreq!=='irregular'&&s.autoIncrFreq!=='completed'&&s.autoIncrAmt>0&&s.autoIncrNext){
-    const diffMs=s.autoIncrNext-Date.now();
-    const diffDays=Math.ceil(diffMs/(1000*60*60*24));
+    const diffDays=daysUntil(s.autoIncrNext);
     const dateLabel=new Date(s.autoIncrNext).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
     if(diffDays<=0) return '<div class="countdown-box"><div><div class="countdown-label">Yeni Bölüm</div><div class="countdown-days" style="color:var(--green);">Bugün!</div><div class="countdown-sub">+'+s.autoIncrAmt+' bölüm bekleniyor</div></div><div class="countdown-icon" style="color:var(--green);border-color:rgba(52,211,153,.4);">'+ic('bolt',26)+'</div></div>';
     return '<div class="countdown-box"><div><div class="countdown-label">Sonraki Bölüme</div><div class="countdown-days">'+diffDays+'</div><div class="countdown-sub">gün kaldı · '+esc(dateLabel)+'</div></div><div class="countdown-icon">'+ic('clock',26)+'</div></div>';
@@ -1926,7 +1979,7 @@ function openDetail(id,skipHistory){
   document.getElementById('catTabsRow').style.display='none';
   { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl)heroSecEl.style.display='none'; }
   if(!skipHistory){
-    history.pushState({megamiDetail:id},'',location.pathname+'?seri='+encodeURIComponent(id));
+    _pushDetailHistory(id);
   }
 }
 function closeDetail(){
@@ -1934,7 +1987,7 @@ function closeDetail(){
   _detailReturnState=null;
   currentDetailId=null;
   currentPage=returnPage;
-  history.pushState({},'',location.pathname);
+  _unwindHistory();
   const navHomeEl=document.getElementById('navHome');
   const navStatsEl=document.getElementById('navStats');
   if(navHomeEl)navHomeEl.classList.toggle('active',returnPage==='home');
@@ -1946,6 +1999,7 @@ function closeDetail(){
   if(typeof updateRadialActive==='function') updateRadialActive();
 }
 window.addEventListener('popstate',()=>{
+  _formBackPending=false;
   // Mobile'a özel: Seri Ekle/Düzenle formu açıksa, geri tuşu önce onu kapatmalı.
   if(typeof _formPageWasOpen!=='undefined'&&_formPageWasOpen){
     const addEl=document.getElementById('addOverlay');
@@ -1959,7 +2013,7 @@ window.addEventListener('popstate',()=>{
   const params=new URLSearchParams(location.search);
   const seriId=params.get('seri');
   if(seriId&&series.find(x=>x.id===seriId)){
-    openDetail(seriId,true);
+    if(!(currentPage==='detail'&&currentDetailId===seriId)) openDetail(seriId,true);
   } else if(currentPage==='detail'){
     closeDetail();
   }
@@ -2120,7 +2174,7 @@ async function saveSeries(){
   const cover=_pendingCoverData||ci||(cimg?cimg.src:'');
   console.log('[Megami] saveSeries kapak:',_pendingCoverData?'_pendingCoverData':(ci?'coverUrlInput':(cimg?'img.src':'yok')),'uzunluk:',cover.length);
   const prevTR=editingId?(series.find(x=>x.id===editingId)?.chapterTR||0):0;
-  const newTR=document.getElementById('chapterTR').value||'';
+  const newTR=cleanChapterValue(document.getElementById('chapterTR').value);
   const autoAmt=parseInt(document.getElementById('autoIncrAmt').value)||0;
   const autoFreq=document.getElementById('autoIncrFreq').value||'';
   const _rawDay=parseInt(document.getElementById('autoIncrDay').value);
@@ -2151,8 +2205,8 @@ async function saveSeries(){
     cover:normalizeCoverUrl(cover),
     oldCovers:[...oldCovers],
     category:document.getElementById('seriesCategory').value,
-    chapterTR:newTR,chapterEN:document.getElementById('chapterEN').value||'',
-    chapterTotal:document.getElementById('chapterTotal').value||'',
+    chapterTR:newTR,chapterEN:cleanChapterValue(document.getElementById('chapterEN').value),
+    chapterTotal:cleanChapterValue(document.getElementById('chapterTotal').value),
     note:document.getElementById('seriesNote').value.trim(),
     opinion:(document.getElementById('seriesOpinion')?.value||'').trim(),
     originalName:(document.getElementById('originalNameInput')?.value||'').trim(),
@@ -2215,11 +2269,13 @@ async function deleteSeries(){
     const deletedIndex=series.findIndex(x=>x.id===id);
     const wasDetailPage=currentPage==='detail'&&currentDetailId===id;
     series=series.filter(x=>x.id!==id);
+    const removedLinks=detachLinksTo([id]); // diğer serilerde artık var olmayan bir seriye bağlantı kalmasın
     await save();closeSheet('addOverlay');renderTabs();
     if(wasDetailPage){closeDetail();}else{renderContent();}
     if(deletedSeries){
       showUndoBanner(`"${deletedSeries.name}" silindi.`,async()=>{
         series.splice(Math.min(deletedIndex,series.length),0,deletedSeries);
+        restoreLinks(removedLinks);
         await save();renderTabs();renderContent();
         showToast('check','Seri geri getirildi.');
       });
@@ -2390,8 +2446,9 @@ function periodKey(freq, day, date){
   if(freq==='monthly') return `m-${d.getFullYear()}-${d.getMonth()}-${date}`;
   return '';
 }
+let _lastAutoRun=0;
 async function runAutoIncrement(){
-  const now=Date.now();
+  const now=Date.now(); _lastAutoRun=now;
   let changed=false;
   series.forEach(s=>{
     if(!s.autoIncrFreq||!s.autoIncrAmt||s.autoIncrAmt<=0) return;
@@ -2417,7 +2474,9 @@ async function runAutoIncrement(){
     const effectiveMissed=wasCurrentSkipped?missed-1:missed;
 
     if(effectiveMissed>0){
-      const prev=parseInt(s.chapterTotal)||0;
+      // Toplam girilmemişse (bilinmiyor) 0'dan değil, okuduğun bölümden saymaya başla: aksi halde toplam 1 olup
+      // "12 / 1" gibi tutarsız bir ilerleme çıkıyordu.
+      const prev=parseInt(s.chapterTotal)||parseInt(s.chapterTR)||0;
       const added=s.autoIncrAmt*effectiveMissed;
       s.chapterTotal=String(prev+added);
       addLog(s.id, effectiveMissed>1
@@ -2602,7 +2661,7 @@ function saveFansubMetaFromForm(){
   const name=window._fansubMetaEditingName; if(!name)return;
   const logo=document.getElementById('fansubMetaLogoInput').value.trim();
   const url=document.getElementById('fansubMetaUrlInput').value.trim();
-  setFansubMeta(name,logo,url);
+  if(setFansubMeta(name,logo,url)===false){ showToast('warn','Kaydedilemedi: tarayıcı depolama alanı dolu. Daha küçük bir logo dene.'); return; }
   closeFansubMetaEditor();
   renderFansubTags();
   if(currentPage==='fansubs'&&typeof renderFansubListPage==='function')renderFansubListPage();
@@ -3071,7 +3130,7 @@ function isImageAvatar(a){ return typeof a==='string'&&(a.startsWith('data:')||a
 function avatarHTML(a,size){
   return isImageAvatar(a)?`<img src="${esc(a)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:a;
 }
-function saveProfileData(p){ localStorage.setItem('megami_profile',JSON.stringify(p)); }
+function saveProfileData(p){ return lsSet('megami_profile',JSON.stringify(p)); }
 function getProfileRank(){
   const n=series.length;
   let rank=PROFILE_RANKS[0].label;
@@ -3123,7 +3182,7 @@ function previewProfileName(){} // ileride canlı önizleme için ayrılmış, �
 function saveProfile(){
   const name=document.getElementById('profileNameInput').value.trim();
   const bio=document.getElementById('profileBioInput').value.trim();
-  saveProfileData({avatar:_profileAvatarPending,name,bio});
+  if(!saveProfileData({avatar:_profileAvatarPending,name,bio})){ showToast('warn','Profil kaydedilemedi: tarayıcı depolama alanı dolu.'); return; }
   updateProfileAvatarBtn();
   closeSheet('profileOverlay');
   showToast('check','Profil kaydedildi!');
@@ -3287,7 +3346,7 @@ function _cleanImgUrl(v){
   if(/^https?:\/\//i.test(t)||t.startsWith('data:image/')) return t;
   return '';
 }
-function _cleanChapter(v){ return (v==null?'':String(v)).replace(/[<>"'`&\\]/g,'').slice(0,32); }
+function _cleanChapter(v){ const t=(v==null?'':String(v)).replace(/[<>"'`&\\]/g,'').slice(0,32); return /^-?\d+(\.\d+)?$/.test(t.trim())?cleanChapterValue(t):t; }
 function _strList(a,maxItems,maxLen){ return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,maxItems||100).map(x=>x.slice(0,maxLen||200)):[]; }
 function sanitizeFansubMeta(obj){
   const out={};
@@ -3411,7 +3470,7 @@ async function exportBackup(){
     setTimeout(()=>URL.revokeObjectURL(url),60000); // hemen iptal etmek iOS Safari'de indirmeyi yarıda kesebiliyordu
     done=true;
   }
-  localStorage.setItem('megami_last_backup',JSON.stringify({ts:Date.now(),count:series.length,size:blob.size}));
+  lsSet('megami_last_backup',JSON.stringify({ts:Date.now(),count:series.length,size:blob.size}));
   updateBackupInfo();
   if(currentPage==='home') renderContent(); // hatırlatma şeridi kalksın
   showToast('check','Yedek hazır!');
@@ -3565,7 +3624,7 @@ async function importBackup(e){
       return;
     }
     _lastBackupBeforeImport=snapshot;
-    if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
+    if(currentPage==='detail'){currentPage='home';currentDetailId=null;_unwindHistory();}
     renderTabs(); renderContent();
     closeSheet('backupOverlay');
     const skipMsg=skipped>0?` (${skipped} geçersiz kayıt atlandı)`:'';
@@ -3587,7 +3646,7 @@ async function undoImport(){
     if(snap.logReplaced) await replaceActivityLog(snap.log);
     if(snap.settingsReplaced) applyBackupSettings(snap.settings,true);
   }catch(e){ showToast('warn','Geri alma sırasında bir sorun oluştu.'); return; }
-  if(currentPage==='detail'){currentPage='home';currentDetailId=null;history.pushState({},'',location.pathname);}
+  if(currentPage==='detail'){currentPage='home';currentDetailId=null;_unwindHistory();}
   renderTabs(); renderContent();
   showToast('check','Önceki verilerine geri dönüldü.');
 }
