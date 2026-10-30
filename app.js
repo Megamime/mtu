@@ -869,6 +869,22 @@ function _unwindHistory(){
   if(d>0) history.go(-d);                                   // detaya girerken eklenen tüm kayıtları geri al
   else if(location.search) history.replaceState({},'',location.pathname); // doğrudan bağlantıyla açıldıysa sadece adresi temizle
 }
+// "Ana Sayfa": nerede olursan ol (arama, başka kategori, tür/etiket süzgeci, seçim modu, detay ya da başka sayfa)
+// Tümü kategorisine ve sayfanın en üstüne döner.
+function goHome(){
+  const wasHome=currentPage==='home';
+  clearTimeout(_searchDebounceTimer);
+  currentCat='all'; searchQ=''; currentGenre=null;
+  selectionMode=false; selectedIds.clear(); _otherTabsOpen=false;
+  const si=document.getElementById('searchInput'); if(si){ si.value=''; si.blur(); }
+  document.querySelectorAll('.more-menu.open,#subMoreMenu.open,#sortMenu.open').forEach(e=>e.classList.remove('open'));
+  switchPage('home');
+  renderTabs();
+  const row=document.getElementById('catTabsRow');
+  if(row) [row,...row.querySelectorAll('*')].forEach(el=>{ if(el.scrollLeft>0) el.scrollLeft=0; }); // sekme çubuğu da başa dönsün
+  const app=document.getElementById('app');
+  if(app){ if(wasHome&&app.scrollTop>40&&app.scrollTo) app.scrollTo({top:0,behavior:'smooth'}); else app.scrollTop=0; }
+}
 function switchPage(p){
   if(currentPage==='detail'&&p!=='detail'){
     currentDetailId=null;
@@ -3962,7 +3978,7 @@ function normalizeCoverUrl(u){
 // ═══════════════════════════════════════════
 var radialOpen=false, radialTimer=null, radialHovered=-1, radialStaggerTimers=[];
 var radialDefs=[
-  {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){switchPage('home');}},
+  {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){goHome();}},
   {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
   {label:'Seri Ekle', page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
   {label:'Liste',      page:'list',  icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>', action:function(){switchPage('list');}},
