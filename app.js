@@ -854,6 +854,12 @@ function luckyPick(){
 // kapattığın detay yeniden açılıyor, uygulamadan çıkmak için defalarca basmak gerekiyordu. Artık girerken
 // eklediğimiz kayıtları çıkarken geri alıyoruz (yeni kayıt eklemeden).
 let _formBackPending=false;
+// Detay sayfası açıkken mor parlama, sayfayla birlikte yaylanan içerikten bağımsız sabit bir katmanda çizilir
+// (iOS'ta sayfayı aşağı çekince üstte boşluk/çizgi açılmasın).
+function _setDetailOpen(on){
+  document.documentElement.classList.toggle('detail-open',!!on);
+  const g=document.getElementById('detailGlow'); if(g) g.style.transform='';
+}
 function _pushDetailHistory(id){
   const depth=((history.state&&history.state.megamiDepth)||0)+1;
   history.pushState({megamiDetail:id,megamiDepth:depth},'',location.pathname+'?seri='+encodeURIComponent(id));
@@ -867,6 +873,7 @@ function switchPage(p){
   if(currentPage==='detail'&&p!=='detail'){
     currentDetailId=null;
     _detailReturnState=null;
+    _setDetailOpen(false);
     _unwindHistory();
   }
   currentPage=p;
