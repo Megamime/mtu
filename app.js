@@ -153,7 +153,8 @@ function normalizeGenres(arr){
 }
 const TAG_ALIASES={
   'yetiskin':'Yetişkin','adult':'Yetişkin','mature':'Yetişkin','18+':'Yetişkin',
-  'one shot':'Tek Sayı | One Shot','oneshot':'Tek Sayı | One Shot','one-shot':'Tek Sayı | One Shot','tek sayi':'Tek Sayı | One Shot','tek sayi | one shot':'Tek Sayı | One Shot'
+  'one shot':'Tek Sayı | One Shot','oneshot':'Tek Sayı | One Shot','one-shot':'Tek Sayı | One Shot','tek sayi':'Tek Sayı | One Shot','tek sayi | one shot':'Tek Sayı | One Shot',
+  '4 koma':'Kısa Komedi (4-Koma)','4-koma':'Kısa Komedi (4-Koma)','4koma':'Kısa Komedi (4-Koma)','yonkoma':'Kısa Komedi (4-Koma)','yon koma':'Kısa Komedi (4-Koma)','4-panel':'Kısa Komedi (4-Koma)','kisa komedi':'Kısa Komedi (4-Koma)','four-panel':'Kısa Komedi (4-Koma)'
 };
 function isKnownTag(v){ const k=trFold(v); return !!TAG_ALIASES[k]||TAGS_PRESET.some(x=>trFold(x)===k); }
 function canonTag(t){
@@ -635,7 +636,7 @@ const GENRES_PRESET=[
   'Harem','Eççi','Erotika (Hentai’nin yandan yemişi)','İsekai','Şonen','Şojo','Ters Harem','Yuri (Kız Kıza)','Yaşamdan Kesitler','Okul Yaşamı'
 ];
 // Etiketler: türden bağımsız, serinin "ne tür bir içerik/biçim olduğunu" belirten işaretler.
-const TAGS_PRESET=['Yetişkin','Tek Sayı | One Shot'];
+const TAGS_PRESET=['Yetişkin','Tek Sayı | One Shot','Kısa Komedi (4-Koma)'];
 // Formda hazır seçenek olarak gösterilmez ama bilinen türlerdir: bu adlar (büyük/küçük harf, Türkçe karakter
 // farkıyla yazılsa bile) tek bir doğru yazıma çevrilir. Kullanıcı bunları kendi türü olarak ekleyebilir.
 const GENRES_KNOWN_EXTRA=[
@@ -854,6 +855,8 @@ function luckyPick(){
 // kapattığın detay yeniden açılıyor, uygulamadan çıkmak için defalarca basmak gerekiyordu. Artık girerken
 // eklediğimiz kayıtları çıkarken geri alıyoruz (yeni kayıt eklemeden).
 let _formBackPending=false;
+let _suppressPop=false;      // geçmişi kendimiz geri aldığımızda popstate bir şey yapmasın
+let _forcedDetailReturn;     // geri dönüşte detay sayfasının "nereye döneceği" bilgisini korur
 // Detay sayfası açıkken mor parlama, sayfayla birlikte yaylanan içerikten bağımsız sabit bir katmanda çizilir
 // (iOS'ta sayfayı aşağı çekince üstte boşluk/çizgi açılmasın).
 function _setDetailOpen(on){
@@ -868,6 +871,21 @@ function _unwindHistory(){
   const d=(history.state&&history.state.megamiDepth)||0;
   if(d>0) history.go(-d);                                   // detaya girerken eklenen tüm kayıtları geri al
   else if(location.search) history.replaceState({},'',location.pathname); // doğrudan bağlantıyla açıldıysa sadece adresi temizle
+}
+// "Arama": her durumdan temiz bir aramayla arama kutusuna odaklanır. Liste sayfasındaysan orada kalır (sekme
+// durumu korunur); diğer her yerden Tümü kategorisine, sayfanın en üstüne gelir. focus() dokunuş anında,
+// senkron çağrılır: iOS'ta klavyenin açılması için gerekli.
+function goSearch(){
+  const onList=currentPage==='list';
+  clearTimeout(_searchDebounceTimer);
+  searchQ=''; currentGenre=null; selectionMode=false; selectedIds.clear(); _otherTabsOpen=false;
+  if(!onList) currentCat='all';
+  document.querySelectorAll('.more-menu.open,#subMoreMenu.open,#sortMenu.open').forEach(e=>e.classList.remove('open'));
+  if(onList&&typeof renderListPage==='function') renderListPage();
+  else { switchPage('home'); renderTabs(); }
+  const app=document.getElementById('app'); if(app) app.scrollTop=0;
+  const si=document.getElementById('searchInput');
+  if(si){ si.value=''; si.focus(); try{ si.select(); }catch(e){} }
 }
 // "Ana Sayfa": nerede olursan ol (arama, başka kategori, tür/etiket süzgeci, seçim modu, detay ya da başka sayfa)
 // Tümü kategorisine ve sayfanın en üstüne döner.
@@ -886,6 +904,12 @@ function goHome(){
   if(app){ if(wasHome&&app.scrollTop>40&&app.scrollTo) app.scrollTo({top:0,behavior:'smooth'}); else app.scrollTop=0; }
 }
 function switchPage(p){
+  if(currentPage==='fansub'&&p!=='fansub'){
+    // Çeviri ekibi sayfasından bir sekmeye geçiliyor: sayfayla eklenen geçmiş kaydını sessizce geri al.
+    if(typeof _fansubRet!=='undefined') { _fansubRet=null; _fansubName=null; }
+    const d=(history.state&&history.state.megamiFansub&&history.state.megamiDepth)||0;
+    if(d>0){ _suppressPop=true; history.go(-d); setTimeout(()=>{ _suppressPop=false; },600); } // altındaki detay kayıtlarıyla birlikte hepsini geri al
+  }
   if(currentPage==='detail'&&p!=='detail'){
     currentDetailId=null;
     _detailReturnState=null;
@@ -1054,10 +1078,10 @@ function closeGenreFilter(){ document.getElementById('genreFilterOverlay').class
 function setGenreFilter(g){
   currentGenre=currentGenre===g?null:g; // aynı türe tekrar basınca filtre kalkar
   closeGenreFilter();
-  renderHome();
+  renderContent();
   updateGenreFilterBtn();
 }
-function clearGenreFilter(){ currentGenre=null; closeGenreFilter(); renderHome(); updateGenreFilterBtn(); }
+function clearGenreFilter(){ currentGenre=null; closeGenreFilter(); renderContent(); updateGenreFilterBtn(); }
 function updateGenreFilterBtn(){
   const btn=document.getElementById('genreFilterBtn');
   if(!btn)return;
@@ -1093,7 +1117,7 @@ function bulkPin(){
   save().then(()=>{
     showToast('check',`${selectedIds.size} seri sabitlendi.`);
     selectionMode=false;selectedIds.clear();
-    renderTabs();renderHome();
+    renderTabs();renderContent();
   });
 }
 function bulkSetCategory(cat){
@@ -1102,7 +1126,7 @@ function bulkSetCategory(cat){
   save().then(()=>{
     showToast('check',`${selectedIds.size} seri "${CATS[cat].label}" olarak güncellendi.`);
     selectionMode=false;selectedIds.clear();
-    renderTabs();renderHome();
+    renderTabs();renderContent();
   });
 }
 function bulkFavorite(){
@@ -1111,7 +1135,7 @@ function bulkFavorite(){
   save().then(()=>{
     showToast('star',`${selectedIds.size} seri favorilere eklendi.`);
     selectionMode=false;selectedIds.clear();
-    renderTabs();renderHome();
+    renderTabs();renderContent();
   });
 }
 function bulkDelete(){
@@ -1123,11 +1147,11 @@ function bulkDelete(){
     const removedLinks=detachLinksTo(deletedSeries.map(d=>d.id));
     await save();
     selectionMode=false;selectedIds.clear();
-    renderTabs();renderHome();
+    renderTabs();renderContent();
     showUndoBanner(`${n} seri silindi.`,async()=>{
       series=series.concat(deletedSeries);
       restoreLinks(removedLinks);
-      await save();renderTabs();renderHome();
+      await save();renderTabs();renderContent();
       showToast('check','Seriler geri getirildi.');
     });
   });
@@ -1876,10 +1900,10 @@ function getSeriesDetailSections(s){
         const initials=f.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
         const logoImg=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
         const inner=`<div class="detail-fansub-logo" style="position:relative;">${logoImg}<span style="display:${meta.logo?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;">${esc(initials)}</span></div>
-          <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">Bu seride takip ettiğin grup</div></div>`;
-        return safeUrl(meta.url)
-          ?`<a href="${esc(safeUrl(meta.url))}" target="_blank" rel="noopener" class="detail-fansub-row" style="margin-bottom:8px;text-decoration:none;">${inner}</a>`
-          :`<div class="detail-fansub-row" style="margin-bottom:8px;">${inner}</div>`;
+          <div><div class="detail-fansub-name">${esc(f)}</div><div class="detail-fansub-sub">${seriesOfFansub(f).length} seri · ekibin sayfasını aç</div></div>`;
+        const cnt=seriesOfFansub(f).length;
+        const ext=safeUrl(meta.url)?`<span class="detail-fansub-ext" onclick="event.stopPropagation();openExternal(${jsArg(meta.url)})" aria-label="Siteye git"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg></span>`:'';
+        return `<div class="detail-fansub-row" style="margin-bottom:8px;cursor:pointer;" onclick="openFansubFromDetail(${jsArg(f)})">${inner}<span style="margin-left:auto;display:flex;align-items:center;gap:10px;">${ext}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></span></div>`;
       }).join('')}
       ${fans.length>FANSUB_LIMIT?`<div class="more-toggle" onclick="expandTags('fanWrap-${id}','${id}','fans')" style="cursor:pointer;font-size:11px;color:var(--purple3);">+${fans.length-FANSUB_LIMIT} daha</div>`:''}
     </div>`:'';
@@ -2033,6 +2057,12 @@ window.addEventListener('popstate',()=>{
       return;
     }
   }
+  if(_suppressPop){ _suppressPop=false; return; }
+  // Çeviri ekibi sayfasındayken: geri tuşu bir önceki ekrana döner (detay / ekip listesi / ana sekme).
+  if(currentPage==='fansub'){
+    if(!(history.state&&history.state.megamiFansub)&&typeof closeFansubDetail==='function') closeFansubDetail({fromPop:true});
+    return;
+  }
   const params=new URLSearchParams(location.search);
   const seriId=params.get('seri');
   if(seriId&&series.find(x=>x.id===seriId)){
@@ -2109,7 +2139,7 @@ function openAddSheet(){
   { const e=document.getElementById('autoIncrEvery'); if(e) e.value='1'; } // masaüstü formunda bu alan yok
   document.getElementById('returnDate').value='';
   document.getElementById('altTagsWrap').innerHTML='';document.getElementById('fansubTagsWrap').innerHTML='';hideFansubSuggestions();
-  document.getElementById('oldCoversPreviews').innerHTML='';
+  renderOldCoverPreviews(); // "+" (eski kapak ekle) düğmesi yeni seri formunda da görünsün
   document.getElementById('seriesCategory').value='reading';
   document.getElementById('chapterTR').value='';document.getElementById('chapterEN').value='';
   resetCoverPreview();updateFormToggles();renderRatingStars(0);renderGenreUI();renderLinkChips();
@@ -2577,18 +2607,24 @@ function renderGenreUI(){
 }
 function openFansubMetaEditor(i){
   const name=fansubList[i]; if(!name)return;
-  if(!document.getElementById('fansubMetaOverlay')){
+  if(!_openFansubEditor(name)){
     // Bu pop-up şu an sadece mobilde var; masaüstünde basit bir istemle devam et.
     promptFansubMetaFallback(name,()=>renderFansubTags());
-    return;
   }
+}
+// Ekip düzenleme penceresini açar (ad, logo, link). Pencere yoksa (masaüstü) false döner.
+function _openFansubEditor(name){
+  if(!document.getElementById('fansubMetaOverlay')) return false;
   const meta=getFansubMeta(name);
-  document.getElementById('fansubMetaName').textContent=name;
+  const ni=document.getElementById('fansubMetaNameInput'); if(ni) ni.value=name;
   document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
   document.getElementById('fansubMetaUrlInput').value=meta.url||'';
+  const cnt=document.getElementById('fansubMetaCount'); if(cnt) cnt.textContent=`${seriesOfFansub(name).length} seride kullanılıyor`;
+  const hint=document.getElementById('fansubMetaNameHint'); if(hint){ hint.textContent=''; hint.style.display='none'; }
   window._fansubMetaEditingName=name;
   renderFansubMetaLogoPreview(meta.logo||'');
   document.getElementById('fansubMetaOverlay').classList.remove('hidden');
+  return true;
 }
 function promptFansubMetaFallback(name,onDone){
   const meta=getFansubMeta(name);
@@ -2600,7 +2636,8 @@ function promptFansubMetaFallback(name,onDone){
 function renderFansubMetaLogoPreview(src){
   const wrap=document.getElementById('fansubMetaLogoPreviewWrap');
   if(!wrap)return;
-  const name=window._fansubMetaEditingName||'';
+  const ni=document.getElementById('fansubMetaNameInput');
+  const name=(ni&&ni.value.trim())||window._fansubMetaEditingName||'';
   const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
   wrap.innerHTML=src
     ?`<img src="${esc(src)}" onerror="this.style.display='none'">`
@@ -2610,17 +2647,9 @@ function renderFansubMetaLogoPreview(src){
 // doğrudan bir ekibin logo/link bilgisini düzenlemek için — openFansubMetaEditor(i) gibi
 // forma bağlı bir index yerine doğrudan ismi kullanır.
 function openFansubMetaEditorByName(name){
-  if(!document.getElementById('fansubMetaOverlay')){
+  if(!_openFansubEditor(name)){
     promptFansubMetaFallback(name,()=>{ if(typeof renderFansubListPage==='function') renderFansubListPage(); });
-    return;
   }
-  const meta=getFansubMeta(name);
-  document.getElementById('fansubMetaName').textContent=name;
-  document.getElementById('fansubMetaLogoInput').value=meta.logo||'';
-  document.getElementById('fansubMetaUrlInput').value=meta.url||'';
-  window._fansubMetaEditingName=name;
-  renderFansubMetaLogoPreview(meta.logo||'');
-  document.getElementById('fansubMetaOverlay').classList.remove('hidden');
 }
 
 let _fansubsReturnPage='home';
@@ -2645,10 +2674,10 @@ function renderFansubListPage(){
     const meta=getFansubMeta(name);
     const initials=name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
     const logo=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" onerror="this.style.display='none'">`:esc(initials);
-    return `<div class="fteam-row" onclick="openFansubMetaEditorByName(${jsArg(name)})">
+    return `<div class="fteam-row" onclick="openFansubOrEditor(${jsArg(name)})">
       <div class="fteam-logo-wrap">
         <div class="fteam-logo">${logo}</div>
-        <div class="fteam-upload-badge">${ic('edit',9)}</div>
+        <div class="fteam-upload-badge" onclick="event.stopPropagation();openFansubMetaEditorByName(${jsArg(name)})" title="Logo / link / ad düzenle">${ic('edit',9)}</div>
       </div>
       <div class="fteam-name">${esc(name)}<div class="fteam-n">${count} seri${meta.url?' · '+esc(meta.url.replace(/^https?:\/\//,'')):' · logo eklenmemiş'}</div></div>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2681,14 +2710,106 @@ function closeFansubMetaEditor(){
   window._fansubMetaEditingName=null;
 }
 function saveFansubMetaFromForm(){
-  const name=window._fansubMetaEditingName; if(!name)return;
-  const logo=document.getElementById('fansubMetaLogoInput').value.trim();
-  const url=document.getElementById('fansubMetaUrlInput').value.trim();
-  if(setFansubMeta(name,logo,url)===false){ showToast('warn','Kaydedilemedi: tarayıcı depolama alanı dolu. Daha küçük bir logo dene.'); return; }
-  closeFansubMetaEditor();
-  renderFansubTags();
-  if(currentPage==='fansubs'&&typeof renderFansubListPage==='function')renderFansubListPage();
-  showToast('check',`"${name}" için logo/link kaydedildi.`);
+  const old=window._fansubMetaEditingName; if(!old)return;
+  const ni=document.getElementById('fansubMetaNameInput');
+  const newName=ni?ni.value.replace(/\s+/g,' ').trim():old;
+  if(!newName){ showToast('warn','Ekip adı boş olamaz.'); return; }
+  const logoRaw=document.getElementById('fansubMetaLogoInput').value.trim();
+  const urlRaw=document.getElementById('fansubMetaUrlInput').value.trim();
+  const logo=logoRaw?_cleanImgUrl(logoRaw):'';
+  if(logoRaw&&!logo){ showToast('warn','Logo adresi geçersiz (http/https ya da yüklenen görsel olmalı).'); return; }
+  const url=urlRaw?safeUrl(urlRaw):'';
+  if(urlRaw&&!url){ showToast('warn','Geçerli bir site linki gir (örn. sadscans.com).'); return; }
+  const finish=(finalName,undo,msg)=>{
+    if(setFansubMeta(finalName,logo,url)===false){ showToast('warn','Kaydedilemedi: tarayıcı depolama alanı dolu. Daha küçük bir logo dene.'); return; }
+    closeFansubMetaEditor();
+    refreshFansubViews(finalName);
+    if(undo) showUndoBanner(msg,()=>{ undo(); refreshFansubViews(old); });
+    else showToast('check',msg);
+  };
+  if(newName===old){ finish(old,null,`"${old}" kaydedildi.`); return; }
+  const dupe=getAllKnownFansubs().find(f=>f!==old&&trFold(f)===trFold(newName));
+  const go=()=>{
+    const r=renameFansub(old,newName);
+    if(!r.ok){ showToast('warn','Ad değiştirilemedi.'); return; }
+    finish(r.name,r.undo,r.merged?`"${old}" → "${r.name}" ile birleştirildi.`:`"${old}" → "${r.name}" olarak yeniden adlandırıldı.`);
+  };
+  if(dupe){ showConfirm(`"${dupe}" adında bir ekip zaten var. "${old}" ekibindeki seriler ona taşınsın mı?`,go,{okLabel:'Birleştir'}); return; }
+  go();
+}
+// ===== Çeviri ekibi: ad değiştirme / birleştirme / kaldırma =====
+function seriesOfFansub(name){ return series.filter(s=>(s.fansubList||[]).includes(name)); }
+function _snapFansub(names){
+  return {lists:series.filter(s=>(s.fansubList||[]).some(f=>names.includes(f))).map(s=>({id:s.id,list:[...s.fansubList]})),meta:JSON.parse(JSON.stringify(fansubMeta||{}))};
+}
+function _restoreFansub(snap){
+  snap.lists.forEach(r=>{ const s=series.find(x=>x.id===r.id); if(s) s.fansubList=[...r.list]; });
+  fansubMeta=JSON.parse(JSON.stringify(snap.meta)); saveFansubMeta();
+  save().catch(()=>{});
+}
+// Tüm serilerde adı değiştirir. Aynı adda (büyük/küçük harf, Türkçe karakter farkıyla) başka bir ekip varsa ona birleştirir.
+function renameFansub(oldName,newName){
+  newName=String(newName||'').replace(/\s+/g,' ').trim().slice(0,80);
+  if(!newName) return {ok:false};
+  if(newName===oldName) return {ok:true,name:oldName,same:true};
+  const dupe=getAllKnownFansubs().find(f=>f!==oldName&&trFold(f)===trFold(newName));
+  const target=dupe||newName;
+  const snap=_snapFansub([oldName,target]);
+  const remap=list=>{ const out=[]; list.forEach(f=>{ const v=f===oldName?target:f; if(!out.includes(v)) out.push(v); }); return out; };
+  series.forEach(x=>{ if((x.fansubList||[]).includes(oldName)) x.fansubList=remap(x.fansubList); });
+  if(Array.isArray(fansubList)&&fansubList.includes(oldName)) fansubList=remap(fansubList); // açık seri formu
+  const mo=fansubMeta[oldName], mt=fansubMeta[target];
+  delete fansubMeta[oldName];
+  if(mo){
+    const merged={logo:(mt&&mt.logo)||mo.logo||'',url:(mt&&mt.url)||mo.url||''};
+    if(merged.logo||merged.url) fansubMeta[target]=merged;
+  }
+  saveFansubMeta(); save().catch(()=>{});
+  return {ok:true,name:target,merged:!!dupe,undo:()=>_restoreFansub(snap)};
+}
+// Ekibi tüm serilerden çıkarır (seriler silinmez). Geri alınabilir.
+function removeFansubEverywhere(name){
+  const snap=_snapFansub([name]);
+  const n=seriesOfFansub(name).length;
+  series.forEach(x=>{ if((x.fansubList||[]).includes(name)) x.fansubList=x.fansubList.filter(f=>f!==name); });
+  if(Array.isArray(fansubList)) fansubList=fansubList.filter(f=>f!==name);
+  delete fansubMeta[name];
+  saveFansubMeta(); save().catch(()=>{});
+  return {count:n,undo:()=>_restoreFansub(snap)};
+}
+function removeFansubFromEditor(){
+  const name=window._fansubMetaEditingName; if(!name) return;
+  const n=seriesOfFansub(name).length;
+  showConfirm(`"${name}" ekibi ${n} seriden kaldırılsın mı? Seriler silinmez, yalnızca bu ekip adı onlardan çıkar.`,()=>{
+    const r=removeFansubEverywhere(name);
+    closeFansubMetaEditor();
+    refreshFansubViews(null);
+    showUndoBanner(`"${name}" ${r.count} seriden kaldırıldı.`,()=>{ r.undo(); refreshFansubViews(name); });
+  },{okLabel:'Kaldır'});
+}
+function clearFansubMetaLogo(){
+  const li=document.getElementById('fansubMetaLogoInput'); if(li) li.value='';
+  const fi=document.getElementById('fansubMetaLogoFileInput'); if(fi) fi.value='';
+  renderFansubMetaLogoPreview('');
+}
+// Ekip bilgisi değişince açık olan ilgili ekranları yenile. finalName: ekibin (yeni) adı; null = ekip artık yok.
+function refreshFansubViews(finalName){
+  if(typeof renderFansubTags==='function') renderFansubTags();
+  if(currentPage==='fansubs'&&typeof renderFansubListPage==='function') renderFansubListPage();
+  else if(currentPage==='fansub'&&typeof renderFansubDetailPage==='function'){
+    if(finalName) _fansubName=finalName;
+    renderFansubDetailPage();
+  } else if(currentPage==='detail'&&currentDetailId&&typeof openDetail==='function') openDetail(currentDetailId,true);
+  else if(currentPage==='home'||currentPage==='list') renderContent();
+}
+// Ekip satırı / kartı: mobilde ekibin sayfasını açar, pencere olmayan ortamda (masaüstü) doğrudan düzenleyiciye gider.
+function openFansubOrEditor(name){
+  if(typeof openFansubDetail==='function') openFansubDetail(name);
+  else openFansubMetaEditorByName(name);
+}
+function openFansubFromDetail(name){
+  if(typeof openFansubDetail==='function') openFansubDetail(name);
+  else { const m=getFansubMeta(name); if(safeUrl(m.url)) openExternal(m.url); }
 }
 // ===== Bağlantılı Seriler — "Ana Seri" (ardışık devam, ör. Mirai Nikki → Redial) ve
 // "Yan Seri" (paralel, ör. spin-off/alternatif versiyon) olarak iki türde bağlantı.
@@ -3979,7 +4100,7 @@ function normalizeCoverUrl(u){
 var radialOpen=false, radialTimer=null, radialHovered=-1, radialStaggerTimers=[];
 var radialDefs=[
   {label:'Ana Sayfa', page:'home', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', action:function(){goHome();}},
-  {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){switchPage('home');setTimeout(function(){var i=document.getElementById('searchInput');if(i){i.focus();i.select();}},250);}},
+  {label:'Arama',     page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', action:function(){goSearch();}},
   {label:'Seri Ekle', page:null,   icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action:function(){openAddSheet();}},
   {label:'Liste',      page:'list',  icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>', action:function(){switchPage('list');}},
   {label:'İstatistik',page:'stats', icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', action:function(){switchPage('stats');}}

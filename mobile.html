@@ -403,6 +403,45 @@ html.detail-open #detailGlow{display:block;}
 html.detail-open .detail-hero{background:transparent;}
 html.detail-open .detail-hero::before{display:none;}
 html.detail-open .aurora{display:none;}
+
+/* ===== Liste sayfası ===== */
+.list-sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--black);padding:12px 16px 6px;}
+.list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:9px;}
+.list-count{font-size:11.5px;color:var(--text3);display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;}
+.list-count b{color:var(--text);font-size:13px;}
+.list-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--purple3);background:rgba(124,58,237,.16);border:1px solid rgba(124,58,237,.35);padding:2px 8px;border-radius:12px;cursor:pointer;}
+.list-tools{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.list-tool{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;font-family:inherit;color:var(--text2);background:var(--black4);border:1px solid var(--line);padding:6px 10px;border-radius:9px;cursor:pointer;}
+.list-tool.on{background:var(--purple2);border-color:var(--purple2);color:#fff;}
+.list-sort{font-size:10.5px;font-weight:600;font-family:inherit;color:var(--text2);background:var(--black4);border:1px solid var(--line);border-radius:9px;padding:6px 6px;max-width:112px;}
+.lrow-cat-row{display:flex;align-items:center;gap:8px;margin-top:6px;min-width:0;}
+.lrow-cat-row .lrow-cat-pill{margin-top:0;flex-shrink:0;}
+.lrow-fansub{font-size:9.5px;font-weight:600;color:var(--purple3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:pointer;}
+.lrow-left{font-size:9.5px;color:var(--text3);font-weight:600;flex-shrink:0;opacity:.85;}
+.lrow-tag-pill{color:#fbbf24;background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);}
+.lrow-bottom-r{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.lrow-step{min-width:34px;height:28px;padding:0 9px;border-radius:9px;border:none;background:var(--purple);color:#fff;font-size:11.5px;font-weight:800;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.lrow-step:active{transform:scale(.92);}
+
+/* ===== Çeviri ekibi sayfası / düzenleme penceresi ===== */
+.fd-hero{display:flex;align-items:center;gap:14px;margin:6px 16px 12px;padding:16px;background:var(--black4);border:1px solid var(--line);border-radius:18px;}
+.fd-logo{width:68px;height:68px;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,var(--purple2),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px rgba(124,58,237,.3);}
+.fd-logo img{width:100%;height:100%;object-fit:cover;}
+.fd-initials{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:22px;font-weight:800;color:#fff;}
+.fd-info{min-width:0;display:flex;flex-direction:column;gap:5px;}
+.fd-name{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--text);line-height:1.2;overflow-wrap:anywhere;}
+.fd-sub{font-size:11.5px;color:var(--text3);line-height:1.4;}
+.fd-sub b{color:var(--text);font-size:13px;}
+.fd-link{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--purple3);background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.32);padding:5px 10px;border-radius:10px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fd-link.add{color:var(--text2);background:var(--black3);border-style:dashed;border-color:var(--line);}
+.detail-fansub-ext{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:rgba(124,58,237,.14);color:var(--purple3);}
+.fmeta-modal{max-width:340px;}
+.fmeta-upload-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:12px;border:1px dashed rgba(255,255,255,.22);background:var(--black3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;}
+.fmeta-logo-row{display:flex;gap:8px;align-items:stretch;margin-bottom:12px;}
+.fmeta-logo-row .fmeta-upload-btn{flex:1;margin:0;}
+.fmeta-remove-btn{flex-shrink:0;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--text2);background:var(--black4);border:1px solid var(--line);border-radius:12px;padding:0 12px;cursor:pointer;}
+.fmeta-hint{font-size:10px;color:var(--text3);line-height:1.5;margin-top:6px;}
+.fmeta-danger{width:100%;margin-top:10px;font-family:inherit;font-size:12px;font-weight:700;color:#f87171;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.28);border-radius:12px;padding:11px;cursor:pointer;}
 </style></head><body><div id="detailGlow"></div><div id="app"><div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div><div class="header" id="header"><div class="logo"><div class="logo-mark" id="logoMark" onclick="logoTap()"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 C10.2 7 7 10 1 12 C7 14 10.2 17 12 23 C13.8 17 17 14 23 12 C17 10 13.8 7 12 1 Z"/></svg></div><span id="logoWord">Megami</span><span id="logoSubWrap"></span>
 </div><div class="hdr-right" id="hdrRightHome"><div class="hdr-btn hdr-avatar-btn" id="profileAvatarBtn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="hdr-btn" id="notifBtn" onclick="openNotificationsSheet()" title="Bildirimler" style="position:relative;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge hidden" id="notifBadge">0</span></div><div class="streak-badge" id="streakBadge" onclick="showStreak()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span id="streakNum">0</span></div><div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('homeMoreMenu').classList.toggle('open')" title="Diğer"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></div><div class="more-menu" id="homeMoreMenu"><div class="more-item" id="themeToggleBtn" onclick="toggleTheme();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('homeMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div></div><div class="hdr-right" id="hdrRightSub" style="display:none;"><div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div><div class="more-wrap"><div class="hdr-btn" onclick="document.getElementById('subMoreMenu').classList.toggle('open')" title="Diğer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div><div class="more-menu" id="subMoreMenu"><div class="more-item" onclick="switchPage('home');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Ana Sayfa</div><div class="more-item" onclick="toggleTheme();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>Tema Değiştir</div><div class="more-item" onclick="openFansubList();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Çeviri Ekipleri</div><div class="more-item" onclick="updateBackupInfo();openSheet('backupOverlay');document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekle / Geri Yükle</div><div class="more-item" onclick="openInstallPrompt();document.getElementById('subMoreMenu').classList.remove('open')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Uygulamayı Yükle</div></div></div></div></div><div id="heroSection" style="display:none;"></div><div class="search-wrap" id="searchWrap"><div class="search-box"><span class="s-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input class="search-input" type="text" id="searchInput" placeholder="Seri, alternatif ad, fansub ara…" oninput="handleSearch()"/></div></div><div class="cat-tabs-row" id="catTabsRow"><div class="cat-tabs" id="catTabs"></div><div class="cat-tabs-actions" id="catTabsActions" style="display:none;"><button class="cat-tab-filter-btn" id="genreFilterBtn" onclick="openGenreFilter()" title="Türe göre filtrele"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg></button><button class="cat-tab-filter-btn" onclick="openFansubList()" title="Çeviri Ekipleri"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button><button class="btn-secondary" onclick="toggleSelectionMode()"><span id="selBtnLabel"></span></button></div></div><div class="content" id="mainContent"></div><div class="radial-backdrop" id="radialBackdrop" onclick="closeRadial()"></div>
 <div id="radialMenu"></div>
@@ -430,7 +469,7 @@ Yedek Dosyası İndir
 Geri Yükle
 </div><div class="backup-card-desc">Daha önce aldığın yedek dosyasını seç. Mevcut verilerinin üzerine yazar (tekli seri paylaşım dosyaları eklenir, üzerine yazmaz).</div><label class="backup-btn secondary" style="cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 Yedek Dosyası Seç
-<input type="file" accept=".json" onchange="importBackup(event)" style="display:none;"/></label></div><div id="backupInfoPanel"></div></div></div></div><div class="toast hidden" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div><div class="overlay hidden" id="confirmOverlay" onclick="closeOnOverlay(event,'confirmOverlay')"><div class="sheet" style="max-width:340px;margin:auto;border-radius:20px;" onclick="event.stopPropagation()"><div class="sheet-header" style="border-bottom:none;padding-bottom:0;"><span class="sheet-title">Emin misin?</span></div><div class="form-body" style="padding-top:8px;"><p id="confirmMsg" style="font-size:13px;color:var(--text2);line-height:1.6;"></p><div class="btn-row"><button class="btn-ghost" onclick="resolveConfirm(false)">Vazgeç</button><button class="btn-danger" id="confirmOkBtn" onclick="resolveConfirm(true)">Evet, Sil</button></div></div></div></div><div class="overlay hidden" id="genreFilterOverlay" onclick="closeOnOverlay(event,'genreFilterOverlay')"><div class="fmeta-modal" style="max-width:300px;" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeGenreFilter()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="fmeta-title" style="text-align:center;margin-bottom:2px;">Türe Göre Filtrele</div><div class="fmeta-sub" style="margin-bottom:18px;">Bir tür seç, o türdeki seriler listelensin</div><div class="form-body" style="padding:0;"><div id="genreFilterList"></div><div class="genre-filter-clear" onclick="clearGenreFilter()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Filtreyi Temizle</div></div></div></div><div class="overlay hidden" id="fansubMetaOverlay" onclick="closeOnOverlay(event,'fansubMetaOverlay')"><div class="fmeta-modal" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeFansubMetaEditor()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="form-body" style="padding:0;"><div class="fmeta-head"><div class="fmeta-logo-preview" id="fansubMetaLogoPreviewWrap"></div><div class="fmeta-title" id="fansubMetaName" style="font-size:15px;"></div><div class="fmeta-sub">Logo ve site linkini ekle</div></div><label class="fmeta-upload-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="15"/></svg>Cihazdan Görsel Yükle<input type="file" accept="image/*" id="fansubMetaLogoFileInput" onchange="handleFansubMetaLogoFile()" style="display:none;"/></label><div style="display:flex;align-items:center;gap:10px;margin:16px 0;"><div style="flex:1;height:1px;background:rgba(255,255,255,.08);"></div><span style="font-size:10px;color:var(--text3);font-weight:700;">VEYA</span><div style="flex:1;height:1px;background:rgba(255,255,255,.08);"></div></div><div><label class="form-label">Logo URL</label><input class="form-input" type="text" id="fansubMetaLogoInput" placeholder="https://…/logo.png" oninput="previewFansubMetaLogo()"/></div><div style="margin-bottom:16px;"><label class="form-label">Site Linki</label><input class="form-input" type="text" id="fansubMetaUrlInput" placeholder="https://sadscans.com"/></div><button class="form-save-btn" onclick="saveFansubMetaFromForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kaydet</button><p style="font-size:10.5px;color:var(--text3);line-height:1.5;margin-top:12px;">Bu bilgi bu ekip adını kullandığın tüm serilerde otomatik görünür.</p><button class="btn-primary" onclick="saveFansubMetaFromForm()">Kaydet</button></div></div></div><div class="overlay hidden" id="previewOverlay" onclick="closeOnOverlay(event,'previewOverlay')"><div class="preview-modal-sheet" onclick="event.stopPropagation()" id="previewBody"></div></div><div class="overlay hidden" id="fansubListOverlay" onclick="closeOnOverlay(event,'fansubListOverlay')"><div class="sheet" style="max-width:400px;margin:auto;border-radius:20px;max-height:74vh;" onclick="event.stopPropagation()"><div class="sheet-header"><span class="sheet-title">Çeviri Ekipleri</span><button class="close-btn" onclick="closeSheet('fansubListOverlay')">&#x2715;</button></div><div class="form-body" id="fansubListBody" style="overflow-y:auto;"></div></div></div><div class="overlay hidden" id="notifOverlay" onclick="closeOnOverlay(event,'notifOverlay')"><div class="sheet-panel" onclick="event.stopPropagation()"><div class="sheet-panel-header"><div class="sheet-panel-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Bildirimler</div><div class="hdr-btn" onclick="closeSheet('notifOverlay')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="sheet-panel-body" id="notifSheetBody"></div></div></div><div class="overlay hidden" id="forecastOverlay" onclick="closeOnOverlay(event,'forecastOverlay')"><div class="sheet-panel" onclick="event.stopPropagation()"><div class="sheet-panel-header"><div class="sheet-panel-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Önümüzdeki 7 Gün</div><div class="hdr-btn" onclick="closeSheet('forecastOverlay')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="sheet-panel-body" id="forecastSheetBody"></div></div></div><div class="overlay hidden" id="profileOverlay" onclick="closeOnOverlay(event,'profileOverlay')"><div class="fmeta-modal" style="max-width:300px;" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeSheet('profileOverlay')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="fmeta-title" style="text-align:center;margin-bottom:16px;">Profilim</div><div class="form-body" style="padding:0;">
+<input type="file" accept=".json" onchange="importBackup(event)" style="display:none;"/></label></div><div id="backupInfoPanel"></div></div></div></div><div class="toast hidden" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div><div class="overlay hidden" id="confirmOverlay" onclick="closeOnOverlay(event,'confirmOverlay')"><div class="sheet" style="max-width:340px;margin:auto;border-radius:20px;" onclick="event.stopPropagation()"><div class="sheet-header" style="border-bottom:none;padding-bottom:0;"><span class="sheet-title">Emin misin?</span></div><div class="form-body" style="padding-top:8px;"><p id="confirmMsg" style="font-size:13px;color:var(--text2);line-height:1.6;"></p><div class="btn-row"><button class="btn-ghost" onclick="resolveConfirm(false)">Vazgeç</button><button class="btn-danger" id="confirmOkBtn" onclick="resolveConfirm(true)">Evet, Sil</button></div></div></div></div><div class="overlay hidden" id="genreFilterOverlay" onclick="closeOnOverlay(event,'genreFilterOverlay')"><div class="fmeta-modal" style="max-width:300px;" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeGenreFilter()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="fmeta-title" style="text-align:center;margin-bottom:2px;">Türe Göre Filtrele</div><div class="fmeta-sub" style="margin-bottom:18px;">Bir tür seç, o türdeki seriler listelensin</div><div class="form-body" style="padding:0;"><div id="genreFilterList"></div><div class="genre-filter-clear" onclick="clearGenreFilter()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Filtreyi Temizle</div></div></div></div><div class="overlay hidden" id="fansubMetaOverlay" onclick="closeOnOverlay(event,'fansubMetaOverlay')"><div class="fmeta-modal" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeFansubMetaEditor()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="form-body" style="padding:0;"><div class="fmeta-head"><div class="fmeta-logo-preview" id="fansubMetaLogoPreviewWrap"></div><div class="fmeta-title" style="font-size:15px;">Çeviri ekibini düzenle</div><div class="fmeta-sub" id="fansubMetaCount"></div></div><div style="margin-bottom:14px;"><label class="form-label">Ekip adı</label><input class="form-input" type="text" id="fansubMetaNameInput" maxlength="80" placeholder="Ekip adı" oninput="renderFansubMetaLogoPreview(document.getElementById('fansubMetaLogoInput').value.trim())"/><div class="fmeta-hint" id="fansubMetaNameHint" style="display:none;"></div><div class="fmeta-hint">Adı değiştirirsen bu ekibi kullanan tüm serilerde güncellenir. Aynı adda başka bir ekip varsa birleştirilir.</div></div><div class="fmeta-logo-row"><label class="fmeta-upload-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Görsel Yükle<input type="file" accept="image/*" id="fansubMetaLogoFileInput" onchange="handleFansubMetaLogoFile()" style="display:none;"/></label><button type="button" class="fmeta-remove-btn" onclick="clearFansubMetaLogo()">Logoyu kaldır</button></div><div><label class="form-label">Logo URL <span style="color:var(--text3);font-size:8.5px;">(veya yukarıdan yükle)</span></label><input class="form-input" type="text" id="fansubMetaLogoInput" placeholder="https://…/logo.png" oninput="previewFansubMetaLogo()"/></div><div style="margin:14px 0 16px;"><label class="form-label">Site linki</label><input class="form-input" type="text" id="fansubMetaUrlInput" placeholder="sadscans.com" autocapitalize="none" autocorrect="off" inputmode="url"/></div><button class="btn-primary" onclick="saveFansubMetaFromForm()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Kaydet</button><button type="button" class="fmeta-danger" onclick="removeFansubFromEditor()">Ekibi tüm serilerden kaldır</button></div></div></div><div class="overlay hidden" id="previewOverlay" onclick="closeOnOverlay(event,'previewOverlay')"><div class="preview-modal-sheet" onclick="event.stopPropagation()" id="previewBody"></div></div><div class="overlay hidden" id="fansubListOverlay" onclick="closeOnOverlay(event,'fansubListOverlay')"><div class="sheet" style="max-width:400px;margin:auto;border-radius:20px;max-height:74vh;" onclick="event.stopPropagation()"><div class="sheet-header"><span class="sheet-title">Çeviri Ekipleri</span><button class="close-btn" onclick="closeSheet('fansubListOverlay')">&#x2715;</button></div><div class="form-body" id="fansubListBody" style="overflow-y:auto;"></div></div></div><div class="overlay hidden" id="notifOverlay" onclick="closeOnOverlay(event,'notifOverlay')"><div class="sheet-panel" onclick="event.stopPropagation()"><div class="sheet-panel-header"><div class="sheet-panel-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Bildirimler</div><div class="hdr-btn" onclick="closeSheet('notifOverlay')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="sheet-panel-body" id="notifSheetBody"></div></div></div><div class="overlay hidden" id="forecastOverlay" onclick="closeOnOverlay(event,'forecastOverlay')"><div class="sheet-panel" onclick="event.stopPropagation()"><div class="sheet-panel-header"><div class="sheet-panel-title"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Önümüzdeki 7 Gün</div><div class="hdr-btn" onclick="closeSheet('forecastOverlay')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="sheet-panel-body" id="forecastSheetBody"></div></div></div><div class="overlay hidden" id="profileOverlay" onclick="closeOnOverlay(event,'profileOverlay')"><div class="fmeta-modal" style="max-width:300px;" onclick="event.stopPropagation()"><div class="fmeta-close" onclick="closeSheet('profileOverlay')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div class="fmeta-title" style="text-align:center;margin-bottom:16px;">Profilim</div><div class="form-body" style="padding:0;">
   <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 4px;">
     <div class="profile-avatar-big" id="profileAvatarBig">✨</div>
   </div>
@@ -503,6 +542,7 @@ function renderContent(){
   else if(currentPage==='stats')renderStats();
   else if(currentPage==='list')renderListPage();
   else if(currentPage==='fansubs')renderFansubListPage();
+  else if(currentPage==='fansub')renderFansubDetailPage();
   // currentPage==='detail' ise içerik zaten openDetail() tarafından #mainContent'e yazıldı,
   // diğer sekmelerde olduğu gibi burada tekrar render etmeye gerek yok.
 }
@@ -552,7 +592,10 @@ function openDetail(id,skipHistoryOrEvent){
     return;
   }
   if(currentPage!=='detail'){
-    _detailReturnState={page:currentPage};
+    // Çeviri ekibi sayfasından açıldıysa geri dönüşte o ekip sayfasına dönülür (ve onun da kendi dönüş bilgisi korunur).
+    _detailReturnState=(_forcedDetailReturn!==undefined)?_forcedDetailReturn
+      :(currentPage==='fansub'?{page:'fansub',name:_fansubName,ret:_fansubRet}:{page:currentPage});
+    _forcedDetailReturn=undefined;
   }
   currentPage='detail';
   _setDetailOpen(true);
@@ -677,6 +720,13 @@ function closeDetail(){
   // Artık Ana Sayfa/İstatistik sekmeleri arasında geçiş (switchPage) ile birebir aynı
   // mekanizma: anında içerik değişimi, ayrı bir kapanış animasyonu/katmanı yok.
   const returnPage=(_detailReturnState&&_detailReturnState.page)||'home';
+  if(returnPage==='fansub'){
+    const st=_detailReturnState;
+    _detailReturnState=null; currentDetailId=null; _setDetailOpen(false);
+    if(history.state&&history.state.megamiDetail) history.back(); // yalnızca bir adım geri: ekip sayfasının kaydına
+    openFansubDetail(st.name,st.ret,{restore:true});
+    return;
+  }
   _detailReturnState=null;
   currentDetailId=null;
   currentPage=returnPage;
@@ -1245,21 +1295,135 @@ function renderListPage(){
   const filtered=sortSeries(series.filter(s=>{
     const mc=listCat==='all'||s.category===listCat;
     const ms=!searchQ||trFold(s.name).includes(searchQ)||(s.altNames||[]).some(a=>trFold(a).includes(searchQ))||(s.fansubList||[]).some(f=>trFold(f).includes(searchQ));
-    return mc&&ms;
+    const mg=!currentGenre||(s.genres||[]).includes(currentGenre)||(s.tags||[]).includes(currentGenre);
+    return mc&&ms&&mg;
   }));
 
-  const rowsHTML=filtered.length?filtered.map(s=>{
-    const cat=CATS[s.category]||CATS.reading;
-    const total=parseInt(s.chapterTotal)||0;
-    const chTR=parseInt(s.chapterTR)||0;
-    const pct=total>0?Math.min(100,Math.round(chTR/total*100)):0;
-    const chStr=s.chapterTR?`Böl. ${esc(s.chapterTR)}${total>0?'/'+total:''}`:'—';
-    const ratingStr=s.rating?`<span class="lrow-rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:'';
-    const genresH=(s.genres&&s.genres.length)?`<div class="lrow-genres">${s.genres.slice(0,2).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')}</div>`:'<div></div>';
-    const coverEl=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">`:ic('img',18);
-    const pinIco=s.pinned?`<span style="color:var(--purple3);">${ic('pinFill',12)}</span>`:'';
-    const favIco=s.favorited?`<span style="color:#f472b6;">${ic('heartFill',12)}</span>`:'';
-    return `<div class="lrow-swipe-wrap">
+  const rowsHTML=filtered.length?filtered.map(s=>listRowHTML(s)).join(''):
+    `<div class="empty" style="padding:50px 24px;"><div class="empty-icon">${ic('layers',34)}</div><h3>${searchQ||currentGenre?'Sonuç bulunamadı':'Bu durumda seri yok'}</h3><p>${searchQ||currentGenre?'Aramayı ya da süzgeci değiştirmeyi dene.':'Farklı bir sekme dene.'}</p></div>`;
+
+  const toolbar=`<div class="list-toolbar">
+      <div class="list-count"><b>${filtered.length}</b> seri${currentGenre?` <span class="list-chip" onclick="setGenreFilter(${jsArg(currentGenre)})">${esc(currentGenre)} ${ic('close',9)}</span>`:''}</div>
+      <div class="list-tools">
+        <button class="list-tool" onclick="openGenreFilter()">${ic('layers',11)} Tür</button>
+        <select class="list-sort" onchange="setSort(this.value)" aria-label="Sıralama">${Object.entries(SORT_OPTIONS).map(([k,v])=>`<option value="${k}" ${currentSort===k?'selected':''}>${v.label}</option>`).join('')}</select>
+      </div>
+    </div>`;
+  el.innerHTML=`<div class="list-sticky"><div class="list-tabs-row">${tabsHTML}</div>${toolbar}</div>
+  <div class="list-rows${selectionMode?' select-mode':''}" style="padding:6px 14px 4px;">${rowsHTML}</div>
+  ${filtered.length?'<div class="swipe-hint">← Bir satırı sola kaydırınca hızlı aksiyonlar (favori / düzenle) açılır</div>':''}
+  <div style="height:16px;"></div>${selectionMode?renderBulkBar():''}`;
+  document.getElementById('searchWrap').style.display='';
+  const listSearchInput=document.getElementById('searchInput');
+  if(listSearchInput)listSearchInput.placeholder='Kütüphanende ara…';
+  document.getElementById('catTabsRow').style.display='none';
+  { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl)heroSecEl.style.display='none'; }
+}
+// ===== Çeviri ekibi sayfası ve manga ↔ ekip geçişi =====
+// Geri dönüş zinciri: her ekip sayfası, nereden açıldığını (_fansubRet) saklar; ekipten bir seriye gidilirse seri, ekip
+// sayfasına döner. Böylece "seri → ekip → başka seri → geri → geri" tam olarak geldiğin yolu izler.
+let _fansubName=null, _fansubRet=null, _fansubFilter='all';
+function _domainOf(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return String(u||''); } }
+function _makeFansubRet(){
+  if(currentPage==='detail') return {t:'detail',id:currentDetailId,detailReturn:_detailReturnState};
+  if(currentPage==='fansubs') return {t:'fansubs'};
+  return {t:'page',p:(currentPage&&currentPage!=='fansub')?currentPage:'home'};
+}
+function openFansubFromRow(name){ openFansubDetail(name); }
+function openFansubDetail(name,ret,opts){
+  opts=opts||{};
+  if(!name) return;
+  const wasDetail=currentPage==='detail';
+  if(ret) _fansubRet=ret; else if(!opts.restore) _fansubRet=_makeFansubRet();
+  _fansubName=name;
+  if(!opts.restore) _fansubFilter='all';
+  if(wasDetail){ currentDetailId=null; _setDetailOpen(false); }
+  currentPage='fansub';
+  document.getElementById('header').style.display='none';
+  document.getElementById('searchWrap').style.display='none';
+  document.getElementById('catTabsRow').style.display='none';
+  { const h=document.getElementById('heroSection'); if(h) h.style.display='none'; }
+  if(!opts.restore&&!opts.noPush) history.pushState({megamiFansub:name,megamiDepth:((history.state&&history.state.megamiDepth)||0)+1},'',location.pathname);
+  renderFansubDetailPage();
+  const app=document.getElementById('app'); if(app) app.scrollTop=0;
+}
+function closeFansubDetail(opts){
+  opts=opts||{};
+  const ret=_fansubRet||{t:'page',p:'home'};
+  const had=currentPage==='fansub';
+  _fansubRet=null; _fansubName=null;
+  // Sayfayı açarken eklenen geçmiş kaydını geri al (geri tuşuyla geldiysek zaten geri alındı).
+  if(had&&!opts.fromPop&&history.state&&history.state.megamiFansub) history.back();
+  if(ret.t==='detail'&&ret.id&&series.some(x=>x.id===ret.id)){
+    currentPage='home'; _forcedDetailReturn=ret.detailReturn||null;
+    openDetail(ret.id,true);
+    return;
+  }
+  if(ret.t==='fansubs'){ currentPage='fansubs'; openFansubList(); return; }
+  document.getElementById('header').style.display='';
+  currentPage='home'; // switchPage, "ekip sayfasından çıkılıyor" sanıp geçmişi ikinci kez geri almasın
+  switchPage(ret.p||'home');
+}
+function setFansubFilter(k){ _fansubFilter=k; renderFansubDetailPage(); }
+function openFansubEditorCurrent(){ if(_fansubName) openFansubMetaEditorByName(_fansubName); }
+function renderFansubDetailPage(){
+  const el=document.getElementById('mainContent'); const name=_fansubName;
+  const all=name?seriesOfFansub(name):[];
+  const hasMeta=!!(name&&fansubMeta[name]&&(fansubMeta[name].logo||fansubMeta[name].url));
+  if(!name||(!all.length&&!hasMeta)){ if(currentPage==='fansub') closeFansubDetail({fromPop:false}); return; }
+  const meta=getFansubMeta(name), url=safeUrl(meta.url);
+  const initials=esc(name.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2));
+  const logo=meta.logo?`<img referrerpolicy="no-referrer" src="${esc(meta.logo)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="fd-initials" style="display:none;">${initials}</span>`:`<span class="fd-initials">${initials}</span>`;
+  const counts={}; all.forEach(s=>{ counts[s.category]=(counts[s.category]||0)+1; });
+  if(_fansubFilter!=='all'&&!counts[_fansubFilter]) _fansubFilter='all';
+  const keys=Object.keys(CATS).filter(k=>k!=='all'&&counts[k]);
+  const tabs=['all',...keys].map(k=>{
+    const n=k==='all'?all.length:counts[k];
+    return `<div class="list-tab ${_fansubFilter===k?'active':''}" onclick="setFansubFilter('${k}')">${ic(k==='all'?'grid4':CATS[k].icon,11)} ${k==='all'?'Tümü':CATS[k].label} <span class="list-tab-count">${n}</span></div>`;
+  }).join('');
+  const shown=sortSeries(all.filter(s=>_fansubFilter==='all'||s.category===_fansubFilter));
+  const unread=all.reduce((a,s)=>{ const t=_chNum(s.chapterTotal),c=_chNum(s.chapterTR); return a+(t>c?t-c:0); },0);
+  const active=all.filter(s=>['reading','current','current_en','current_both','stockpile'].includes(s.category)).length;
+  const linkH=url?`<div class="fd-link" onclick="openExternal(${jsArg(url)})"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg> ${esc(_domainOf(url))}</div>`:`<div class="fd-link add" onclick="openFansubEditorCurrent()">+ Site linki ekle</div>`;
+  const back=`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+  el.innerHTML=`<div class="subpage-topbar">
+      <div class="hdr-btn" onclick="closeFansubDetail()" aria-label="Geri">${back}</div>
+      <div class="subpage-topbar-title">Çeviri Ekibi</div>
+      <div class="hdr-btn" onclick="openFansubEditorCurrent()" aria-label="Düzenle">${ic('edit',15)}</div>
+    </div>
+    <div class="fd-hero">
+      <div class="fd-logo">${logo}</div>
+      <div class="fd-info">
+        <div class="fd-name">${esc(name)}</div>
+        <div class="fd-sub"><b>${all.length}</b> seri${active?` · ${active} takipte`:''}${unread?` · ${unread} bölüm okunmamış`:''}</div>
+        ${linkH}
+      </div>
+    </div>
+    ${all.length?`<div class="list-sticky"><div class="list-tabs-row">${tabs}</div></div>
+    <div class="list-rows" style="padding:8px 14px 4px;">${shown.map(s=>listRowHTML(s,{hideFansub:true})).join('')}</div>`
+      :`<div class="empty" style="padding:40px 24px;"><h3>Henüz seri yok</h3><p>Bu ekibi bir seriye atayınca burada listelenir.</p></div>`}
+    <div style="height:24px;"></div>`;
+}
+
+// Tek bir liste satırı. Sağ altta "+1" ile tek dokunuşla bölüm ilerletilir; "N kaldı" okunmamış bölüm sayısını gösterir;
+// ekip adına dokunmak o çeviri ekibinin sayfasını açar.
+function listRowHTML(s,opts){
+  opts=opts||{};
+  const cat=CATS[s.category]||CATS.reading;
+  const total=_chNum(s.chapterTotal), chTR=_chNum(s.chapterTR);
+  const pct=total>0?Math.min(100,Math.round(chTR/total*100)):0;
+  const chStr=s.chapterTR?`Böl. ${esc(s.chapterTR)}${total>0?'/'+total:''}`:'—';
+  const left=total>chTR?total-chTR:0;
+  const ratingStr=s.rating?`<span class="lrow-rating">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span>`:'';
+  const pills=(s.genres||[]).slice(0,2).map(g=>`<span class="lrow-genre-pill">${esc(g)}</span>`).join('')+((s.tags||[])[0]?`<span class="lrow-genre-pill lrow-tag-pill">${esc(s.tags[0])}</span>`:'');
+  const genresH=pills?`<div class="lrow-genres">${pills}</div>`:'<div></div>';
+  const coverEl=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">`:ic('img',18);
+  const pinIco=s.pinned?`<span style="color:var(--purple3);">${ic('pinFill',12)}</span>`:'';
+  const favIco=s.favorited?`<span style="color:#f472b6;">${ic('heartFill',12)}</span>`:'';
+  const fl=s.fansubList||[];
+  const fansubH=(!opts.hideFansub&&fl[0])?`<span class="lrow-fansub" onclick="event.stopPropagation();openFansubFromRow(${jsArg(fl[0])})">${esc(fl[0])}${fl.length>1?' +'+(fl.length-1):''}</span>`:'';
+  const canStep=s.category!=='completed'&&s.category!=='dropped';
+  return `<div class="lrow-swipe-wrap" data-id="${esc(s.id)}">
       <div class="lrow-swipe-actions">
         <button class="lrow-action fav" onclick="toggleFav('${s.id}');event.stopPropagation();">${ic(s.favorited?'heartFill':'heart',20)}</button>
         <button class="lrow-action edit" onclick="openEditSheet('${s.id}');event.stopPropagation();">${ic('edit',18)}</button>
@@ -1273,26 +1437,32 @@ function renderListPage(){
               <div class="lrow-title-row"><span class="lrow-title">${esc(s.name)}</span>${s.originalName?`<span class="lrow-original">${esc(s.originalName)}</span>`:''}</div>
               <div class="lrow-pinfav">${pinIco}${favIco}</div>
             </div>
-            <div class="lrow-cat-pill ${cat.badge}">${ic(cat.icon,9)} ${cat.label}</div>
-            <div class="lrow-ch-row"><span class="lrow-ch">${chStr}</span>${total>0?`<div class="lrow-progress-track"><div class="lrow-progress-fill" style="width:${pct}%;background:${pct>=100?'#34d399':'var(--purple2)'};"></div></div>`:''}</div>
+            <div class="lrow-cat-row"><div class="lrow-cat-pill ${cat.badge}">${ic(cat.icon,9)} ${cat.label}</div>${fansubH}</div>
+            <div class="lrow-ch-row"><span class="lrow-ch">${chStr}</span>${total>0?`<div class="lrow-progress-track"><div class="lrow-progress-fill" style="width:${pct}%;background:${pct>=100?'#34d399':'var(--purple2)'};"></div></div>`:''}${left>0?`<span class="lrow-left">${left} kaldı</span>`:''}</div>
           </div>
-          <div class="lrow-bottom">${genresH}${ratingStr}</div>
+          <div class="lrow-bottom">${genresH}<div class="lrow-bottom-r">${ratingStr}${canStep&&!selectionMode?`<button class="lrow-step" onclick="listStep('${s.id}',event)" aria-label="Bir bölüm ilerlet">+1</button>`:''}</div></div>
         </div>
       </div>
     </div>`;
-  }).join(''):`<div class="empty" style="padding:50px 24px;"><div class="empty-icon">${ic('layers',34)}</div><h3>Bu durumda seri yok</h3><p>Farklı bir sekme dene.</p></div>`;
-
-  el.innerHTML=`<div style="padding:14px 16px 0;">
-    <div class="list-tabs-row">${tabsHTML}</div>
-  </div>
-  <div class="list-rows${selectionMode?' select-mode':''}" style="padding:2px 14px 4px;">${rowsHTML}</div>
-  ${filtered.length?'<div class="swipe-hint">← Bir satırı sola kaydırınca hızlı aksiyonlar (favori / düzenle) açılır</div>':''}
-  <div style="height:16px;"></div>`;
-  document.getElementById('searchWrap').style.display='';
-  const listSearchInput=document.getElementById('searchInput');
-  if(listSearchInput)listSearchInput.placeholder='Kütüphanende ara…';
-  document.getElementById('catTabsRow').style.display='none';
-  { const heroSecEl=document.getElementById('heroSection'); if(heroSecEl)heroSecEl.style.display='none'; }
+}
+// "+1": tek dokunuşla Türkçe bölümü ilerlet (geri alınabilir); satır yerinde güncellenir.
+function _updateListRow(s){
+  const w=document.querySelector(`.lrow-swipe-wrap[data-id="${CSS.escape(s.id)}"]`); if(!w) return;
+  const total=_chNum(s.chapterTotal), chTR=_chNum(s.chapterTR);
+  const pct=total>0?Math.min(100,Math.round(chTR/total*100)):0;
+  const ch=w.querySelector('.lrow-ch'); if(ch) ch.textContent=s.chapterTR?`Böl. ${s.chapterTR}${total>0?'/'+total:''}`:'—';
+  const fill=w.querySelector('.lrow-progress-fill'); if(fill){ fill.style.width=pct+'%'; fill.style.background=pct>=100?'#34d399':'var(--purple2)'; }
+  const left=total>chTR?total-chTR:0, row=w.querySelector('.lrow-ch-row'); let lf=w.querySelector('.lrow-left');
+  if(left>0){ if(!lf&&row){ lf=document.createElement('span'); lf.className='lrow-left'; row.appendChild(lf); } if(lf) lf.textContent=left+' kaldı'; }
+  else if(lf) lf.remove();
+}
+function listStep(id,e){
+  if(e&&e.stopPropagation) e.stopPropagation();
+  const s=series.find(x=>x.id===id); if(!s) return;
+  const next=_chNum(s.chapterTR)+1;
+  setChapterTR(s,next); _updateListRow(s);
+  showUndoBanner(`${s.name}: Bölüm ${next}`,()=>{ setChapterTR(s,next-1); _updateListRow(s); scheduleTrackRefresh(); });
+  scheduleTrackRefresh();
 }
 function lrowSwipeStart(e,el){
   el._sx=e.touches[0].clientX;
