@@ -616,19 +616,22 @@ const SECTIONS=[
 // otomatik olarak "Uzun Süredir Bakmadıklarım"a düşer. Bitti/Bıraktım Ana Sayfa'da hiç
 // gösterilmiyor (favorilenmiş "Bitti" olanlar zaten Spotlight'ta çıkıyor); ikisine de
 // üstteki kategori çipinden ulaşılabiliyor.
-// "Uzun süredir bakmadıklarım" eşiği, serinin yayın sıklığına göre değişir — haftalık bir
-// seriye 1 ay bakmamak uzun sayılır, ama düzensiz/aylık bir seride bu daha normaldir.
+// "Uzun Süredir Bakmadıklarım" (gözden düşenler): serinin kendi kendine artan toplamı etkileşim sayılmaz,
+// yalnızca senin yaptığın bir işlem (bölüm ilerletme, düzenleme, durum/favori/sabit değişikliği) sayılır.
+// Eşik 2 hafta; yayın sıklığı aylık olan serilerde 60 gün, iki (ya da daha çok) haftada bir olanlarda 30 gün.
+function lastUserTouch(s){
+  const autoLast=s.autoAt&&s.updatedAt===s.autoAt; // son güncelleme otomatik artıştan mı geldi?
+  return autoLast?(s.userAt||parseInt(s.id)||0):(s.updatedAt||0);
+}
 function getStaleThresholdMs(s){
   const day=86400000;
-  if(s.autoIncrFreq==='daily') return 14*day;
-  if(s.autoIncrFreq==='weekly') return 30*day;
   if(s.autoIncrFreq==='monthly') return 60*day;
-  return 90*day; // düzensiz veya elle takip edilen seriler
+  if(s.autoIncrFreq==='weekly'&&(parseInt(s.autoIncrEvery)||1)>=2) return 30*day;
+  return 14*day;
 }
 function isStaleSeries(s){
   if(!['reading','current','current_en','current_both','stockpile','paused'].includes(s.category)) return false;
-  const last=s.updatedAt||0;
-  return (Date.now()-last)>getStaleThresholdMs(s);
+  return (Date.now()-lastUserTouch(s))>getStaleThresholdMs(s);
 }
 // Tür (genre) — sabit ön tanımlı liste, ama kullanıcı forma serbestçe kendi türünü de ekleyebilir.
 const GENRES_PRESET=[
@@ -1257,10 +1260,19 @@ function dismissDailyDigest(){
 // Header'daki zil butonu — ana sayfadaki kapatılabilir kartın aksine, bu HER ZAMAN mevcut
 // durumu gösterir (kapatma durumundan etkilenmez), çünkü kullanıcı burayı özellikle "bildirimlerimi
 // göster" diye açıyor.
+// Gözden düşenler: ana sayfadaki "Uzun Süredir Bakmadıklarım" bölümüyle aynı liste (sabit/favori olanlar hariç).
+// Bildirim rozeti yalnızca senin henüz görmediğin yeni düşenleri sayar; bildirim panelini açınca görüldü sayılırlar.
+function getStaleForNotif(){ return series.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s)); }
+function _staleSeenMap(){ try{ return JSON.parse(localStorage.getItem('megami_stale_seen')||'{}')||{}; }catch(e){ return {}; } }
+function getUnseenStale(){ const seen=_staleSeenMap(); return getStaleForNotif().filter(s=>seen[s.id]!==lastUserTouch(s)); }
+function markStaleSeen(){
+  const seen={}; getStaleForNotif().forEach(s=>{ seen[s.id]=lastUserTouch(s); });
+  lsSet('megami_stale_seen',JSON.stringify(seen));
+}
 function updateNotificationBadge(){
   const badge=document.getElementById('notifBadge');
   if(!badge)return;
-  const count=getTodaysNewChapters().length+getReturnedFromHiatus().length;
+  const count=getTodaysNewChapters().length+getReturnedFromHiatus().length+getUnseenStale().length;
   if(count>0){ badge.textContent=count>99?'99+':count; badge.classList.remove('hidden'); }
   else badge.classList.add('hidden');
 }
@@ -1269,15 +1281,18 @@ function openNotificationsSheet(){
   if(!body)return;
   const newCh=getTodaysNewChapters();
   const returned=getReturnedFromHiatus();
-  const notifItem=(s,showCh)=>{
+  const stale=getStaleForNotif();
+  const notifItem=(s,showCh,extra)=>{
     const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
-    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl. ${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl. ${esc(s.chapterTR)}</span>`:''}${extra?`<span class="notif-item-badge">${extra}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
+  const staleSec=stale.length?`<div class="notif-sec"><div class="notif-sec-title">${ic('clock',10)} Gözden Düştü</div><div style="font-size:10.5px;color:var(--text3);padding:0 2px 8px;line-height:1.5;">Bu seriler uzun süredir etkileşim görmedi ve "Uzun Süredir Bakmadıklarım" bölümüne alındı.</div>${stale.slice(0,6).map(s=>notifItem(s,false,Math.floor((Date.now()-lastUserTouch(s))/86400000)+' gün')).join('')}${stale.length>6?`<div style="font-size:10.5px;color:var(--text3);padding:6px 2px;">+${stale.length-6} seri daha</div>`:''}</div>`:'';
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
   const forecastBtn=`<div class="notif-forecast-btn" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</div>`;
-  const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false);
+  const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+staleSec;
   body.innerHTML=forecastBtn+(html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`);
   openSheet('notifOverlay');
+  markStaleSeen(); updateNotificationBadge();
 }
 function openWeeklyForecast(){
   const body=document.getElementById('forecastSheetBody');
@@ -1344,9 +1359,19 @@ function renderContent(){
 }
 function isNewChapterFresh(s){
   if(!s.newChapter||!s.newChapterAt) return false; // zaman damgası yoksa (eski/içe aktarılmış veri) sonsuza dek "yeni" kalmasın
+  if(s.category==='completed'||s.category==='dropped'||s.category==='planned') return false; // bitirdiğin, bıraktığın ya da henüz başlamadığın seride "yeni bölüm" anlamsız
   if(Date.now()-s.newChapterAt>=48*60*60*1000) return false; // 48 saatten eskiyse artık "yeni" sayılmaz
   const total=_chNum(s.chapterTotal);
   return total>_chNum(s.chapterTR); // okunmamış bölüm yoksa yeni bölüm de yok
+}
+// "Yeni Bölüm" rozetinin süresi dolduğu anda ana sayfa kendiliğinden yenilensin (uygulama açık kalsa bile).
+let _heroExpiryTimer=null;
+function scheduleHeroExpiry(){
+  clearTimeout(_heroExpiryTimer);
+  const now=Date.now(); let next=Infinity;
+  series.forEach(s=>{ if(s.newChapter&&s.newChapterAt){ const t=s.newChapterAt+48*60*60*1000; if(t>now&&t<next) next=t; } });
+  if(next===Infinity) return;
+  _heroExpiryTimer=setTimeout(()=>{ if(currentPage==='home') renderContent(); },Math.min(next-now+1000,2147000000));
 }
 function hideHeroSection(){
   const heroEl=document.getElementById('heroSection');
@@ -1468,6 +1493,7 @@ function renderHome(){
       </div><div class="carousel-wrap"><button class="carousel-arrow left" onclick="scrollCarousel(this,-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button><div class="carousel" id="car-${sec.key}">${shown.map((s,i)=>carouselCard(s,i,canReorder)).join('')}${moreCard}</div><button class="carousel-arrow right" onclick="scrollCarousel(this,1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>`;
   });
   if(!heroFound)hideHeroSection();
+  scheduleHeroExpiry();
   const homeBulkBar=selectionMode?renderBulkBar():'';
   patchContent(el,(html||`<div class="empty"><div class="empty-icon">${ic('book',48)}</div><h3>Kütüphane Boş</h3><p>+ butonuna basarak ilk serini ekleyebilirsin.</p></div>`)+homeBulkBar);
   initPinnedDragSort();
@@ -1566,9 +1592,10 @@ function cardMeta(s){
   }else if(s.category==='planned'){
     chText=total>0?`${total} bölüm bekliyor`:(chTR>0?`${chTR} bölüm var`:'');
   }else if(!s.pinned&&isStaleSeries(s)){
-    const last=s.updatedAt?new Date(s.updatedAt):null;
+    const lt=lastUserTouch(s);
+    const last=lt?new Date(lt):null;
     chText=last?`Son bakış: ${last.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}`:'';
-    const days=s.updatedAt?Math.floor((Date.now()-s.updatedAt)/(1000*60*60*24)):0;
+    const days=lt?Math.floor((Date.now()-lt)/(1000*60*60*24)):0;
     staleBadge=`<div class="stale-badge">${ic('clock',9)} ${days} gün</div>`;
   }else{
     chText=chTR>0?`Böl. ${chTR}${total>0?' / '+total:''}`:'';
@@ -1738,6 +1765,7 @@ function openRead(id){
   const s=series.find(x=>x.id===id); if(!s) return;
   if(!s.readUrl){ openQuick(id); return; }
   try{ localStorage.setItem('megami_pending_read',JSON.stringify({id,ts:Date.now()})); }catch(e){}
+  if(s.newChapter){ s.newChapter=false; save().catch(()=>{}); } // okumaya gittin: yeni bölüm rozeti görevini yaptı
   openExternal(s.readUrl);
 }
 function checkPendingRead(){
@@ -1782,7 +1810,11 @@ function _resumeAutoIncrement(){
   runAutoIncrement().catch(()=>{});
 }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){ setTimeout(checkPendingRead,400); setTimeout(_resumeAutoIncrement,700); }
+  if(document.visibilityState==='visible'){
+    setTimeout(checkPendingRead,400); setTimeout(_resumeAutoIncrement,700);
+    // Uygulama arka plandan dönünce ana sayfa, değişiklik olmasa bile yenilensin (süresi dolan "Yeni Bölüm" rozeti kalksın).
+    setTimeout(()=>{ const ov=document.getElementById('addOverlay'); if(currentPage==='home'&&!(ov&&!ov.classList.contains('hidden'))) renderContent(); if(typeof updateNotificationBadge==='function') updateNotificationBadge(); },1000);
+  }
   else flushChapterLog();
 });
 window.addEventListener('pagehide',flushChapterLog);
@@ -2533,7 +2565,9 @@ async function runAutoIncrement(){
         : `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal}`);
       s.newChapter=true;
       s.newChapterAt=Date.now();
+      if(!(s.autoAt&&s.updatedAt===s.autoAt)) s.userAt=s.updatedAt||s.userAt||0; // önceki güncelleme senin işlemiydiyse sakla
       s.updatedAt=Date.now();
+      s.autoAt=s.updatedAt;
     }
     s.autoIncrNext=cursor;
     changed=true;
@@ -3530,6 +3564,8 @@ function sanitizeSeriesRecord(item){
   out.rating=Math.round(num(item.rating,0,0,5));
   out.mainOrder=Math.round(num(item.mainOrder,0,0,100000));
   out.updatedAt=num(item.updatedAt,Date.now(),0,8.64e15);
+  if(isFinite(Number(item.autoAt))&&Number(item.autoAt)>0) out.autoAt=Number(item.autoAt);
+  if(isFinite(Number(item.userAt))&&Number(item.userAt)>0) out.userAt=Number(item.userAt);
   out.autoIncrAmt=num(item.autoIncrAmt,0,0,100000);
   out.autoIncrDay=Math.round(num(item.autoIncrDay,1,0,31));
   out.autoIncrDate=Math.round(num(item.autoIncrDate,1,1,31));
@@ -3984,7 +4020,42 @@ function computeExtraStats(){
   // En çok okunan (TR bölüm sayısına göre)
   const mostRead=[...series].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
   const pinnedCount=series.filter(s=>s.pinned).length;
-  return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount};
+  // Kütüphane: bitirilen seri, bekleyen bölüm, okunan oran, ortalama uzunluk, yıl içinde eklenenler
+  const completedCount=series.filter(s=>s.category==='completed').length;
+  const waiting=series.filter(s=>s.category!=='completed'&&s.category!=='dropped');
+  const unreadTotal=waiting.reduce((a,s)=>{const t=parseInt(s.chapterTotal)||0,c=parseInt(s.chapterTR)||0;return a+(t>c?t-c:0);},0);
+  const totTotal=withTotal.reduce((a,s)=>a+(parseInt(s.chapterTotal)||0),0);
+  const totReadOfTotal=withTotal.reduce((a,s)=>a+Math.min(parseInt(s.chapterTR)||0,parseInt(s.chapterTotal)||0),0);
+  const readPct=totTotal>0?Math.round(totReadOfTotal/totTotal*100):0;
+  const avgLen=withTotal.length?Math.round(totTotal/withTotal.length):0;
+  const yearStart=new Date(now.getFullYear(),0,1).getTime();
+  const addedThisYear=series.filter(s=>{const t=parseInt(s.id);return !isNaN(t)&&t>=yearStart;}).length;
+  // Türler: en çok okunan (bölüm toplamı) ve en yüksek puanlı (en az 2 puanlı seri)
+  const gRead={},gRate={};
+  series.forEach(s=>(s.genres||[]).forEach(g=>{
+    const k=(g||'').trim(); if(!k) return;
+    gRead[k]=(gRead[k]||0)+(parseInt(s.chapterTR)||0);
+    if(s.rating>0){ (gRate[k]=gRate[k]||[]).push(s.rating); }
+  }));
+  const topGenreRead=Object.entries(gRead).filter(e=>e[1]>0).sort((x,y)=>y[1]-x[1])[0]||null;
+  const topGenreRated=Object.entries(gRate).filter(e=>e[1].length>=2).map(e=>[e[0],e[1].reduce((p,q)=>p+q,0)/e[1].length,e[1].length]).sort((x,y)=>y[1]-x[1])[0]||null;
+  return {avgRating,ratedCount:rated.length,totEN,totTR,totAll:totEN+totTR,topFansub,addedThisMonth,longest,mostRead,pinnedCount,completedCount,unreadTotal,readPct,avgLen,addedThisYear,topGenreRead,topGenreRated};
+}
+// Alışkanlıklar: etkinlik günlüğündeki "TR/EN bölüm a→b" kayıtlarından hesaplanır.
+function computeHabitStats(){
+  const DAY=86400000, now=Date.now();
+  const today=new Date(); today.setHours(0,0,0,0);
+  const t0=today.getTime();
+  const reads=getReadEvents();
+  const sumSince=ts=>reads.filter(r=>r.ts>=ts).reduce((a,r)=>a+r.n,0);
+  const week=sumSince(t0-6*DAY);
+  const last30=sumSince(t0-29*DAY);
+  const dayCount=[0,0,0,0,0,0,0];
+  activityLog.forEach(l=>{ if(!isAutoLog(l)) dayCount[new Date(l.ts).getDay()]++; });
+  const topDayIdx=dayCount.indexOf(Math.max(...dayCount));
+  const topDay=dayCount[topDayIdx]>0?{name:new Date(2024,0,7+topDayIdx).toLocaleDateString('tr-TR',{weekday:'long'}),count:dayCount[topDayIdx]}:null;
+  const streak=computeReadingStreak();
+  return {week,avgPerDay:last30>0?(last30/30):0,last30,topDay,bestStreak:streak.best,hasReads:reads.length>0};
 }
 // ===== Kişiselleştirilmiş istatistikler — tür dağılımı, fansub liderlik tablosu, puan
 // dağılımı, en eski seri gibi daha "kişiye özel" ve görsel açıdan zengin veriler. =====
@@ -4032,6 +4103,19 @@ function computeActivityCalendar(weeks){
   }
   return days;
 }
+// Okuma kayıtları: "TR bölüm 3→4" / "EN bölüm 1→3" satırlarından okunan bölüm farkı. Otomatik toplam artışları
+// ("Otomatik: Toplam bölüm …") senin okuman değildir, bu yüzden hiçbir okuma istatistiğine girmez.
+function isAutoLog(l){ return !!(l&&l.text&&l.text.indexOf('Otomatik: ')===0); }
+function getReadEvents(){
+  const out=[];
+  activityLog.forEach(l=>{
+    const m=l.text&&/^(TR|EN) bölüm (\d+)→(\d+)/.exec(l.text);
+    if(!m) return;
+    const d=(+m[3])-(+m[2]);
+    if(d>0) out.push({ts:l.ts,n:d});
+  });
+  return out;
+}
 function computeMonthlyTempo(){
   const now=new Date();
   const months=[];
@@ -4040,11 +4124,12 @@ function computeMonthlyTempo(){
     const next=new Date(d.getFullYear(),d.getMonth()+1,1);
     months.push({label:d.toLocaleDateString('tr-TR',{month:'short'}),start:d.getTime(),end:next.getTime()});
   }
-  const counts=months.map(m=>activityLog.filter(l=>l.ts>=m.start&&l.ts<m.end&&l.text&&(l.text.indexOf('bölüm')>-1)).length);
+  const reads=getReadEvents();
+  const counts=months.map(m=>reads.filter(r=>r.ts>=m.start&&r.ts<m.end).reduce((s,r)=>s+r.n,0));
   return {labels:months.map(m=>m.label),counts};
 }
 function computeReadingStreak(){
-  const daySet=new Set(activityLog.map(l=>{const d=new Date(l.ts);d.setHours(0,0,0,0);return d.getTime();}));
+  const daySet=new Set(activityLog.filter(l=>!isAutoLog(l)).map(l=>{const d=new Date(l.ts);d.setHours(0,0,0,0);return d.getTime();}));
   const days=[...daySet].sort((a,b)=>a-b);
   let best=0,cur=0,prev=null;
   days.forEach(d=>{
@@ -4070,7 +4155,41 @@ function computeRecords(){
   });
   const stockpile=series.filter(s=>s.category==='stockpile');
   const mostStockpiled=[...stockpile].sort((a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0))[0];
-  return {thickest,fastest,fastestDays:Math.round(fastestDays),mostStockpiled};
+  // Bağlantılı seriler (yan hikaye, aynı evren…) tek grup sayılır; grubun süresi en eski üyenin eklenişinden
+  // en geç bitenin bitişine kadardır. Bitti/Bıraktım olan üye bırakıldığı güne kadar, diğerleri bugüne kadar sayılır.
+  const DAY=86400000, now=Date.now();
+  const parent={};
+  const find=x=>{ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+  series.forEach(s=>{ parent[s.id]=s.id; });
+  series.forEach(s=>(s.links||[]).forEach(l=>{ if(l&&parent[l.id]!==undefined){ const ra=find(s.id),rb=find(l.id); if(ra!==rb) parent[ra]=rb; } }));
+  const groups={};
+  series.forEach(s=>{ (groups[find(s.id)]=groups[find(s.id)]||[]).push(s); });
+  let longestFollowed=null, biggestUniverse=null;
+  Object.values(groups).forEach(g=>{
+    const members=g.filter(s=>s.category!=='planned'&&!isNaN(parseInt(s.id)));
+    if(g.length>=2&&(!biggestUniverse||g.length>biggestUniverse.size)){
+      const first=[...g].sort((x,y)=>(parseInt(x.id)||Infinity)-(parseInt(y.id)||Infinity))[0];
+      biggestUniverse={series:first,size:g.length};
+    }
+    if(!members.length) return;
+    const first=[...members].sort((x,y)=>parseInt(x.id)-parseInt(y.id))[0];
+    const start=parseInt(first.id);
+    const end=Math.max(...members.map(s=>(s.category==='completed'||s.category==='dropped')?Math.max(parseInt(s.id),s.updatedAt||parseInt(s.id)):now));
+    const days=Math.max(0,Math.floor((end-start)/DAY));
+    if(!longestFollowed||days>longestFollowed.days) longestFollowed={series:first,size:g.length,days};
+  });
+  // Bir günde en çok okunan bölüm
+  const perDay={};
+  getReadEvents().forEach(r=>{ const d=new Date(r.ts); d.setHours(0,0,0,0); perDay[d.getTime()]=(perDay[d.getTime()]||0)+r.n; });
+  let bestDay=null;
+  Object.entries(perDay).forEach(([ts,n])=>{ if(!bestDay||n>bestDay.n) bestDay={ts:+ts,n}; });
+  return {thickest,fastest,fastestDays:Math.round(fastestDays),mostStockpiled,longestFollowed,biggestUniverse,bestDay};
+}
+function formatSpanDays(days){
+  if(days<30) return days+' gün';
+  if(days<365) return Math.floor(days/30)+' ay';
+  const y=Math.floor(days/365), mo=Math.floor((days%365)/30);
+  return y+' yıl'+(mo>0?' '+mo+' ay':'');
 }
 function formatNote(s){
   if(!s)return '';
