@@ -948,7 +948,7 @@ function updateHeaderMode(p){
   if(p==='stats'){
     subIcons.innerHTML=`<div class="hdr-btn hdr-avatar-btn" onclick="openProfileSheet()" title="Profilim">✨</div>${backBtn}`;
   }else if(p==='list'){
-    const sortItems=[['name_az','A-Z Sırala'],['rating','Puana Göre'],['updated','Son Güncellenene Göre'],['chapters','Bölüm Sayısına Göre']]
+    const sortItems=[['name_az','A-Z Sırala'],['rating','Puana Göre'],['updated','Son Güncellenene Göre'],['chapters','Okunan Bölüme Göre']]
       .map(([k,label])=>`<div class="more-item" onclick="setSort('${k}');document.getElementById('sortMenu').classList.remove('open')">${label}</div>`).join('');
     subIcons.innerHTML=`<div class="hdr-btn" id="listSelectBtn" onclick="toggleSelectionMode()" title="Seç" style="width:auto;padding:0 11px;border-radius:16px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;gap:5px;">${ic('check',12)}<span id="selBtnLabel2">${selectionMode?'Vazgeç':'Seç'}</span></div>
       <div class="more-wrap">
@@ -1172,7 +1172,7 @@ const SORT_OPTIONS={
   name_za:{label:'İsim (Z-A)',fn:(a,b)=>b.name.localeCompare(a.name,'tr')},
   rating:{label:'Puan (Yüksek-Düşük)',fn:(a,b)=>(b.rating||0)-(a.rating||0)},
   newest:{label:'Yeni Eklenen',fn:(a,b)=>b.id.localeCompare(a.id)},
-  chapters:{label:'Bölüm Sayısına Göre',fn:(a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0)},
+  chapters:{label:'Okunan Bölüme Göre',fn:(a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0)},
 };
 function setSort(val){
   currentSort=val;
@@ -1217,9 +1217,6 @@ function getReturnedFromHiatus(){
     const rd=parseLocalDate(s.returnDate);
     return rd<=today;
   });
-}
-function getUnfinishedReading(){
-  return series.filter(s=>s.category==='reading'&&s.chapterTR);
 }
 // ===== Haftalık Takvim — önümüzdeki 7 gün içinde hangi serilere yeni bölüm gelecek ve
 // hangileri sezon arasından dönecek. Günlük/haftalık otomatik artırma birden fazla kez
@@ -1272,14 +1269,13 @@ function openNotificationsSheet(){
   if(!body)return;
   const newCh=getTodaysNewChapters();
   const returned=getReturnedFromHiatus();
-  const reading=getUnfinishedReading();
   const notifItem=(s,showCh)=>{
     const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
-    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+    return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl. ${esc(s.chapterTR)}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
   const forecastBtn=`<div class="notif-forecast-btn" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</div>`;
-  const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+section('Kaldığın Yerden Devam Et','bookmark',reading,true);
+  const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false);
   body.innerHTML=forecastBtn+(html||`<div class="empty" style="padding:40px 10px;"><div class="empty-icon">${ic('checkcirc',30)}</div><h3>Her şey güncel!</h3><p>Şu an gösterecek bir bildirim yok.</p></div>`);
   openSheet('notifOverlay');
 }
@@ -1325,11 +1321,10 @@ function buildDailyDigestHTML(){
   if(localStorage.getItem('megami_digest_dismissed')===new Date().toDateString()) return '';
   const newCh=getTodaysNewChapters();
   const returned=getReturnedFromHiatus();
-  const reading=getUnfinishedReading();
-  if(!newCh.length&&!returned.length&&!reading.length) return '';
+  if(!newCh.length&&!returned.length) return '';
   const digestItem=(s,showCh)=>{
     const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="digest-item-cover">`:`<div class="digest-item-cover digest-item-cover-ph">${ic('img',11)}</div>`;
-    return `<div class="digest-item" onclick="openPreview('${s.id}',event)">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl.${esc(s.chapterTR)}</span>`:''}</div>`;
+    return `<div class="digest-item" onclick="openPreview('${s.id}',event)">${cov}<span class="digest-item-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="digest-item-badge">Böl. ${esc(s.chapterTR)}</span>`:''}</div>`;
   };
   let sections='';
   if(newCh.length){
@@ -1337,9 +1332,6 @@ function buildDailyDigestHTML(){
   }
   if(returned.length){
     sections+=`<div class="digest-section"><div class="digest-section-title">${ic('checkcirc',10)} Sezon Arasından Döndü</div><div class="digest-row-list">${returned.slice(0,4).map(s=>digestItem(s,false)).join('')}${returned.length>4?`<div class="digest-more">+${returned.length-4} daha</div>`:''}</div></div>`;
-  }
-  if(reading.length){
-    sections+=`<div class="digest-section"><div class="digest-section-title">${ic('bookmark',10)} Kaldığın Yerden Devam Et</div><div class="digest-row-list">${reading.slice(0,4).map(s=>digestItem(s,true)).join('')}${reading.length>4?`<div class="digest-more" onclick="setCat('reading')">+${reading.length-4} daha</div>`:''}</div></div>`;
   }
   return `<div class="daily-digest-card" id="dailyDigestCard">
     <div class="digest-header"><span class="digest-title">${ic('sparkle',12)} Bugün Neler Oldu?</span><button class="digest-close" onclick="dismissDailyDigest()">&#x2715;</button></div>
@@ -1351,9 +1343,10 @@ function renderContent(){
   renderHome();
 }
 function isNewChapterFresh(s){
-  if(!s.newChapter)return false;
-  if(!s.newChapterAt)return true; // eski veri: zaman damgası yoksa geriye dönük olarak "yeni" say
-  return (Date.now()-s.newChapterAt) < 48*60*60*1000; // 48 saatten eskiyse artık "yeni" sayılmaz
+  if(!s.newChapter||!s.newChapterAt) return false; // zaman damgası yoksa (eski/içe aktarılmış veri) sonsuza dek "yeni" kalmasın
+  if(Date.now()-s.newChapterAt>=48*60*60*1000) return false; // 48 saatten eskiyse artık "yeni" sayılmaz
+  const total=_chNum(s.chapterTotal);
+  return total>_chNum(s.chapterTR); // okunmamış bölüm yoksa yeni bölüm de yok
 }
 function hideHeroSection(){
   const heroEl=document.getElementById('heroSection');
@@ -1684,8 +1677,11 @@ function _chNum(v){ return Math.min(99999,Math.max(0,parseInt(v)||0)); }
 function unreadText(s){
   const tr=_chNum(s.chapterTR), total=_chNum(s.chapterTotal);
   if(total<=0) return '';
-  if(tr>=total) return 'Seriye yetiştin 🎉';
-  return `${total-tr} bölüm okunmamış`;
+  if(tr>=total){
+    const ended=s.category==='completed'||s.autoIncrFreq==='completed'; // seri bitmiş mi
+    return ended?'Seriyi bitirdin 🎉':'Günceldesin 🎉';
+  }
+  return `Okunmamış ${total-tr} bölüm var`;
 }
 // Art arda hızlı dokunuşlar tek bir günlük kaydına birleştirilir ("5→6, 6→7, 7→8" yerine "5→8").
 let _chLog=null;
@@ -1806,7 +1802,7 @@ function openQuick(id){
   if(s.autoIncrFreq&&s.autoIncrAmt>0){
     skipWrap.style.display='';
     btn.style.background='';btn.style.borderColor='';btn.style.color='';
-    const freqLabel={daily:'Günü',weekly:'Haftayı',monthly:'Ayı'}[s.autoIncrFreq]||'Periyodu';
+    const freqLabel=skipWords(s).acc;
     btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu ${freqLabel} Atla`;
   } else {
     skipWrap.style.display='none';
@@ -1835,7 +1831,7 @@ async function saveQuick(){
     s.autoIncrSkips=s.autoIncrSkips||[];
     if(!s.autoIncrSkips.includes(pk)) s.autoIncrSkips.push(pk);
     s.autoIncrSkips=s.autoIncrSkips.slice(-20);
-    addLog(s.id,`Otomatik artırma bu periyot atlandı.`);
+    addLog(s.id,`Otomatik artırma bu yayın atlandı.`);
   }
   // Tür farkı (metin/sayı) yüzünden değişmemiş bölüm değişmiş gibi kaydedilmesin
   if(_chNum(prevTR)!==_chNum(s.chapterTR)) addLog(s.id,`TR bölüm ${_chNum(prevTR)}→${_chNum(s.chapterTR)}`);
@@ -1894,7 +1890,7 @@ function getSeriesDetailSections(s){
       ${alts.length>ALT_LIMIT?`<span class="alt-tag more-toggle" onclick="expandTags('altWrap-${id}','${id}','alts')" style="cursor:pointer;border-color:var(--purple);color:var(--purple3);">+${alts.length-ALT_LIMIT} daha</span>`:''}
     </div></div>`:'';
   const fans=s.fansubList||[];
-  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub</div>
+  const fanH=fans.length?`<div><div class="detail-sec-title">${ic('users',10)} Fansub / Çeviri Ekibi</div>
       ${fans.slice(0,FANSUB_LIMIT).map(f=>{
         const meta=getFansubMeta(f);
         const initials=f.trim().split(/\s+/).map(w=>w.charAt(0)).join('').toUpperCase().slice(0,2);
@@ -1960,8 +1956,8 @@ function getSeriesDetailSections(s){
       ${oldC.slice(0,4).map(c=>`<img class="old-cover-thumb" referrerpolicy="no-referrer" src="${esc(coverSrc(c))}" loading="lazy" onclick="openLightbox(${jsArg(coverSrc(c))})" style="cursor:zoom-in;">`).join('')}
       ${oldC.length>4?`<div class="old-cover-more" onclick="expandOldCovers('${id}')" style="flex-shrink:0;width:60px;height:84px;border-radius:7px;border:1px dashed var(--line2);background:var(--black3);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;">+${oldC.length-4}</div>`:''}
     </div></div>`:'';
-  const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Yorumun</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
-  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Notun</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
+  const opinionH=s.opinion?`<div><div class="detail-sec-title">${ic('sparkle',10)} Kişisel Düşüncem</div><div class="note-box opinion-box">${formatNote(s.opinion)}</div></div>`:'';
+  const noteH=s.note?`<div><div class="detail-sec-title">${ic('edit',10)} Hatırlatma Notu</div><div class="note-box">${formatNote(s.note)}</div></div>`:'';
   const ratingH=s.rating?`<div><div class="detail-sec-title">${ic('starFill',10)} Puanın</div><div class="detail-rating-row"><span class="detail-rating-stars">${'★'.repeat(s.rating)}${'☆'.repeat(5-s.rating)}</span><span class="detail-rating-num">${s.rating.toFixed(1)}</span></div></div>`:'';
   const log=getSeriesLog(id);
   const logH=log.length?`<div><div class="detail-sec-title">${ic('clock',10)} Değişiklik Geçmişi</div><div style="background:var(--black4);border:1px solid var(--line);border-radius:10px;padding:10px 12px;" id="logWrap-${id}">
@@ -2219,7 +2215,7 @@ function renderRatingStars(cur){
 function setRating(n){formRating=formRating===n?0:n;renderRatingStars(formRating);}
 async function saveSeries(){
   const name=document.getElementById('seriesName').value.trim();
-  if(!name){showToast('warn','Seri adı zorunludur!');return;}
+  if(!name){showToast('warn','Seri adı boş olamaz.');return;}
   // Öncelik sırası: (1) dosyadan yüklenen büyük veri (_pendingCoverData),
   // (2) kullanıcının URL alanına yazdığı metin, (3) önizlemedeki img.src (son çare).
   const ci=document.getElementById('coverUrlInput').value.trim();
@@ -2533,7 +2529,7 @@ async function runAutoIncrement(){
       const added=s.autoIncrAmt*effectiveMissed;
       s.chapterTotal=String(prev+added);
       addLog(s.id, effectiveMissed>1
-        ? `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal} (${effectiveMissed} periyot birikmiş)`
+        ? `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal} (${effectiveMissed} yayın birikmiş)`
         : `Otomatik: Toplam bölüm ${prev}→${s.chapterTotal}`);
       s.newChapter=true;
       s.newChapterAt=Date.now();
@@ -2545,15 +2541,19 @@ async function runAutoIncrement(){
   if(changed){ await save(); renderContent(); if(typeof updateNotificationBadge==='function')updateNotificationBadge(); }
 }
 let quickSkipping=false;
+// "Bu Haftayı Atla" / "Bu Hafta Atlanacak ✓": düğmedeki kelime serinin yayın sıklığından gelir.
+function skipWords(s){
+  return {daily:{acc:'Günü',nom:'Gün'},weekly:{acc:'Haftayı',nom:'Hafta'},monthly:{acc:'Ayı',nom:'Ay'}}[s&&s.autoIncrFreq]||{acc:'Yayını',nom:'Yayın'};
+}
 function toggleSkip(){
   quickSkipping=!quickSkipping;
   const btn=document.getElementById('skipBtn');
   if(quickSkipping){
     btn.style.background='var(--pinG)'; btn.style.borderColor='var(--pin)'; btn.style.color='var(--pin)';
-    btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu Periyot Atlanacak ✓`;
+    btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu ${skipWords(series.find(x=>x.id===quickId)).nom} Atlanacak ✓`;
   } else {
     btn.style.background=''; btn.style.borderColor=''; btn.style.color='';
-    btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu Periyodu Atla`;
+    btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Bu ${skipWords(series.find(x=>x.id===quickId)).acc} Atla`;
   }
 }
 function toggleGenrePreset(g){
@@ -2628,7 +2628,7 @@ function _openFansubEditor(name){
 }
 function promptFansubMetaFallback(name,onDone){
   const meta=getFansubMeta(name);
-  const url=prompt(`"${name}" için link (opsiyonel):`,meta.url||'');
+  const url=prompt(`"${name}" için link (isteğe bağlı):`,meta.url||'');
   if(url===null) return;
   setFansubMeta(name,meta.logo||'',url.trim());
   if(onDone)onDone();
@@ -2690,7 +2690,7 @@ function renderFansubListPage(){
     </div>
     <div class="fteam-body">
       <div class="stat-card-wrap">${rowsHTML}</div>
-      <div class="fteam-add-btn" onclick="showToast('info','Bir ekibi eklemek için önce bir seriye o çeviri ekibini ata.')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Yeni Çeviri Ekibi Ekle</div>
+      <div class="fteam-add-btn" onclick="showToast('info','Bir Çeviri Ekibi / Fansub eklemek için önce bir seriye o çeviri ekibini / fansubu ata.')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Yeni Çeviri Ekibi Ekle</div>
       <div style="height:20px;"></div>
     </div>`;
 }
@@ -2717,7 +2717,7 @@ function saveFansubMetaFromForm(){
   const logoRaw=document.getElementById('fansubMetaLogoInput').value.trim();
   const urlRaw=document.getElementById('fansubMetaUrlInput').value.trim();
   const logo=logoRaw?_cleanImgUrl(logoRaw):'';
-  if(logoRaw&&!logo){ showToast('warn','Logo adresi geçersiz (http/https ya da yüklenen görsel olmalı).'); return; }
+  if(logoRaw&&!logo){ showToast('warn','Logo linki geçersiz (http/https ya da yüklenen görsel olmalı).'); return; }
   const url=urlRaw?safeUrl(urlRaw):'';
   if(urlRaw&&!url){ showToast('warn','Geçerli bir site linki gir (örn. sadscans.com).'); return; }
   const finish=(finalName,undo,msg)=>{
@@ -2872,7 +2872,7 @@ function renderLinkChips(){
     const thumbImg=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`:'';
     const thumb=`<div style="position:relative;width:22px;height:30px;border-radius:5px;overflow:hidden;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px;background:var(--black3);">${thumbImg}${coverLetterPh(s,!!s.cover)}</div>`;
     const chip=`<span class="alt-tag" style="${isMain?'border-color:rgba(124,58,237,.5);color:var(--purple3);':`border-color:${tagColor}66;color:${tagColor};`}display:inline-flex;align-items:center;">${thumb}${esc(s.name)} <b style="font-size:8.5px;opacity:.85;font-weight:700;">${tagLabel}</b><button onclick="removeSeriesLink('${l.id}')">&#x2715;</button></span>`;
-    const descBox=`<textarea class="form-textarea" placeholder="${isMain?'Bu seri hakkında kısa bir not… (opsiyonel)':'Bu bağlantı hakkında kısa bir not… (ör. Yuno karakterine odaklanan yan seri)'}" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:36px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`;
+    const descBox=`<textarea class="form-textarea" placeholder="${isMain?'Bu seri hakkında kısa bir not… (isteğe bağlı)':'Bu bağlantı hakkında kısa bir not… (ör. Yuno karakterine odaklanan yan seri)'}" oninput="updateLinkDesc('${l.id}',this.value)" style="min-height:36px;margin:4px 0 2px;font-size:11px;padding:7px 9px;">${esc(l.desc||'')}</textarea>`;
     return `<div style="margin-bottom:7px;">${chip}${descBox}</div>`;
   }).join('');
   renderChainOrderEditor();
@@ -3537,7 +3537,7 @@ function sanitizeSeriesRecord(item){
   out.autoIncrNext=(item.autoIncrNext==null||!isFinite(Number(item.autoIncrNext)))?null:Number(item.autoIncrNext);
   out.autoIncrFreq=['daily','weekly','monthly','irregular','completed'].includes(item.autoIncrFreq)?item.autoIncrFreq:'';
   out.autoIncrSkips=Array.isArray(item.autoIncrSkips)?item.autoIncrSkips.filter(x=>typeof x==='number'||typeof x==='string').slice(0,500).map(x=>typeof x==='string'?x.slice(0,40):x):[];
-  out.favorited=!!item.favorited; out.pinned=!!item.pinned; if('newChapter' in item) out.newChapter=!!item.newChapter;
+  out.favorited=!!item.favorited; out.pinned=!!item.pinned; if('newChapter' in item) out.newChapter=!!item.newChapter; { const t=Number(item.newChapterAt); if(isFinite(t)&&t>0) out.newChapterAt=t; }
   out.links=(Array.isArray(item.links)?item.links:[]).filter(l=>l&&typeof l==='object'&&(l.type==='main'||l.type==='side')&&l.id!=null).slice(0,200).map(l=>({
     id:String(l.id), type:l.type, desc:str(l.desc,500),
     relation:Object.prototype.hasOwnProperty.call(RELATION_TYPES,l.relation)?l.relation:''
@@ -3645,9 +3645,9 @@ function updateBackupInfo(){
     <div class="backup-banner${isStale?' stale':''}">
       <div style="color:${isStale?'#f87171':'var(--purple3)'};flex-shrink:0;">${ic(isStale?'warn':'checkcirc',22)}</div>
       <div style="flex:1;min-width:0;">
-        <div class="backup-banner-title">Son Yedek: ${lastLabel}</div>
+        <div class="backup-banner-title">Son yedek: ${lastLabel}</div>
         <div class="backup-banner-sub">Şu an kütüphanende <b style="color:var(--text2);">${series.length} seri</b> · tahmini boyut <b style="color:var(--text2);">~${formatBytes(currentSize)}</b></div>
-        ${isStale?`<div style="font-size:10px;color:#f87171;margin-top:3px;">Uzun süredir yedek almadın, bir tane almanı öneririz.</div>`:''}
+        ${isStale?`<div style="font-size:10px;color:#f87171;margin-top:3px;">Uzun süredir yedek almadın, bir tane alsan iyi olur.</div>`:''}
       </div>
     </div>`;
 }
