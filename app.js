@@ -607,13 +607,13 @@ const SECTIONS=[
   {key:'hero',    label:'Yeni Bölüm & Favorilerim',          icon:'sparkle',  heroOnly:true},
   {key:'pinned',  label:'Sabitlenenler',                      icon:'pin',      cats:null, pinnedOnly:true},
   {key:'active',  label:'Okumaya Devam Ettiklerim',         icon:'book',     cats:['reading','current','current_en','current_both']},
-  {key:'stale',   label:'Uzun Süredir Bakmadıklarım',        icon:'clock',    staleOnly:true},
+  {key:'stale',   label:'Uzun Süredir Bakmadıklarım',        icon:'clock',    cats:['fallen']},
   {key:'stock',   label:'Bölüm Biriktirdiklerim',            icon:'box',      cats:['stockpile']},
-  {key:'planned', label:'Okumadıklarım',                     icon:'bookmark', cats:['planned']},
-  {key:'season',  label:'Sezon Arası',                      icon:'moon',     cats:['season']},
+  {key:'planned', label:'Okumayı Planladıklarım',                     icon:'bookmark', cats:['planned']},
+  {key:'season',  label:'Sezon Arasındakiler',                      icon:'moon',     cats:['season']},
 ];
-// Ara Verdiklerim (paused) artık kendi satırı değil — isStaleSeries() eşik süresini geçince
-// otomatik olarak "Uzun Süredir Bakmadıklarım"a düşer. Bitti/Bıraktım Ana Sayfa'da hiç
+// Ara Verdiklerim (paused) artık kendi satırı değil — eşik süresini geçince (runAutoFall) "Gözümden Düştü"
+// durumuna alınır ve "Uzun Süredir Bakmadıklarım" satırında görünür. Bitti/Bıraktım Ana Sayfa'da hiç
 // gösterilmiyor (favorilenmiş "Bitti" olanlar zaten Spotlight'ta çıkıyor); ikisine de
 // üstteki kategori çipinden ulaşılabiliyor.
 // "Uzun Süredir Bakmadıklarım" (gözden düşenler): serinin kendi kendine artan toplamı etkileşim sayılmaz,
@@ -622,6 +622,28 @@ const SECTIONS=[
 function lastUserTouch(s){
   const autoLast=s.autoAt&&s.updatedAt===s.autoAt; // son güncelleme otomatik artıştan mı geldi?
   return autoLast?(s.userAt||parseInt(s.id)||0):(s.updatedAt||0);
+}
+// Eşiği aşan seriyi "Gözümden Düştü" durumuna alır (sabit/favori olanlar hariç). Önceki durumu fellFrom'da saklanır;
+// bölüm ilerletince o duruma geri döner. updatedAt'e dokunmaz: etkileşim sayılmaz.
+async function runAutoFall(){
+  let changed=false;
+  // İlk çalıştırmada (özellik yeni geldiğinde) mevcut serileri bildirim yağdırmadan sessizce taşır.
+  const firstRun=!localStorage.getItem('megami_fall_init');
+  series.forEach(s=>{
+    if(s.pinned||s.favorited||!isStaleSeries(s)) return;
+    s.fellFrom=s.category; s.category='fallen'; s.fellAt=firstRun?0:Date.now();
+    addLog(s.id,'Gözümden düştü: uzun süredir bakmadın');
+    changed=true;
+  });
+  if(firstRun&&series.length) lsSet('megami_fall_init','1');
+  if(changed){ await save(); renderContent(); if(typeof updateNotificationBadge==='function') updateNotificationBadge(); }
+}
+function restoreFromFall(s){
+  if(s.category==='fallen'&&s.fellFrom&&CATS[s.fellFrom]&&s.fellFrom!=='fallen'){
+    s.category=s.fellFrom;
+    addLog(s.id,'Gözümden düştü durumundan çıktı: yeniden bölüm ilerletildi');
+  }
+  delete s.fellFrom; delete s.fellAt;
 }
 function getStaleThresholdMs(s){
   const day=86400000;
@@ -697,6 +719,7 @@ const CATS={
   current_both: {label:'TR+EN Güncel',icon:'zap',      badge:'b-current-both'},
   stockpile:{label:'Biriktiriyorum',icon:'box',      badge:'b-stockpile'},
   paused:   {label:'Ara Verdim',    icon:'pause',    badge:'b-paused'},
+  fallen:   {label:'Gözümden Düştü',icon:'clock',    badge:'b-fallen'},
   dropped:  {label:'Bıraktım',      icon:'xcirc',    badge:'b-dropped'},
   completed:{label:'Bitti',         icon:'checkcirc',badge:'b-completed'},
   planned:  {label:'Planlıyorum',   icon:'bookmark', badge:'b-planned'},
@@ -714,14 +737,14 @@ function updateStreak(){
   if(streakNumEl)streakNumEl.textContent=data.count||1;
   const streakSidebarNumEl=document.getElementById('streakSidebarNum');
   if(streakSidebarNumEl)streakSidebarNumEl.textContent=data.count||1;
-  if(data.count===7)  setTimeout(()=>{spawnConfetti();showToast('fire','7 günlük seri! Bir hafta boyunca buradayken! 🔥');},800);
+  if(data.count===7)  setTimeout(()=>{spawnConfetti();showToast('fire','7 günlük seri! Bir haftadır her gün buradasın! 🔥');},800);
   if(data.count===30) setTimeout(()=>{spawnConfetti();showToast('fire','30 gün! Sen artık bir efsanesin! 👑');},800);
   if(data.count===100)setTimeout(()=>{spawnConfetti();spawnConfetti();showToast('fire','100 GÜN! Bu gerçekten inanılmaz! 🏆');},800);
   if(data.count===365)setTimeout(()=>{spawnConfetti();spawnConfetti();spawnConfetti();showToast('fire','365 GÜN! Tam bir yıl! Sen artık bir efsane değil, bir destansın! 🐉👑');},800);
 }
 function showStreak(){
   const data=JSON.parse(localStorage.getItem('mv_streak')||'{}');
-  showToast('fire',`${data.count||1} günlük seri çalışması! 🔥`);
+  showToast('fire',`${data.count||1} günlük seri! 🔥`);
 }
 let logoTaps=0,logoTimer=null;
 function logoTap(){
@@ -783,7 +806,7 @@ function easterEggCheck(){
   const msgs={
     10:  ['star','10 seri! Kütüphanen büyümeye başladı 📚'],
     25:  ['star','25 seri! Ciddi bir koleksiyoncu olmaya başladın 🎯'],
-    50:  ['star','50 SERİ! Sen artık bir koleksiyon ustasisin! 🏅'],
+    50:  ['star','50 SERİ! Sen artık bir koleksiyon ustasısın! 🏅'],
     100: ['star','100 SERİ!!! Bu bir efsane! 👑'],
   };
   const completedMsgs={
@@ -889,6 +912,26 @@ function goSearch(){
   const app=document.getElementById('app'); if(app) app.scrollTop=0;
   const si=document.getElementById('searchInput');
   if(si){ si.value=''; si.focus(); try{ si.select(); }catch(e){} }
+  _bindSearchFocus();
+  // Arama kutusu hero'nun altında: klavye açılınca altta kalmasın diye kutuyu ekranın üstüne getir.
+  _scrollSearchIntoView(); setTimeout(_scrollSearchIntoView,350);
+}
+function _scrollSearchIntoView(){
+  const app=document.getElementById('app'), w=document.getElementById('searchWrap');
+  if(!app||!w||w.offsetParent===null) return;
+  const padTop=parseFloat(getComputedStyle(app).paddingTop)||0;
+  const off=w.getBoundingClientRect().top-app.getBoundingClientRect().top-padTop-12;
+  if(Math.abs(off)>2) app.scrollTo({top:Math.max(0,app.scrollTop+off),behavior:'smooth'});
+}
+// Arama odaktayken sayfanın altına boşluk ekler: içerik kısaysa bile kutu yukarı kaydırılabilsin.
+let _searchFocusBound=false;
+function _bindSearchFocus(){
+  if(_searchFocusBound) return;
+  const si=document.getElementById('searchInput'); if(!si) return;
+  _searchFocusBound=true;
+  si.addEventListener('focus',()=>document.documentElement.classList.add('search-focus'));
+  si.addEventListener('blur',()=>document.documentElement.classList.remove('search-focus'));
+  document.documentElement.classList.add('search-focus');
 }
 // "Ana Sayfa": nerede olursan ol (arama, başka kategori, tür/etiket süzgeci, seçim modu, detay ya da başka sayfa)
 // Tümü kategorisine ve sayfanın en üstüne döner.
@@ -1108,7 +1151,7 @@ function renderBulkBar(){
   const bottomOffset=hasRadial?'calc(96px + env(safe-area-inset-bottom,0px))':'calc(var(--nav-h,0px) + 12px)';
   return `<div id="bulkActionBar" style="position:fixed;left:12px;right:12px;bottom:${bottomOffset};z-index:150;background:rgba(20,10,32,.85);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.5);">
     <span style="font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;flex-shrink:0;">${n} seçili</span>
-    <select class="form-select" style="flex:1;font-size:12px;padding:7px 9px;min-width:0;" onchange="if(this.value){bulkSetCategory(this.value);this.value='';}"><option value="">Kategori…</option>${Object.entries(CATS).filter(([k])=>k!=='all').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
+    <select class="form-select" style="flex:1;font-size:12px;padding:7px 9px;min-width:0;" onchange="if(this.value){bulkSetCategory(this.value);this.value='';}"><option value="">Durum…</option>${Object.entries(CATS).filter(([k])=>k!=='all').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select>
     <button class="hdr-btn" title="Sabitle" onclick="bulkPin()">${ic('pin',15)}</button>
     <button class="hdr-btn" title="Favorile" onclick="bulkFavorite()">${ic('heart',15)}</button>
     <button class="hdr-btn" title="Sil" style="color:#f87171;" onclick="bulkDelete()">${ic('trash',15)}</button>
@@ -1127,7 +1170,7 @@ function bulkSetCategory(cat){
   if(selectedIds.size===0)return;
   series.forEach(s=>{if(selectedIds.has(s.id)){s.category=cat;s.updatedAt=Date.now();}});
   save().then(()=>{
-    showToast('check',`${selectedIds.size} seri "${CATS[cat].label}" olarak güncellendi.`);
+    showToast('check',`${selectedIds.size} serinin durumu "${CATS[cat].label}" yapıldı.`);
     selectionMode=false;selectedIds.clear();
     renderTabs();renderContent();
   });
@@ -1262,13 +1305,9 @@ function dismissDailyDigest(){
 // göster" diye açıyor.
 // Gözden düşenler: ana sayfadaki "Uzun Süredir Bakmadıklarım" bölümüyle aynı liste (sabit/favori olanlar hariç).
 // Bildirim rozeti yalnızca senin henüz görmediğin yeni düşenleri sayar; bildirim panelini açınca görüldü sayılırlar.
-function getStaleForNotif(){ return series.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s)); }
-function _staleSeenMap(){ try{ return JSON.parse(localStorage.getItem('megami_stale_seen')||'{}')||{}; }catch(e){ return {}; } }
-function getUnseenStale(){ const seen=_staleSeenMap(); return getStaleForNotif().filter(s=>seen[s.id]!==lastUserTouch(s)); }
-function markStaleSeen(){
-  const seen={}; getStaleForNotif().forEach(s=>{ seen[s.id]=lastUserTouch(s); });
-  lsSet('megami_stale_seen',JSON.stringify(seen));
-}
+function getStaleForNotif(){ return series.filter(s=>s.category==='fallen'&&!s.pinned&&!s.favorited); }
+function getUnseenStale(){ const seen=+localStorage.getItem('megami_fall_seen')||0; return getStaleForNotif().filter(s=>(s.fellAt||0)>seen); }
+function markStaleSeen(){ lsSet('megami_fall_seen',String(Date.now())); }
 function updateNotificationBadge(){
   const badge=document.getElementById('notifBadge');
   if(!badge)return;
@@ -1286,7 +1325,7 @@ function openNotificationsSheet(){
     const cov=s.cover?`<img referrerpolicy="no-referrer" src="${esc(coverSrc(s.cover))}" class="notif-cov">`:`<div class="notif-cov">${ic('img',15)}</div>`;
     return `<div class="notif-item" onclick="closeSheet('notifOverlay');openDetail('${s.id}')">${cov}<span class="notif-name">${esc(s.name)}</span>${showCh&&s.chapterTR?`<span class="notif-item-badge">Böl. ${esc(s.chapterTR)}</span>`:''}${extra?`<span class="notif-item-badge">${extra}</span>`:''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg></div>`;
   };
-  const staleSec=stale.length?`<div class="notif-sec"><div class="notif-sec-title">${ic('clock',10)} Gözden Düştü</div><div style="font-size:10.5px;color:var(--text3);padding:0 2px 8px;line-height:1.5;">Bu seriler uzun süredir etkileşim görmedi ve "Uzun Süredir Bakmadıklarım" bölümüne alındı.</div>${stale.slice(0,6).map(s=>notifItem(s,false,Math.floor((Date.now()-lastUserTouch(s))/86400000)+' gün')).join('')}${stale.length>6?`<div style="font-size:10.5px;color:var(--text3);padding:6px 2px;">+${stale.length-6} seri daha</div>`:''}</div>`:'';
+  const staleSec=stale.length?`<div class="notif-sec"><div class="notif-sec-title">${ic('clock',10)} Gözümden Düştü</div><div style="font-size:10.5px;color:var(--text3);padding:0 2px 8px;line-height:1.5;">Bu seriler uzun süredir etkileşim görmedi ve "Gözümden Düştü" durumuna alındı.</div>${stale.slice(0,6).map(s=>notifItem(s,false,Math.floor((Date.now()-lastUserTouch(s))/86400000)+' gün')).join('')}${stale.length>6?`<div style="font-size:10.5px;color:var(--text3);padding:6px 2px;">+${stale.length-6} seri daha</div>`:''}</div>`:'';
   const section=(title,icon,items,showCh)=>items.length?`<div class="notif-sec"><div class="notif-sec-title">${ic(icon,10)} ${title}</div>${items.map(s=>notifItem(s,showCh)).join('')}</div>`:'';
   const forecastBtn=`<div class="notif-forecast-btn" onclick="closeSheet('notifOverlay');openWeeklyForecast();">${ic('layers',13)} Önümüzdeki 7 Gün Takvimi</div>`;
   const html=section('Bugün Yeni Bölüm Geldi','bolt',newCh,true)+section('Sezon Arasından Döndü','checkcirc',returned,false)+staleSec;
@@ -1359,7 +1398,7 @@ function renderContent(){
 }
 function isNewChapterFresh(s){
   if(!s.newChapter||!s.newChapterAt) return false; // zaman damgası yoksa (eski/içe aktarılmış veri) sonsuza dek "yeni" kalmasın
-  if(s.category==='completed'||s.category==='dropped'||s.category==='planned') return false; // bitirdiğin, bıraktığın ya da henüz başlamadığın seride "yeni bölüm" anlamsız
+  if(s.category==='completed'||s.category==='dropped'||s.category==='planned'||s.category==='fallen') return false; // bitirdiğin, bıraktığın ya da henüz başlamadığın seride "yeni bölüm" anlamsız
   if(Date.now()-s.newChapterAt>=48*60*60*1000) return false; // 48 saatten eskiyse artık "yeni" sayılmaz
   const total=_chNum(s.chapterTotal);
   return total>_chNum(s.chapterTR); // okunmamış bölüm yoksa yeni bölüm de yok
@@ -1471,8 +1510,7 @@ function renderHome(){
     let items;
     if(sec.pinnedOnly) items=filtered.filter(s=>s.pinned);
     else if(sec.heroOnly) items=filtered.filter(s=>isNewChapterFresh(s)||s.favorited).sort((a,b)=>(isNewChapterFresh(b)?1:0)-(isNewChapterFresh(a)?1:0));
-    else if(sec.staleOnly) items=filtered.filter(s=>!s.pinned&&!s.favorited&&isStaleSeries(s));
-    else items=filtered.filter(s=>!s.pinned&&!s.favorited&&!isStaleSeries(s)&&sec.cats.includes(s.category));
+    else items=filtered.filter(s=>!s.pinned&&!s.favorited&&sec.cats.includes(s.category));
     if(!items.length) return;
     if(sec.heroOnly){
       heroFound=true;
@@ -1565,7 +1603,7 @@ function initHeroRail(){
   setActive(0);
   _heroAutoTimer=setInterval(advance,AUTO_MS);
 }
-const CAT_LETTER_COLORS={reading:'#a78bfa',current:'#34d399',current_en:'#38bdf8',current_both:'#a78bfa',stockpile:'#f59e0b',paused:'#94a3b8',dropped:'#f87171',completed:'#60a5fa',planned:'#f472b6',season:'#c4b5fd'};
+const CAT_LETTER_COLORS={reading:'#a78bfa',current:'#34d399',current_en:'#38bdf8',current_both:'#a78bfa',stockpile:'#f59e0b',paused:'#94a3b8',fallen:'#fb923c',dropped:'#f87171',completed:'#60a5fa',planned:'#f472b6',season:'#c4b5fd'};
 function coverLetterPh(s,hidden){
   const letter=(s.name||'?').trim().charAt(0).toLocaleUpperCase('tr-TR');
   const color=CAT_LETTER_COLORS[s.category]||'#7c3aed';
@@ -1591,7 +1629,7 @@ function cardMeta(s){
     chText=chTR>0?`+${chTR} bölüm birikti`:'';
   }else if(s.category==='planned'){
     chText=total>0?`${total} bölüm bekliyor`:(chTR>0?`${chTR} bölüm var`:'');
-  }else if(!s.pinned&&isStaleSeries(s)){
+  }else if(!s.pinned&&s.category==='fallen'){
     const lt=lastUserTouch(s);
     const last=lt?new Date(lt):null;
     chText=last?`Son bakış: ${last.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}`:'';
@@ -1727,6 +1765,7 @@ function setChapterTR(s,n){
   clearTimeout(_chLog.timer); _chLog.timer=setTimeout(flushChapterLog,1500);
   s.chapterTR=String(n);   // form ve içe aktarma da metin olarak tutuyor: tür tutarlı kalsın
   s.updatedAt=Date.now();
+  restoreFromFall(s);
   const total=_chNum(s.chapterTotal);
   if(total>0&&n>=total&&s.newChapter) s.newChapter=false; // yetiştiysen "yeni bölüm" rozeti söner
   save().catch(()=>{});
@@ -1807,7 +1846,7 @@ function _resumeAutoIncrement(){
   if(!series.length||Date.now()-_lastAutoRun<60000) return;
   const ov=document.getElementById('addOverlay');
   if(ov&&!ov.classList.contains('hidden')) return; // form açıkken seriyi değiştirme
-  runAutoIncrement().catch(()=>{});
+  runAutoIncrement().catch(()=>{}).then(()=>runAutoFall()).catch(()=>{});
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'){
@@ -1858,6 +1897,11 @@ async function saveQuick(){
   s.chapterEN=cleanChapterValue(document.getElementById('quickEN').value);
   s.category=quickCat;
   s.updatedAt=Date.now();
+  if(prevCat==='fallen'){
+    // Durumu elle değiştirdiysen düşme kaydı silinir; durum aynı kaldı ama bölüm ilerlediyse eski duruma dönülür.
+    if(quickCat!=='fallen'){ delete s.fellFrom; delete s.fellAt; }
+    else if(_chNum(prevTR)!==_chNum(s.chapterTR)||_chNum(prevEN)!==_chNum(s.chapterEN)) restoreFromFall(s);
+  }
   if(quickSkipping&&s.autoIncrFreq){
     const pk=periodKey(s.autoIncrFreq);
     s.autoIncrSkips=s.autoIncrSkips||[];
@@ -2375,7 +2419,7 @@ function toggleReturnDate(){
 const STATUS_GROUPS=[
   {title:'Okuma',keys:['reading','planned','stockpile']},
   {title:'Güncel',keys:['current','current_en','current_both']},
-  {title:'Ara / bitiş',keys:['season','paused','dropped','completed']}
+  {title:'Ara / bitiş',keys:['season','paused','fallen','dropped','completed']}
 ];
 const STATUS_HELP={
   reading:'Bölümleri sırayla okuyorsun.',
@@ -2386,6 +2430,7 @@ const STATUS_HELP={
   current_both:'Hem Türkçe hem İngilizce güncelsin.',
   season:'Yeni sezonu bekliyor. Dönüş tarihini aşağıdan girebilirsin.',
   paused:'Şimdilik ara verdin, sonra devam edebilirsin.',
+  fallen:'Uzun süredir bakmadın. Süre dolunca kendiliğinden buraya alınır; bölüm ilerletirsen eski durumuna döner.',
   dropped:'Artık takip etmiyorsun.',
   completed:'Seriyi bitirdin.'
 };
@@ -3564,6 +3609,8 @@ function sanitizeSeriesRecord(item){
   out.rating=Math.round(num(item.rating,0,0,5));
   out.mainOrder=Math.round(num(item.mainOrder,0,0,100000));
   out.updatedAt=num(item.updatedAt,Date.now(),0,8.64e15);
+  if(typeof item.fellFrom==='string'&&item.fellFrom!=='fallen'&&Object.prototype.hasOwnProperty.call(CATS,item.fellFrom)) out.fellFrom=item.fellFrom;
+  if(isFinite(Number(item.fellAt))&&Number(item.fellAt)>0) out.fellAt=Number(item.fellAt);
   if(isFinite(Number(item.autoAt))&&Number(item.autoAt)>0) out.autoAt=Number(item.autoAt);
   if(isFinite(Number(item.userAt))&&Number(item.userAt)>0) out.userAt=Number(item.userAt);
   out.autoIncrAmt=num(item.autoIncrAmt,0,0,100000);
