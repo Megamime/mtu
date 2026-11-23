@@ -1,4 +1,4 @@
-const CACHE_NAME = 'megami-cache-v43';
+const CACHE_NAME = 'megami-cache-v47';
 const FONT_CACHE = 'megami-fonts-v1';
 const NETWORK_TIMEOUT_MS = 3000;
 const CORE_ASSETS = [

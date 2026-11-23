@@ -1218,8 +1218,19 @@ const SORT_OPTIONS={
   name_za:{label:'İsim (Z-A)',fn:(a,b)=>b.name.localeCompare(a.name,'tr')},
   rating:{label:'Puan (Yüksek-Düşük)',fn:(a,b)=>(b.rating||0)-(a.rating||0)},
   newest:{label:'Yeni Eklenen',fn:(a,b)=>b.id.localeCompare(a.id)},
+  untouched:{label:'En Uzun Süredir Bakılmayan',fn:(a,b)=>(lastUserTouch(a)||0)-(lastUserTouch(b)||0)},
   chapters:{label:'Okunan Bölüme Göre',fn:(a,b)=>(parseInt(b.chapterTR)||0)-(parseInt(a.chapterTR)||0)},
 };
+// Okunabilir serilerden rastgele birini detayda açar; sabit/favori ve
+function pickRandomSeries(){
+  const ok=['reading','current','current_en','current_both','stockpile','paused'];
+  const pool=series.filter(s=>ok.includes(s.category));
+  if(!pool.length){ showToast('info','Okunacak seri bulunamadı'); return; }
+  const w=pool.map(s=>1+(s.pinned?1:0)+(s.favorited?1:0));
+  let r=Math.random()*w.reduce((a,b)=>a+b,0), pick=pool[0];
+  for(let i=0;i<pool.length;i++){ r-=w[i]; if(r<=0){ pick=pool[i]; break; } }
+  openDetail(pick.id);
+}
 function setSort(val){
   currentSort=val;
   lsSet('megami_sort',val);
@@ -3404,7 +3415,7 @@ function fillProfileDiag(){
     'visualViewport '+(vv?Math.round(vv.width)+'x'+Math.round(vv.height)+' top='+Math.round(vv.offsetTop):'yok'),
     'safe-area t/r/b/l '+ins.join('/'),
     'standalone '+(navigator.standalone===true)+' | display-mode '+(matchMedia('(display-mode: standalone)').matches?'standalone':'browser')+' | scrollY '+Math.round(window.scrollY),
-    '#app top/bottom '+Math.round(ar.top)+'/'+Math.round(ar.bottom)+' | fab bottom '+Math.round(fr.bottom),
+    'vfix '+getComputedStyle(document.documentElement).getPropertyValue('--vfix')+' | #app top/bottom '+Math.round(ar.top)+'/'+Math.round(ar.bottom)+' | fab bottom '+Math.round(fr.bottom),
     'v'+(document.querySelector('script[src="app.js"]')?'':'?')+' ua '+navigator.userAgent.replace(/Mozilla\/5.0 /,'').slice(0,90)
   ].join('\n');
 }
@@ -4118,12 +4129,15 @@ function computeHabitStats(){
   const sumSince=ts=>reads.filter(r=>r.ts>=ts).reduce((a,r)=>a+r.n,0);
   const week=sumSince(t0-6*DAY);
   const last30=sumSince(t0-29*DAY);
+  const prevWeek=reads.filter(r=>r.ts>=t0-13*DAY&&r.ts<t0-6*DAY).reduce((a,r)=>a+r.n,0);
+  const yearStart=new Date(new Date().getFullYear(),0,1).getTime();
+  const year=sumSince(yearStart);
   const dayCount=[0,0,0,0,0,0,0];
   activityLog.forEach(l=>{ if(!isAutoLog(l)) dayCount[new Date(l.ts).getDay()]++; });
   const topDayIdx=dayCount.indexOf(Math.max(...dayCount));
   const topDay=dayCount[topDayIdx]>0?{name:new Date(2024,0,7+topDayIdx).toLocaleDateString('tr-TR',{weekday:'long'}),count:dayCount[topDayIdx]}:null;
   const streak=computeReadingStreak();
-  return {week,avgPerDay:last30>0?(last30/30):0,last30,topDay,bestStreak:streak.best,hasReads:reads.length>0};
+  return {week,prevWeek,year,avgPerDay:last30>0?(last30/30):0,last30,topDay,bestStreak:streak.best,hasReads:reads.length>0};
 }
 // ===== Kişiselleştirilmiş istatistikler — tür dağılımı, fansub liderlik tablosu, puan
 // dağılımı, en eski seri gibi daha "kişiye özel" ve görsel açıdan zengin veriler. =====
