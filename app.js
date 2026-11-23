@@ -3385,7 +3385,28 @@ function openProfileSheet(){
   document.getElementById('profileStatsGrid').innerHTML=`
     <div class="profile-stat-card" style="grid-column:1/-1;"><div class="profile-stat-num" style="font-size:13px;">${esc(getMemberSinceLabel())}</div><div class="profile-stat-label">Üyelik</div></div>
   `;
+  try{ fillProfileDiag(); }catch(e){}
   openSheet('profileOverlay');
+}
+// GEÇİCİ: ekranın altındaki boşluğu anlamak için ölçüler (sorun çözülünce kaldırılacak).
+function fillProfileDiag(){
+  const el=document.getElementById('profileDiag'); if(!el) return;
+  const pr=document.createElement('div');
+  pr.style.cssText='position:fixed;left:0;top:0;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);';
+  document.body.appendChild(pr);
+  const cs=getComputedStyle(pr), ins=[cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].map(v=>Math.round(parseFloat(v)||0));
+  pr.remove();
+  const app=document.getElementById('app'), ar=app?app.getBoundingClientRect():{};
+  const vv=window.visualViewport;
+  const fab=document.getElementById('radialTrigger'), fr=fab?fab.getBoundingClientRect():{};
+  el.textContent=[
+    'inner '+innerWidth+'x'+innerHeight+' | screen '+screen.width+'x'+screen.height+' | client '+document.documentElement.clientWidth+'x'+document.documentElement.clientHeight,
+    'visualViewport '+(vv?Math.round(vv.width)+'x'+Math.round(vv.height)+' top='+Math.round(vv.offsetTop):'yok'),
+    'safe-area t/r/b/l '+ins.join('/'),
+    'standalone '+(navigator.standalone===true)+' | display-mode '+(matchMedia('(display-mode: standalone)').matches?'standalone':'browser')+' | scrollY '+Math.round(window.scrollY),
+    '#app top/bottom '+Math.round(ar.top)+'/'+Math.round(ar.bottom)+' | fab bottom '+Math.round(fr.bottom),
+    'v'+(document.querySelector('script[src="app.js"]')?'':'?')+' ua '+navigator.userAgent.replace(/Mozilla\/5.0 /,'').slice(0,90)
+  ].join('\n');
 }
 function pickProfileAvatar(a){
   _profileAvatarPending=a;
